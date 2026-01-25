@@ -68,7 +68,7 @@ class MarabouGenerator:
 
     def generate(self):
         output = []
-        output.append("from maraboupy import Marabou, MarabouCore")
+        output.append("from maraboupy import Marabou, MarabouCore, MarabouUtils")
         output.append("\ndef check_property(onnx_path):")
 
         for rule in self.model.ruleBlock.rules:
@@ -117,6 +117,10 @@ class MarabouGenerator:
         return "\n".join(code)
 
     def _apply_condition(self, condition, mode):
+        # TODO: add the 'or' case
+        if condition.op == 'and':
+            return self._apply_condition(condition.lhs, mode) + "\n" + self._apply_condition(condition.rhs, mode)
+
         # variable, operator, value
         c = condition.op
         var_idx = self.measures[condition.lhs.ID.name]
@@ -200,9 +204,10 @@ class MarabouGenerator:
                 lines.append(f"    equations.append([eq])")
             else:
                 lines.append(f"    # {name} <= {target_action}")
-                lines.append(f"    eq = MarabouCore.Equation(MarabouCore.Equation.GE)")
+                lines.append(f"    eq = MarabouUtils.Equation(MarabouCore.Equation.GE)")
                 lines.append(f"    eq.addAddend(1, outputVars[{target_idx}])")
                 lines.append(f"    eq.addAddend(-1, outputVars[{idx}])")
+                lines.append(f"    eq.setScalar(0)")
                 lines.append(f"    net.addEquation(eq)")
 
         if mode == "Normal":

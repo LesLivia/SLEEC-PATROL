@@ -46,11 +46,16 @@ rule_start
     // r2 when cmdRequired and ({userCommand}=continue) then outputContinue within 0 seconds
     // r3 when cmdRequired and ({userCommand}=stop) then outputStop within 0 seconds
     // safety property
-    r1_def1 when cmdRequired and ({userCommand}=continue) then outputContinue within 0 seconds
-    unless ({distress}>highDistress) then outputStop within 0 seconds
+    // r1_def1 when cmdRequired and ({userCommand}=continue) then outputContinue within 0 seconds
+    // unless ({distress}>highDistress) then outputStop within 0 seconds
     // ethical property
-    r1_def2 when cmdRequired and ({distress}>highDistress) then outputStop within 0 seconds
-    unless ({robotCommand}=pullOverHead) then outputContinue within 0 seconds
+    r1_def2 when cmdRequired and ({distress}>highDistress)
+    then outputStop within 0 seconds
+    unless ({robotCommand}=pullOverHead)
+    // then outputContinue within 0 seconds
+    // r1_def2_corrected when cmdRequired and (({distress}>highDistress) and ({heartRate}>highHeartRate))
+    // then outputStop within 0 seconds
+    // unless ({robotCommand}=pullOverHead) then outputContinue within 0 seconds
 rule_end
 
 concern_start
