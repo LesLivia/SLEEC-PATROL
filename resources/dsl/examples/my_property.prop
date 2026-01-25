@@ -1,0 +1,5 @@
+property check_output_range {
+    forall x in [-1.0, 1.0] and y in [0.0, 5.0]
+    implies
+    output[0] > 100.0
+}

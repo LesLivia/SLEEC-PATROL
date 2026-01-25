@@ -1,0 +1,19 @@
+Property:
+    'property' name=ID '{'
+        'forall' input_constraints+=InputConstraint['and']
+        'implies'
+        output_constraint=OutputConstraint
+    '}'
+;
+
+InputConstraint:
+    variable=ID 'in' '[' lower_bound=FLOAT ',' upper_bound=FLOAT ']'
+;
+
+OutputConstraint:
+    'output' '[' index=INT ']' op=OutputOp value=FLOAT
+;
+
+OutputOp:
+    '>' | '<' | '>=' | '<=' | '=='
+;

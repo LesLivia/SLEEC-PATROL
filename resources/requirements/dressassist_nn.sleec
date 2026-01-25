@@ -1,0 +1,63 @@
+def_start
+    event cmdRequired
+
+    // NN input 1: probability of distress
+    measure distress:scale(noDistress,lowDistress,mediumDistress,highDistress)
+    constant distressLB = 1
+    constant noDistressLB = 1
+    constant lowDistressLB = 20
+    constant mediumDistressLB = 50
+    constant highDistressLB = 90
+    constant distressUB = 100
+
+    // NN input 2: heart rate
+    measure heartRate:scale(lowHeartRate,normalHeartRate,highHeartRate)
+    constant heartRateLB = 60
+    constant lowHeartRateLB = 60
+    constant normalHeartRateLB = 70
+    constant highHeartRateLB = 120
+    constant heartRateUB = 180
+
+    // NN input 3: last user command
+    measure userCommand:scale(noUserCmd,continue,stop)
+
+    // NN input 4: last robot command
+    measure robotCommand:scale(liftArm,guideSleeve,pullOverHead,adjustCollar,smoothFabric)
+    constant robotCommandLB = 0
+    constant robotCommandUB = 4
+
+    // NN output: activation logits for these 4 commands
+    event outputContinue
+    event outputPause
+    event outputAskUser
+    event outputStop
+def_end
+
+rule_start
+    // only one NN command at a time
+    o1 when outputContinue then not outputPause
+    o2 when outputContinue then not outputAskUser
+    o3 when outputContinue then not outputStop
+    o4 when outputPause then not outputAskUser
+    o5 when outputPause then not outputStop
+    o6 when outputAskUser then not outputStop
+
+    // r1_prelim when cmdRequired and ({userCommand}=continue) then outputContinue within 0 seconds
+    // r2 when cmdRequired and ({userCommand}=continue) then outputContinue within 0 seconds
+    // r3 when cmdRequired and ({userCommand}=stop) then outputStop within 0 seconds
+    // safety property
+    r1_def1 when cmdRequired and ({userCommand}=continue) then outputContinue within 0 seconds
+    unless ({distress}>highDistress) then outputStop within 0 seconds
+    // ethical property
+    r1_def2 when cmdRequired and ({distress}>highDistress) then outputStop within 0 seconds
+    unless ({robotCommand}=pullOverHead) then outputContinue within 0 seconds
+rule_end
+
+concern_start
+    c1 when cmdRequired and ({robotCommand}=pullOverHead) then outputStop
+concern_end
+
+purpose_start
+    p1 when cmdRequired then outputContinue
+    unless ({userCommand}=stop) then outputStop
+purpose_end

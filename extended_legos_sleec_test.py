@@ -1,0 +1,4 @@
+from verifier.generated_verify_model import check_property
+
+ONNX_MODEL_FILENAME = "verifier/resources/models/dressassist_carebot/carebot_decision_model_v2.onnx"
+check_property(ONNX_MODEL_FILENAME)
