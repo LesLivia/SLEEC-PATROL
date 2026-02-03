@@ -60,10 +60,13 @@ class MarabouGenerator:
         output = []
         output.append("from maraboupy import Marabou, MarabouCore, MarabouUtils")
         output.append("\ndef check_property(onnx_path):")
+        output.append("\n    results = {}")
 
         for rule in self.model.ruleBlock.rules:
             output.append(self._generate_rule_check(rule))
             self.covered_inputs = []
+
+        output.append(f"    return results")
 
         return "\n".join([line for line in output if line is not None])
 
@@ -89,6 +92,9 @@ class MarabouGenerator:
         code.append(self._add_remaining_conditions(vars_to_cover))
 
         code.append(self._apply_output_check(rule.response.occ.event.event))
+        code.append(f"    results[\"{rule.name}\" + \"_normal\"] = "                        
+                    f"(result[0] != 'sat', {{key:result[1][key] for key in list(result[1].keys())[:{len(self.measures)+len(self.outputs)}]}})")
+
 
         # Generate Case B: The Exception 'Unless'
         if len(rule.response.defeater) > 0:
@@ -103,6 +109,8 @@ class MarabouGenerator:
                 code.append(self._apply_output_check(rule.response.occ.event.event, mode="Negate"))
             else:
                 code.append(self._apply_output_check(rule.response.defeater[0].response.occ.event.event))
+            code.append(f"    results[\"{rule.name}\" + \"_defeater\"] = "
+                        f"(result[0] != 'sat', {{key:result[1][key] for key in list(result[1].keys())[:{len(self.measures)+len(self.outputs)}]}})")
 
         return "\n".join(code)
 

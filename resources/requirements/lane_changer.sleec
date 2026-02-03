@@ -1,0 +1,71 @@
+def_start
+    event cmdRequired
+
+    // NN input 1: ego vehicle speed
+    measure egoSpeed:scale(veryLowSpeed,lowSpeed,mediumSpeed,highSpeed,veryHighSpeed)
+    constant egoSpeedLB = 0
+    constant veryLowSpeedLB = 0
+    constant lowSpeedLB = 10
+    constant mediumSpeedLB = 30
+    constant highSpeedLB = 50
+    constant veryHighSpeedLB = 70
+    constant egoSpeedUB = 80
+
+    // NN input 2: ego vehicle longitudinal acceleration
+    measure egoAcceleration:scale(strongBraking,moderateBraking,neutralAcceleration,moderateAcceleration,strongAcceleration)
+    constant egoAccelerationLB = -10
+    constant strongBrakingLB = -10
+    constant moderateBrakingLB = -4
+    constant neutralAccelerationLB = -1
+    constant moderateAccelerationLB = 1
+    constant strongAccelerationLB = 4
+    constant egoAccelerationUB = 10
+
+    // NN input 3: headway to front vehicle
+    measure headway:scale(veryShortHeadway,shortHeadway,mediumHeadway,longHeadway)
+    constant headwayLB = 0
+    constant veryShortHeadwayLB = 0
+    constant shortHeadwayLB = 10
+    constant mediumHeadwayLB = 30
+    constant longHeadwayLB = 60
+    constant headwayUB = 100
+
+    // NN input 4: relative speed to front vehicle
+    measure relativeSpeedFront:scale(closingFast,closing,stable,opening,openingFast)
+    constant relativeSpeedFrontLB = -30
+    constant closingFastLB = -30
+    constant closingLB = -10
+    constant stableLB = -2
+    constant openingLB = 2
+    constant openingFastLB = 10
+    constant relativeSpeedFrontUB = 30
+
+    // NN input 5: gap in target lane
+    measure targetLaneGap:scale(noGap,smallGap,mediumGap,largeGap)
+    constant targetLaneGapLB = 0
+    constant noGapLB = 0
+    constant smallGapLB = 5
+    constant mediumGapLB = 15
+    constant largeGapLB = 40
+    constant targetLaneGapUB = 100
+
+    // NN input 6: relative speed in target lane
+    measure relativeSpeedTarget:scale(fasterVehicle,slightlyFaster,matchedSpeed,slightlySlower,slowerVehicle)
+    constant relativeSpeedTargetLB = -50
+    constant fasterVehicleLB = -30
+    constant slightlyFasterLB = -10
+    constant matchedSpeedLB = -2
+    constant slightlySlowerLB = 2
+    constant slowerVehicleLB = 10
+    constant relativeSpeedTargetUB = 30
+
+    // NN output: activation logits for these 4 commands
+    constant changeLaneLB = 0
+    event outputChangeLane
+def_end
+
+rule_start
+    r1 when cmdRequired and (({targetLaneGap}>mediumGap) and ({relativeSpeedFront}<closing))
+    then outputChangeLane
+    unless ({relativeSpeedTarget}<fasterVehicle)
+rule_end

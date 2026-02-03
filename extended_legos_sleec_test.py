@@ -5,14 +5,15 @@ from verifier.sleec2marabou_parser import MarabouGenerator
 # ==========================================
 # 1. LOAD TEXTX GRAMMAR
 # ==========================================
-grammar_file = "LEGOS-SLEEC/sleec-gramar.tx"
+grammar_file = "legos_sleec/sleec-grammar.txt"
 with open(grammar_file, 'r') as f:
     grammar = f.read()
 
 # ==========================================
 # 2. RUNNING THE PARSER
 # ==========================================
-sleec_input_file = "resources/requirements/pima_indians.sleec"
+# sleec_input_file = "resources/requirements/pima_indians.sleec"
+sleec_input_file = "resources/requirements/lane_changer.sleec"
 # sleec_input_file = "resources/requirements/dressassist_nn.sleec"
 with open(sleec_input_file, 'r') as f:
     dsl_snippet = f.read()
@@ -31,6 +32,8 @@ with open("verifier/generated_verify_model.py", 'w') as f:
 # ==========================================
 from verifier.generated_verify_model import check_property
 
-ONNX_MODEL_FILENAME = "verifier/resources/models/pima_classifier/pima_marabou.onnx"
+# ONNX_MODEL_FILENAME = "verifier/resources/models/pima_classifier/pima_marabou.onnx"
+ONNX_MODEL_FILENAME = "verifier/resources/models/ngsim_lanechange_marabou.onnx"
 # ONNX_MODEL_FILENAME = "verifier/resources/models/dressassist_carebot/carebot_decision_model_v2.onnx"
-check_property(ONNX_MODEL_FILENAME)
+outcome = check_property(ONNX_MODEL_FILENAME)
+print(outcome)

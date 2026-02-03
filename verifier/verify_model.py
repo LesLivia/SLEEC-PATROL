@@ -2,7 +2,7 @@ import numpy as np
 from maraboupy import Marabou, MarabouCore, MarabouUtils
 
 # --- Parameters are the same as before ---
-ONNX_MODEL_FILENAME = "resources/models/dressassist_carebot/carebot_decision_model_v2.onnx"
+ONNX_MODEL_FILENAME = "resources/models/carebot_decision_model_v2.onnx"
 ACTION_NAMES = ['Continue', 'Pause', 'Ask User', 'Stop']
 NUM_OUTPUT_ACTIONS = len(ACTION_NAMES)
 ROBOT_ACTION_MAP = {
