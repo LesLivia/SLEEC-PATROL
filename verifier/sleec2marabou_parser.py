@@ -1,13 +1,3 @@
-from textx import metamodel_from_str
-
-# ==========================================
-# 1. THE TEXTX GRAMMAR
-# ==========================================
-grammar_file = "../LEGOS-SLEEC/sleec-gramar.tx"
-with open(grammar_file, 'r') as f:
-    grammar = f.read()
-
-
 # ==========================================
 # 2. THE GENERATOR LOGIC
 # ==========================================
@@ -192,45 +182,32 @@ class MarabouGenerator:
             lines.append(f"    # Assert Negation:  {target_action.name} >= all other outputs")
 
         lines.append(f"    outputVars = net.outputVars[0][0]")
-        lines.append(f"    equations = []")
+        if len(self.outputs) > 1:
+            lines.append(f"    equations = []")
 
         for name, idx in self.outputs.items():
-            if idx == target_idx: continue
-            if mode == "Normal":
-                lines.append(f"    # {name} >= {target_action}")
-                lines.append(f"    eq = MarabouCore.Equation(MarabouCore.Equation.GE)")
-                lines.append(f"    eq.addAddend(1, outputVars[{idx}])")
-                lines.append(f"    eq.addAddend(-1, outputVars[{target_idx}])")
-                lines.append(f"    equations.append([eq])")
+            if idx == target_idx:
+                lines.append(f"    # {target_action} does not occur")
+                lines.append(f"    net.setLowerBound(outputVars[{idx}], -1000.0)")
+                lines.append(f"    net.setUpperBound(outputVars[{idx}], 0.0)")
             else:
-                lines.append(f"    # {name} <= {target_action}")
-                lines.append(f"    eq = MarabouUtils.Equation(MarabouCore.Equation.GE)")
-                lines.append(f"    eq.addAddend(1, outputVars[{target_idx}])")
-                lines.append(f"    eq.addAddend(-1, outputVars[{idx}])")
-                lines.append(f"    eq.setScalar(0)")
-                lines.append(f"    net.addEquation(eq)")
+                if mode == "Normal":
+                    lines.append(f"    # {name} >= {target_action}")
+                    lines.append(f"    eq = MarabouCore.Equation(MarabouCore.Equation.GE)")
+                    lines.append(f"    eq.addAddend(1, outputVars[{idx}])")
+                    lines.append(f"    eq.addAddend(-1, outputVars[{target_idx}])")
+                    lines.append(f"    equations.append([eq])")
+                else:
+                    lines.append(f"    # {name} <= {target_action}")
+                    lines.append(f"    eq = MarabouUtils.Equation(MarabouCore.Equation.GE)")
+                    lines.append(f"    eq.addAddend(1, outputVars[{target_idx}])")
+                    lines.append(f"    eq.addAddend(-1, outputVars[{idx}])")
+                    lines.append(f"    eq.setScalar(0)")
+                    lines.append(f"    net.addEquation(eq)")
 
-        if mode == "Normal":
+        if mode == "Normal" and len(self.outputs) > 1:
             lines.append(f"    net.addDisjunctionConstraint(equations)")
         lines.append(f"    result = net.solve()")
-        lines.append(f"    if result[0] == 'sat': print('  -> FAILED: Counter-example found')")
+        lines.append(f"    if result[0] == 'sat': print('  -> NOT VERIFIED: Counter-example found')")
         lines.append(f"    else: print('  -> VERIFIED')")
         return "\n".join(lines)
-
-
-# ==========================================
-# 3. RUNNING THE PARSER
-# ==========================================
-
-sleec_input_file = "../resources/requirements/dressassist_nn.sleec"
-with open(sleec_input_file, 'r') as f:
-    dsl_snippet = f.read()
-
-# Parse
-meta = metamodel_from_str(grammar)
-model = meta.model_from_str(dsl_snippet)
-
-# Generate Code
-gen = MarabouGenerator(model)
-with open("generated_verify_model.py", 'w') as f:
-    f.write(gen.generate())

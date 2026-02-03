@@ -6,7 +6,7 @@ def_start
     constant distressLB = 1
     constant noDistressLB = 1
     constant lowDistressLB = 20
-    constant mediumDistressLB = 50
+    constant mediumDistressLB = 89
     constant highDistressLB = 90
     constant distressUB = 100
 
@@ -42,27 +42,7 @@ rule_start
     o5 when outputPause then not outputStop
     o6 when outputAskUser then not outputStop
 
-    // r1_prelim when cmdRequired and ({userCommand}=continue) then outputContinue within 0 seconds
-    // r2 when cmdRequired and ({userCommand}=continue) then outputContinue within 0 seconds
-    // r3 when cmdRequired and ({userCommand}=stop) then outputStop within 0 seconds
-    // safety property
-    // r1_def1 when cmdRequired and ({userCommand}=continue) then outputContinue within 0 seconds
-    // unless ({distress}>highDistress) then outputStop within 0 seconds
-    // ethical property
-    r1_def2 when cmdRequired and ({distress}>highDistress)
-    then outputStop within 0 seconds
-    unless ({robotCommand}=pullOverHead)
-    // then outputContinue within 0 seconds
-    // r1_def2_corrected when cmdRequired and (({distress}>highDistress) and ({heartRate}>highHeartRate))
-    // then outputStop within 0 seconds
-    // unless ({robotCommand}=pullOverHead) then outputContinue within 0 seconds
+    r1_def2 when cmdRequired and ({distress}>mediumDistress) then outputStop
+    unless ({robotCommand}=pullOverHead) then outputContinue
+    // r1_cex_guided when cmdRequired and (({robotCommand}=pullOverHead) and ({distress}>mediumDistress)) then outputStop
 rule_end
-
-concern_start
-    c1 when cmdRequired and ({robotCommand}=pullOverHead) then outputStop
-concern_end
-
-purpose_start
-    p1 when cmdRequired then outputContinue
-    unless ({userCommand}=stop) then outputStop
-purpose_end
