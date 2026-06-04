@@ -1,0 +1,62 @@
+Input || R0 || EXISTS p_cmdRequired_2: cmdRequired. (p_cmdRequired_2_presence & EXISTS p_Measure_10: Measure. (p_Measure_10_presence & ((p_cmdRequired_2_time = p_Measure_10_time) & (2 < p_Measure_10_glucose))))
+Def || L1 || c0 <-> EXISTS p_cmdRequired_2: cmdRequired. (p_cmdRequired_2_presence & EXISTS p_Measure_10: Measure. (p_Measure_10_presence & ((p_cmdRequired_2_time = p_Measure_10_time) & (2 < p_Measure_10_glucose))))
+DeriveFact || F0 || c0 || L1 R0
+Input || R1 || Forall p_outputHealthy_0: outputHealthy. ( (! p_outputHealthy_0_presence) | EXISTS p_Measure_11: Measure. (p_Measure_11_presence & ((p_outputHealthy_0_time = p_Measure_11_time) & (! EXISTS p_outputDiabetic_5: outputDiabetic. (p_outputDiabetic_5_presence & ((p_outputDiabetic_5_time <= (p_outputHealthy_0_time + 0)) & ((p_outputHealthy_0_time + 0) <= p_outputDiabetic_5_time)))))))
+Def || L3 || c1 <-> Forall p_outputHealthy_0: outputHealthy. ( (! p_outputHealthy_0_presence) | EXISTS p_Measure_11: Measure. (p_Measure_11_presence & ((p_outputHealthy_0_time = p_Measure_11_time) & (! EXISTS p_outputDiabetic_5: outputDiabetic. (p_outputDiabetic_5_presence & ((p_outputDiabetic_5_time <= (p_outputHealthy_0_time + 0)) & ((p_outputHealthy_0_time + 0) <= p_outputDiabetic_5_time)))))))
+DeriveFact || F1 || c1 || L3 R1
+Input || R2 || Forall p_cmdRequired_0: cmdRequired. ( (! p_cmdRequired_0_presence) | EXISTS p_Measure_12: Measure. (p_Measure_12_presence & ((p_cmdRequired_0_time = p_Measure_12_time) & ((! (2 < p_Measure_12_glucose)) | EXISTS p_outputDiabetic_6: outputDiabetic. (p_outputDiabetic_6_presence & ((p_outputDiabetic_6_time <= (p_cmdRequired_0_time + 0)) & ((p_cmdRequired_0_time + 0) <= p_outputDiabetic_6_time)))))))
+Def || L5 || c2 <-> Forall p_cmdRequired_0: cmdRequired. ( (! p_cmdRequired_0_presence) | EXISTS p_Measure_12: Measure. (p_Measure_12_presence & ((p_cmdRequired_0_time = p_Measure_12_time) & ((! (2 < p_Measure_12_glucose)) | EXISTS p_outputDiabetic_6: outputDiabetic. (p_outputDiabetic_6_presence & ((p_outputDiabetic_6_time <= (p_cmdRequired_0_time + 0)) & ((p_cmdRequired_0_time + 0) <= p_outputDiabetic_6_time)))))))
+DeriveFact || F2 || c2 || L5 R2
+Input || R3 || Forall p_Measure_0: Measure. ( (! p_Measure_0_presence) | Forall p_Measure_13: Measure. ( (! p_Measure_13_presence) | ((! (p_Measure_0_time = p_Measure_13_time)) | ((p_Measure_0_time = p_Measure_13_time) & (p_Measure_0_pregnancies = p_Measure_13_pregnancies) & (p_Measure_0_glucose = p_Measure_13_glucose) & (p_Measure_0_bloodPressure = p_Measure_13_bloodPressure) & (p_Measure_0_skinThickness = p_Measure_13_skinThickness) & (p_Measure_0_insulin = p_Measure_13_insulin) & (p_Measure_0_bmi = p_Measure_13_bmi) & (p_Measure_0_pedigree = p_Measure_13_pedigree) & (p_Measure_0_age = p_Measure_13_age) & (p_Measure_0_presence <-> p_Measure_13_presence)))))
+Def || L7 || c3 <-> Forall p_Measure_0: Measure. ( (! p_Measure_0_presence) | Forall p_Measure_13: Measure. ( (! p_Measure_13_presence) | ((! (p_Measure_0_time = p_Measure_13_time)) | ((p_Measure_0_time = p_Measure_13_time) & (p_Measure_0_pregnancies = p_Measure_13_pregnancies) & (p_Measure_0_glucose = p_Measure_13_glucose) & (p_Measure_0_bloodPressure = p_Measure_13_bloodPressure) & (p_Measure_0_skinThickness = p_Measure_13_skinThickness) & (p_Measure_0_insulin = p_Measure_13_insulin) & (p_Measure_0_bmi = p_Measure_13_bmi) & (p_Measure_0_pedigree = p_Measure_13_pedigree) & (p_Measure_0_age = p_Measure_13_age) & (p_Measure_0_presence <-> p_Measure_13_presence)))))
+DeriveFact || F3 || c3 || L7 R3
+DeriveLemma || EI L1  [p_cmdRequired_2:cmdRequired<-cmdRequired_0] || L8 || c0 -> (cmdRequired_0_presence & EXISTS p_Measure_14: Measure. (p_Measure_14_presence & ((cmdRequired_0_time = p_Measure_14_time) & (2 < p_Measure_14_glucose))))
+Def || L9 || c4 <-> (cmdRequired_0_presence & EXISTS p_Measure_14: Measure. (p_Measure_14_presence & ((cmdRequired_0_time = p_Measure_14_time) & (2 < p_Measure_14_glucose))))
+DeriveFact || F4 || c0 -> c4 || L9 L8
+AddFact || F5 || c5 <-> cmdRequired_0_presence
+Def || L10 || c6 <-> EXISTS p_Measure_14: Measure. (p_Measure_14_presence & ((cmdRequired_0_time = p_Measure_14_time) & (2 < p_Measure_14_glucose)))
+DeriveLemma || EI L10  [p_Measure_14:Measure<-Measure_1] || L11 || c6 -> (Measure_1_presence & ((cmdRequired_0_time = Measure_1_time) & (2 < Measure_1_glucose)))
+Def || L12 || c7 <-> (Measure_1_presence & ((cmdRequired_0_time = Measure_1_time) & (2 < Measure_1_glucose)))
+DeriveFact || F6 || c6 -> c7 || L12 L11
+AddFact || F7 || c8 <-> Measure_1_presence
+AddFact || F8 || c9 <-> (cmdRequired_0_time = Measure_1_time)
+AddFact || F9 || c10 <-> (2 < Measure_1_glucose) || 2790 2817
+Def || L13 || c11 <-> ((cmdRequired_0_time = Measure_1_time) & (2 < Measure_1_glucose))
+DeriveFact || F10 || c11 -> (c9) || F8 L13
+DeriveFact || F11 || c11 -> (c10) || F9 L13
+DeriveFact || F12 || c7 -> (c8) || F7 L12
+DeriveFact || F13 || c7 -> (c11) || L13 L12
+DeriveFact || F14 || c4 -> (c5) || F5 L9
+DeriveFact || F15 || c4 -> (c6) || L10 L9
+DeriveLemma || UI L5 [p_cmdRequired_0:cmdRequired<-cmdRequired_0]  || L14 || c2 -> ((! cmdRequired_0_presence) | EXISTS p_Measure_15: Measure. (p_Measure_15_presence & ((cmdRequired_0_time = p_Measure_15_time) & ((! (2 < p_Measure_15_glucose)) | EXISTS p_outputDiabetic_8: outputDiabetic. (p_outputDiabetic_8_presence & ((p_outputDiabetic_8_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputDiabetic_8_time))))))) || L8
+Def || L15 || c12 <-> ((! cmdRequired_0_presence) | EXISTS p_Measure_15: Measure. (p_Measure_15_presence & ((cmdRequired_0_time = p_Measure_15_time) & ((! (2 < p_Measure_15_glucose)) | EXISTS p_outputDiabetic_8: outputDiabetic. (p_outputDiabetic_8_presence & ((p_outputDiabetic_8_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputDiabetic_8_time)))))))
+DeriveFact || F16 || c2 -> c12 || L15 L14
+AddFact || F17 || c13 <-> (! cmdRequired_0_presence) || 2774 2785
+Def || L16 || c14 <-> EXISTS p_Measure_15: Measure. (p_Measure_15_presence & ((cmdRequired_0_time = p_Measure_15_time) & ((! (2 < p_Measure_15_glucose)) | EXISTS p_outputDiabetic_8: outputDiabetic. (p_outputDiabetic_8_presence & ((p_outputDiabetic_8_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputDiabetic_8_time))))))
+DeriveLemma || EI L16  [p_Measure_15:Measure<-t_Measure_3] || L17 || c14 -> (t_Measure_3_presence & ((cmdRequired_0_time = t_Measure_3_time) & ((! (2 < t_Measure_3_glucose)) | EXISTS p_outputDiabetic_7: outputDiabetic. (p_outputDiabetic_7_presence & ((p_outputDiabetic_7_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputDiabetic_7_time))))))
+Def || L18 || c15 <-> (t_Measure_3_presence & ((cmdRequired_0_time = t_Measure_3_time) & ((! (2 < t_Measure_3_glucose)) | EXISTS p_outputDiabetic_7: outputDiabetic. (p_outputDiabetic_7_presence & ((p_outputDiabetic_7_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputDiabetic_7_time))))))
+DeriveFact || F18 || c14 -> c15 || L18 L17
+AddFact || F19 || c16 <-> t_Measure_3_presence
+AddFact || F20 || c17 <-> (cmdRequired_0_time = t_Measure_3_time)
+AddFact || F21 || c18 <-> (! (2 < t_Measure_3_glucose)) || 2790 2817
+Def || L19 || c19 <-> EXISTS p_outputDiabetic_7: outputDiabetic. (p_outputDiabetic_7_presence & ((p_outputDiabetic_7_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputDiabetic_7_time)))
+DeriveLemma || EI L19  [p_outputDiabetic_7:outputDiabetic<-t_outputDiabetic_1] || L20 || c19 -> (t_outputDiabetic_1_presence & ((t_outputDiabetic_1_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputDiabetic_1_time)))
+Def || L21 || c20 <-> (t_outputDiabetic_1_presence & ((t_outputDiabetic_1_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputDiabetic_1_time)))
+DeriveFact || F22 || c19 -> c20 || L21 L20
+AddFact || F23 || c21 <-> t_outputDiabetic_1_presence || 2823 2837
+AddFact || F24 || c22 <-> ((t_outputDiabetic_1_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputDiabetic_1_time))
+DeriveFact || F25 || c20 -> (c21) || F23 L21
+DeriveFact || F26 || c20 -> (c22) || F24 L21
+Def || L22 || c23 <-> ((! (2 < t_Measure_3_glucose)) | EXISTS p_outputDiabetic_7: outputDiabetic. (p_outputDiabetic_7_presence & ((p_outputDiabetic_7_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputDiabetic_7_time))))
+DeriveFact || F27 || c23 -> (c18 | c19) || F21 L19 L22
+Def || L23 || c24 <-> ((cmdRequired_0_time = t_Measure_3_time) & ((! (2 < t_Measure_3_glucose)) | EXISTS p_outputDiabetic_7: outputDiabetic. (p_outputDiabetic_7_presence & ((p_outputDiabetic_7_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputDiabetic_7_time)))))
+DeriveFact || F28 || c24 -> (c17) || F20 L23
+DeriveFact || F29 || c24 -> (c23) || L22 L23
+DeriveFact || F30 || c15 -> (c16) || F19 L18
+DeriveFact || F31 || c15 -> (c24) || L23 L18
+DeriveFact || F32 || c12 -> (c13 | c14) || F17 L16 L15
+Def || L24 || c25 <-> (t_outputDiabetic_1_presence & ((t_outputDiabetic_1_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputDiabetic_1_time)))
+DeriveFact || F33 || c25 -> (c21) || F23 L24
+DeriveFact || F34 || c25 -> (c22) || F24 L24
+Def || L25 || c26 <-> ((! cmdRequired_0_presence) | EXISTS p_Measure_15: Measure. (p_Measure_15_presence & ((cmdRequired_0_time = p_Measure_15_time) & ((! (2 < p_Measure_15_glucose)) | EXISTS p_outputDiabetic_8: outputDiabetic. (p_outputDiabetic_8_presence & ((p_outputDiabetic_8_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputDiabetic_8_time)))))))
+DeriveFact || F35 || c26 -> (c13 | c14) || F17 L16 L25

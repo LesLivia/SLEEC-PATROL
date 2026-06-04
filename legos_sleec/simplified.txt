@@ -1,0 +1,54 @@
+Input || R0 || EXISTS p_outputDiabetic_1: outputDiabetic. (p_outputDiabetic_1_presence & EXISTS p_Measure_7: Measure. (p_Measure_7_presence & ((p_outputDiabetic_1_time = p_Measure_7_time) & (! (! EXISTS p_outputHealthy_10: outputHealthy. (p_outputHealthy_10_presence & ((p_outputHealthy_10_time <= (p_outputDiabetic_1_time + 0)) & ((p_outputDiabetic_1_time + 0) <= p_outputHealthy_10_time))))))))
+Def || L1 || c0 <-> EXISTS p_outputDiabetic_1: outputDiabetic. (p_outputDiabetic_1_presence & EXISTS p_Measure_7: Measure. (p_Measure_7_presence & ((p_outputDiabetic_1_time = p_Measure_7_time) & (! (! EXISTS p_outputHealthy_10: outputHealthy. (p_outputHealthy_10_presence & ((p_outputHealthy_10_time <= (p_outputDiabetic_1_time + 0)) & ((p_outputDiabetic_1_time + 0) <= p_outputHealthy_10_time))))))))
+DeriveFact || F0 || c0 || L1 R0
+Input || R1 || Forall p_outputHealthy_0: outputHealthy. ( (! p_outputHealthy_0_presence) | EXISTS p_Measure_8: Measure. (p_Measure_8_presence & ((p_outputHealthy_0_time = p_Measure_8_time) & (! EXISTS p_outputDiabetic_11: outputDiabetic. (p_outputDiabetic_11_presence & ((p_outputDiabetic_11_time <= (p_outputHealthy_0_time + 0)) & ((p_outputHealthy_0_time + 0) <= p_outputDiabetic_11_time)))))))
+Def || L3 || c1 <-> Forall p_outputHealthy_0: outputHealthy. ( (! p_outputHealthy_0_presence) | EXISTS p_Measure_8: Measure. (p_Measure_8_presence & ((p_outputHealthy_0_time = p_Measure_8_time) & (! EXISTS p_outputDiabetic_11: outputDiabetic. (p_outputDiabetic_11_presence & ((p_outputDiabetic_11_time <= (p_outputHealthy_0_time + 0)) & ((p_outputHealthy_0_time + 0) <= p_outputDiabetic_11_time)))))))
+DeriveFact || F1 || c1 || L3 R1
+DeriveLemma || EI L1  [p_outputDiabetic_1:outputDiabetic<-outputDiabetic_1] || L8 || c0 -> (outputDiabetic_1_presence & EXISTS p_Measure_11: Measure. (p_Measure_11_presence & ((outputDiabetic_1_time = p_Measure_11_time) & (! (! EXISTS p_outputHealthy_11: outputHealthy. (p_outputHealthy_11_presence & ((p_outputHealthy_11_time <= (outputDiabetic_1_time + 0)) & ((outputDiabetic_1_time + 0) <= p_outputHealthy_11_time)))))))) || L1
+Def || L9 || c4 <-> (outputDiabetic_1_presence & EXISTS p_Measure_11: Measure. (p_Measure_11_presence & ((outputDiabetic_1_time = p_Measure_11_time) & (! (! EXISTS p_outputHealthy_11: outputHealthy. (p_outputHealthy_11_presence & ((p_outputHealthy_11_time <= (outputDiabetic_1_time + 0)) & ((outputDiabetic_1_time + 0) <= p_outputHealthy_11_time))))))))
+DeriveFact || F4 || c0 -> c4 || L9 L8
+AddFact || F5 || c5 <-> outputDiabetic_1_presence || (2768, 2782)
+Def || L10 || c6 <-> EXISTS p_Measure_11: Measure. (p_Measure_11_presence & ((outputDiabetic_1_time = p_Measure_11_time) & (! (! EXISTS p_outputHealthy_11: outputHealthy. (p_outputHealthy_11_presence & ((p_outputHealthy_11_time <= (outputDiabetic_1_time + 0)) & ((outputDiabetic_1_time + 0) <= p_outputHealthy_11_time)))))))
+DeriveLemma || EI L10  [p_Measure_11:Measure<-Measure_1] || L11 || c6 -> (Measure_1_presence & ((outputDiabetic_1_time = Measure_1_time) & (! (! EXISTS p_outputHealthy_12: outputHealthy. (p_outputHealthy_12_presence & ((p_outputHealthy_12_time <= (outputDiabetic_1_time + 0)) & ((outputDiabetic_1_time + 0) <= p_outputHealthy_12_time))))))) || L10
+Def || L12 || c7 <-> (Measure_1_presence & ((outputDiabetic_1_time = Measure_1_time) & (! (! EXISTS p_outputHealthy_12: outputHealthy. (p_outputHealthy_12_presence & ((p_outputHealthy_12_time <= (outputDiabetic_1_time + 0)) & ((outputDiabetic_1_time + 0) <= p_outputHealthy_12_time)))))))
+DeriveFact || F6 || c6 -> c7 || L12 L11
+Def || L13 || c10 <-> EXISTS p_outputHealthy_12: outputHealthy. (p_outputHealthy_12_presence & ((p_outputHealthy_12_time <= (outputDiabetic_1_time + 0)) & ((outputDiabetic_1_time + 0) <= p_outputHealthy_12_time)))
+DeriveLemma || EI L13  [p_outputHealthy_12:outputHealthy<-outputHealthy_1] || L14 || c10 -> (outputHealthy_1_presence & ((outputHealthy_1_time <= (outputDiabetic_1_time + 0)) & ((outputDiabetic_1_time + 0) <= outputHealthy_1_time))) || L13
+Def || L15 || c11 <-> (outputHealthy_1_presence & ((outputHealthy_1_time <= (outputDiabetic_1_time + 0)) & ((outputDiabetic_1_time + 0) <= outputHealthy_1_time)))
+DeriveFact || F9 || c10 -> c11 || L15 L14
+AddFact || F10 || c12 <-> outputHealthy_1_presence || (2792, 2805)
+AddFact || F11 || c13 <-> ((outputHealthy_1_time <= (outputDiabetic_1_time + 0)) & ((outputDiabetic_1_time + 0) <= outputHealthy_1_time))
+DeriveFact || F12 || c11 -> (c12) || F10 L15
+DeriveFact || F13 || c11 -> (c13) || F11 L15
+Def || L16 || c14 <-> (! (! EXISTS p_outputHealthy_12: outputHealthy. (p_outputHealthy_12_presence & ((p_outputHealthy_12_time <= (outputDiabetic_1_time + 0)) & ((outputDiabetic_1_time + 0) <= p_outputHealthy_12_time)))))
+DeriveLemma || NNF L16  || L17 || c14 <-> EXISTS p_outputHealthy_12: outputHealthy. (p_outputHealthy_12_presence & ((p_outputHealthy_12_time <= (outputDiabetic_1_time + 0)) & ((outputDiabetic_1_time + 0) <= p_outputHealthy_12_time))) || L16
+DeriveFact || F14 || c14 -> c10 || L13 L17
+Def || L18 || c15 <-> ((outputDiabetic_1_time = Measure_1_time) & (! (! EXISTS p_outputHealthy_12: outputHealthy. (p_outputHealthy_12_presence & ((p_outputHealthy_12_time <= (outputDiabetic_1_time + 0)) & ((outputDiabetic_1_time + 0) <= p_outputHealthy_12_time))))))
+DeriveFact || F16 || c15 -> (c14) || L16 L18
+DeriveFact || F18 || c7 -> (c15) || L18 L12
+DeriveFact || F19 || c4 -> (c5) || F5 L9
+DeriveFact || F20 || c4 -> (c6) || L10 L9
+DeriveLemma || UI L3  [p_outputHealthy_0:outputHealthy<-outputHealthy_1] || L23 || c1 -> ((! outputHealthy_1_presence) | EXISTS p_Measure_12: Measure. (p_Measure_12_presence & ((outputHealthy_1_time = p_Measure_12_time) & (! EXISTS p_outputDiabetic_15: outputDiabetic. (p_outputDiabetic_15_presence & ((p_outputDiabetic_15_time <= (outputHealthy_1_time + 0)) & ((outputHealthy_1_time + 0) <= p_outputDiabetic_15_time))))))) || L3 L14
+Def || L24 || c20 <-> ((! outputHealthy_1_presence) | EXISTS p_Measure_12: Measure. (p_Measure_12_presence & ((outputHealthy_1_time = p_Measure_12_time) & (! EXISTS p_outputDiabetic_15: outputDiabetic. (p_outputDiabetic_15_presence & ((p_outputDiabetic_15_time <= (outputHealthy_1_time + 0)) & ((outputHealthy_1_time + 0) <= p_outputDiabetic_15_time)))))))
+DeriveFact || F29 || c1 -> c20 || L24 L23
+AddFact || F30 || c21 <-> (! outputHealthy_1_presence) || (2718, 2731)
+Def || L25 || c22 <-> EXISTS p_Measure_12: Measure. (p_Measure_12_presence & ((outputHealthy_1_time = p_Measure_12_time) & (! EXISTS p_outputDiabetic_15: outputDiabetic. (p_outputDiabetic_15_presence & ((p_outputDiabetic_15_time <= (outputHealthy_1_time + 0)) & ((outputHealthy_1_time + 0) <= p_outputDiabetic_15_time))))))
+DeriveLemma || EI L25  [p_Measure_12:Measure<-t_Measure_1] || L26 || c22 -> (t_Measure_1_presence & ((outputHealthy_1_time = t_Measure_1_time) & (! EXISTS p_outputDiabetic_13: outputDiabetic. (p_outputDiabetic_13_presence & ((p_outputDiabetic_13_time <= (outputHealthy_1_time + 0)) & ((outputHealthy_1_time + 0) <= p_outputDiabetic_13_time)))))) || L25
+Def || L27 || c23 <-> (t_Measure_1_presence & ((outputHealthy_1_time = t_Measure_1_time) & (! EXISTS p_outputDiabetic_13: outputDiabetic. (p_outputDiabetic_13_presence & ((p_outputDiabetic_13_time <= (outputHealthy_1_time + 0)) & ((outputHealthy_1_time + 0) <= p_outputDiabetic_13_time))))))
+DeriveFact || F31 || c22 -> c23 || L27 L26
+Def || L28 || c26 <-> Forall p_outputDiabetic_14: outputDiabetic. ( (! p_outputDiabetic_14_presence) | (! ((p_outputDiabetic_14_time <= (outputHealthy_1_time + 0)) & ((outputHealthy_1_time + 0) <= p_outputDiabetic_14_time))))
+DeriveLemma || UI L28  [p_outputDiabetic_14:outputDiabetic<-outputDiabetic_1] || L29 || c26 -> ((! outputDiabetic_1_presence) | (! ((outputDiabetic_1_time <= (outputHealthy_1_time + 0)) & ((outputHealthy_1_time + 0) <= outputDiabetic_1_time)))) || L28 L8
+Def || L30 || c27 <-> ((! outputDiabetic_1_presence) | (! ((outputDiabetic_1_time <= (outputHealthy_1_time + 0)) & ((outputHealthy_1_time + 0) <= outputDiabetic_1_time))))
+DeriveFact || F34 || c26 -> c27 || L30 L29
+AddFact || F35 || c28 <-> (! outputDiabetic_1_presence) || (2741, 2755)
+AddFact || F36 || c29 <-> (! ((outputDiabetic_1_time <= (outputHealthy_1_time + 0)) & ((outputHealthy_1_time + 0) <= outputDiabetic_1_time)))
+DeriveFact || F37 || c27 -> (c28 | c29) || F35 F36 L30
+Def || L31 || c30 <-> (! EXISTS p_outputDiabetic_13: outputDiabetic. (p_outputDiabetic_13_presence & ((p_outputDiabetic_13_time <= (outputHealthy_1_time + 0)) & ((outputHealthy_1_time + 0) <= p_outputDiabetic_13_time))))
+DeriveLemma || NNF L31  || L32 || c30 <-> Forall p_outputDiabetic_14: outputDiabetic. ( (! p_outputDiabetic_14_presence) | (! ((p_outputDiabetic_14_time <= (outputHealthy_1_time + 0)) & ((outputHealthy_1_time + 0) <= p_outputDiabetic_14_time)))) || L31
+DeriveFact || F38 || c30 -> c26 || L28 L32
+Def || L33 || c31 <-> ((outputHealthy_1_time = t_Measure_1_time) & (! EXISTS p_outputDiabetic_13: outputDiabetic. (p_outputDiabetic_13_presence & ((p_outputDiabetic_13_time <= (outputHealthy_1_time + 0)) & ((outputHealthy_1_time + 0) <= p_outputDiabetic_13_time)))))
+DeriveFact || F40 || c31 -> (c30) || L31 L33
+DeriveFact || F42 || c23 -> (c31) || L33 L27
+DeriveFact || F43 || c20 -> (c21 | c22) || F30 L25 L24
+UNSAT || F40 F11 F30 F5 F14 F36 F1 F18 F38 F19 F9 F12 F16 F6 F20 F42 F31 F29 F37 F10 F34 F43 F13 F0 F4 F35
+Vars || c28:Bool c31:Bool c5:Bool c26:Bool c20:Bool c30:Bool outputDiabetic_1_presence:Bool c1:Bool c29:Bool outputHealthy_1_presence:Bool outputHealthy_1_time:Int c21:Bool c13:Bool c0:Bool c12:Bool c15:Bool c22:Bool c27:Bool c4:Bool c11:Bool outputDiabetic_1_time:Int c23:Bool c14:Bool c7:Bool c6:Bool c10:Bool
