@@ -9,7 +9,7 @@ To recreate the Conda environment required for this project, follow these steps:
 1.  **Clone the repository** (if you haven't already):
     ```bash
     git clone <repository-url>
-    cd ai-sleec-ver
+    cd SLEEC2Ver
     ```
 
 2.  **Create the Conda environment** using the provided `environment.yml` file:
