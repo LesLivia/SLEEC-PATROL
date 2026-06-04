@@ -38,7 +38,7 @@ To run the dressing robot demo:
     - The SLEEC specification will appear in the left editor pane.
 
 3.  **Select the Model**:
-    - In the **Model** dropdown menu, select `carebot_decision_model.onnx` or `carebot_decision_model_v2.onnx`.
+    - In the **Model** dropdown menu, select `carebot_decision_model_v2.onnx`.
 
 4.  **Perform Verification**:
     - Click the **VERIFY** button (in green) to check the loaded requirements against the selected NN model.
