@@ -13,4 +13,17 @@ dependencies:
   - scikit-learn
   - ordered-set
   - ipykernel
+  - pip:
+      - arpeggio==2.0.3
+      - filelock==3.20.0
+      - fsspec==2025.10.0
+      - jinja2==3.1.6
+      - maraboupy==1.0.0
+      - networkx==3.4.2
+      - pip==24.3.1
+      - pysmt==0.9.6
+      - setuptools==44.1.1
+      - textx==4.2.3
+      - torch==2.8.0
+      - z3-solver==4.15.4.0
 prefix: /opt/anaconda3/envs/ai-sleec-ver
