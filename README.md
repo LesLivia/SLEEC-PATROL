@@ -1,6 +1,6 @@
 # SLEEC to Marabou Verification Tool
 
-This project provides a tool for verifying requirements expressed in SLEEC (Spatio-Temporal Logic for Ethical and Environmental Constraints) against Neural Network models.
+This project provides a tool for verifying SLEEC (social, legal, ethical, empathetic, and cultural) requirements against Neural Network models.
 
 ## Environment Setup
 
