@@ -1,0 +1,16 @@
+name: ai-sleec-ver
+channels:
+  - defaults
+dependencies:
+  - python==3.10.19
+  - matplotlib
+  - numpy
+  - pandas
+  - joblib
+  - tensorflow==2.19.1
+  - onnx
+  - onnxruntime
+  - scikit-learn
+  - ordered-set
+  - ipykernel
+prefix: /opt/anaconda3/envs/ai-sleec-ver
