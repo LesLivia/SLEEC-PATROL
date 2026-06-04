@@ -1,6 +1,7 @@
 name: ai-sleec-ver
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - _tflow_select=2.2.0
   - absl-py=2.1.0
@@ -142,6 +143,7 @@ dependencies:
   - pexpect=4.9.0
   - pillow=11.1.0
   - pixman=0.46.4
+  - pip
   - platformdirs=4.9.4
   - prompt-toolkit=3.0.52
   - prompt_toolkit=3.0.52
