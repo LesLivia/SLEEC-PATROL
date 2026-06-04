@@ -65,7 +65,5 @@ def_start
 def_end
 
 rule_start
-    r1 when cmdRequired and (({targetLaneGap}>mediumGap) and ({relativeSpeedFront}<closing))
-    then outputChangeLane
-    unless ({relativeSpeedTarget}<fasterVehicle)
+    r1 when cmdRequired and (({targetLaneGap}>mediumGap) and ({relativeSpeedFront}<closing)) then outputChangeLane unless ({relativeSpeedTarget}<fasterVehicle)
 rule_end
