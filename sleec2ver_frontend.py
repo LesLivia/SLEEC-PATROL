@@ -265,7 +265,7 @@ tk.Button(action_frame, text="check situational conflict", command=check_situati
 
 tk.Button(
     action_frame,
-    text="VERIFY MODEL",
+    text="VERIFY",
     command=verify_model,
     bg="#2ecc71",
     font=("Helvetica", 12, "bold"),
