@@ -44,5 +44,5 @@ rule_start
 
     r1_def2 when cmdRequired and ({distress}>mediumDistress) then outputStop
     unless ({robotCommand}=pullOverHead) then outputContinue
-    // r1_cex_guided when cmdRequired and (({robotCommand}=pullOverHead) and ({distress}>mediumDistress)) then outputStop
+    r1_cex_guided when cmdRequired and (({robotCommand}=pullOverHead) and ({distress}>mediumDistress)) then outputStop
 rule_end

@@ -329,7 +329,7 @@ ip.Percolator(new_text).insertfilter(cd1)
 # Startup: preload an example requirements file if available
 # -------------------------------------------------------------------
 
-default_reqs = os.path.join(REQ_DIR, "pima_indians.sleec")
+default_reqs = os.path.join(REQ_DIR, "smart_mobility.sleec")
 if os.path.isfile(default_reqs):
     aText.insert(tk.INSERT, read_text_file(default_reqs))
     selected_req.set("pima_indians.sleec")
