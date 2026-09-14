@@ -1,0 +1,187 @@
+def_start
+    event cmdRequired
+
+    // ============================================================
+    // NN INPUTS: KinematicObservation (normalize=False, absolute=False)
+    // 5 vehicles x 5 features = 25 inputs, row-major flattened.
+    // Features per vehicle: [presence, x(m), y(m), vx(m/s), vy(m/s)]
+    //
+    // With absolute=False (default), highway-env subtracts the ego's
+    // own position AND velocity from every row, including ego itself.
+    // Therefore: ego row is always (1, 0, 0, 0, 0).
+    //            other vehicles have relative positions AND relative
+    //            velocities (v_other - v_ego), so v1Vx < 0 means
+    //            ego is faster than v1 (closing from behind).
+    //
+    // Measure declaration order determines Marabou input index (0-24).
+    // ============================================================
+
+    // --- Vehicle 0: Ego (index 0-4) ---
+    // All values are relative to ego itself, so always 0 except presence.
+    measure egoPresence: numeric
+    constant egoPresenceLB = 1
+    constant egoPresenceUB = 1
+
+    measure egoX: numeric
+    constant egoXLB = 0
+    constant egoXUB = 0
+
+    measure egoY: numeric
+    constant egoYLB = 0
+    constant egoYUB = 0
+
+    measure egoVx: numeric
+    constant egoVxLB = 0
+    constant egoVxUB = 0
+
+    measure egoVy: numeric
+    constant egoVyLB = 0
+    constant egoVyUB = 0
+
+    // --- Vehicle 1 (index 5-9) ---
+    measure v1Presence: numeric
+    constant v1PresenceLB = 0
+    constant v1PresenceUB = 1
+
+    // v1X > 0: vehicle 1 is ahead of ego; v1X < 0: behind ego
+    measure v1X: numeric
+    constant v1XLB = -100
+    constant v1XUB = 100
+
+    measure v1Y: numeric
+    constant v1YLB = -10
+    constant v1YUB = 10
+
+    // v1Vx < 0: v1 is slower than ego (ego is closing in on v1)
+    measure v1Vx: numeric
+    constant v1VxLB = -40
+    constant v1VxUB = 40
+
+    measure v1Vy: numeric
+    constant v1VyLB = -5
+    constant v1VyUB = 5
+
+    // --- Vehicle 2 (index 10-14) ---
+    measure v2Presence: numeric
+    constant v2PresenceLB = 0
+    constant v2PresenceUB = 1
+
+    measure v2X: numeric
+    constant v2XLB = -100
+    constant v2XUB = 100
+
+    measure v2Y: numeric
+    constant v2YLB = -10
+    constant v2YUB = 10
+
+    measure v2Vx: numeric
+    constant v2VxLB = -40
+    constant v2VxUB = 40
+
+    measure v2Vy: numeric
+    constant v2VyLB = -5
+    constant v2VyUB = 5
+
+    // --- Vehicle 3 (index 15-19) ---
+    measure v3Presence: numeric
+    constant v3PresenceLB = 0
+    constant v3PresenceUB = 1
+
+    measure v3X: numeric
+    constant v3XLB = -100
+    constant v3XUB = 100
+
+    measure v3Y: numeric
+    constant v3YLB = -10
+    constant v3YUB = 10
+
+    measure v3Vx: numeric
+    constant v3VxLB = -40
+    constant v3VxUB = 40
+
+    measure v3Vy: numeric
+    constant v3VyLB = -5
+    constant v3VyUB = 5
+
+    // --- Vehicle 4 (index 20-24) ---
+    measure v4Presence: numeric
+    constant v4PresenceLB = 0
+    constant v4PresenceUB = 1
+
+    measure v4X: numeric
+    constant v4XLB = -100
+    constant v4XUB = 100
+
+    measure v4Y: numeric
+    constant v4YLB = -10
+    constant v4YUB = 10
+
+    measure v4Vx: numeric
+    constant v4VxLB = -40
+    constant v4VxUB = 40
+
+    measure v4Vy: numeric
+    constant v4VyLB = -5
+    constant v4VyUB = 5
+
+    // ============================================================
+    // SEMANTIC THRESHOLDS
+    //
+    // Convention (mirrors existing SLEEC files):
+    //   - A "dummy" constant with the base name is required so that
+    //     TextX can resolve the cross-reference in rule conditions.
+    //   - The actual numeric value lives in the {name}LB constant,
+    //     which is what _resolve_value() looks up at verification time.
+    // ============================================================
+
+    // "Vehicle is present": presence >= 1  (presence is binary {0, 1})
+    constant present = 0
+    constant presentLB = 1
+
+    // "Vehicle is close ahead": v1X < 30m
+    // At 30 m/s, 30m = 1 second following distance.
+    constant closeAhead = 0
+    constant closeAheadLB = 30
+
+    // "Dangerously close ahead": v1X < 10m  (critical safety threshold)
+    constant dangerClose = 0
+    constant dangerCloseLB = 10
+
+    // "Closing in on v1": v1Vx < -5 m/s
+    // In the relative frame, v1Vx = v1_speed - ego_speed.
+    // v1Vx < -5 means ego is at least 5 m/s faster than v1.
+    constant closing = 0
+    constant closingLB = -5
+
+    // ============================================================
+    // NN OUTPUTS: PPO action logits  (argmax = selected action)
+    // Declaration order must match highway-env DiscreteMetaAction:
+    //   0=LANE_LEFT  1=IDLE  2=LANE_RIGHT  3=FASTER  4=SLOWER
+    // ============================================================
+    event outputLaneLeft
+    event outputIdle
+    event outputLaneRight
+    event outputFaster
+    event outputSlower
+
+def_end
+
+rule_start
+    // Rule r1 — Collision avoidance
+    // When vehicle 1 is present, within 30m ahead, AND ego is closing
+    // in on it at > 5 m/s (v1Vx < -5 in the relative frame), the
+    // model must output SLOWER.
+    // No unless: egoVx is always 0 in the relative observation frame
+    // (ego speed relative to itself), so any unless based on ego speed
+    // would be semantically meaningless and would always trigger.
+    r1 when cmdRequired and
+        (({v1Presence} > present) and (({v1X} < closeAhead) and ({v1Vx} < closing)))
+        then outputSlower
+
+    // Rule r2 — Dangerous proximity emergency brake
+    // When vehicle 1 is present and within 10m, the model must output
+    // SLOWER regardless of any other condition.
+    r2 when cmdRequired and
+        (({v1Presence} > present) and ({v1X} < dangerClose))
+        then outputSlower
+rule_end
