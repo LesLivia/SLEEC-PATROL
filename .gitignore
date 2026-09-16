@@ -1,1 +1,6 @@
 /verifier/generated_verify_model.py
+
+__pycache__/
+*.pyc
+
+autonomous_driving/logs/

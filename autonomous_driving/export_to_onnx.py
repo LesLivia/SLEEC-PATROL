@@ -16,9 +16,13 @@ import torch
 import torch.nn as nn
 from stable_baselines3 import PPO
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "saved_models", "highway_ppo_model")
+from train_highway_ppo import ENV_ID, MODEL_PATH, BEST_MODEL_PATH
+
+# Prefer the best evaluated policy; fall back to the final one if EvalCallback wrote nothing.
+EXPORT_PATH = BEST_MODEL_PATH if os.path.exists(BEST_MODEL_PATH + ".zip") else MODEL_PATH
+
 OUTPUT_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "verifier", "resources", "models", "highway_ppo.onnx"
+    os.path.dirname(__file__), "..", "verifier", "resources", "models", f"ppo_{ENV_ID}.onnx"
 )
 
 OBS_DIM = 25  # 5 vehicles × 5 features (presence, x, y, vx, vy), row-major flattened
@@ -40,15 +44,21 @@ class PPOActorNet(nn.Module):
 
 
 if __name__ == "__main__":
-    if not os.path.exists(MODEL_PATH + ".zip"):
+    if not os.path.exists(EXPORT_PATH + ".zip"):
         raise FileNotFoundError(
-            f"No trained model found at {MODEL_PATH}.zip\n"
+            f"No trained model found at {EXPORT_PATH}.zip\n"
             "Run train_highway_ppo.py first."
         )
 
-    model = PPO.load(MODEL_PATH, device="cpu")
+    model = PPO.load(EXPORT_PATH, device="cpu")
+    activations = {type(m).__name__ for m in model.policy.mlp_extractor.policy_net
+                   if not isinstance(m, nn.Linear)}
+    assert activations == {"ReLU"}, (
+        f"Actor uses {activations}; Marabou needs a ReLU network. Retrain with activation_fn=nn.ReLU."
+    )
     actor = PPOActorNet(model.policy)
     actor.eval()
+    print(f"Exporting model trained on {ENV_ID}: {EXPORT_PATH}.zip")
 
     dummy_input = torch.zeros(1, OBS_DIM)
 
