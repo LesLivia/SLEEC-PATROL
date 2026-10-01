@@ -1,0 +1,307 @@
+def_start
+    event cmdRequired
+
+    // ============================================================
+    // COMPONENT: PPO actor for highway-fast-v0
+    //
+    // Environment (HighwayEnvFast.default_config):
+    //   lanes_count = 3        -> lane centres at y = 0, 4, 8 (width 4 m)
+    //   vehicles_count = 20    -> 20 IDM vehicles + 1 ego
+    //   duration = 30 s, policy_frequency = 1 Hz -> 30 decisions per episode
+    //
+    // Observation (KinematicObservation, {"type": "Kinematics", "normalize": False}):
+    //   vehicles_count = 5, features = [presence, x, y, vx, vy]
+    //   -> 5 rows x 5 features = 25 inputs, row-major flattened.
+    //   normalize = False   -> real units: metres, m/s.
+    //   absolute  = False   -> rows 1..4 are ego-relative...
+    //   ... but the EGO ROW IS ABSOLUTE: observe() builds it from
+    //       observer_vehicle.to_dict() with no origin, and only the other
+    //       rows get to_dict(origin=ego). So egoX/egoY/egoVx/egoVy carry
+    //       absolute position and velocity, not zeros.
+    //   see_behind = False  -> a vehicle is only observed if
+    //       lane_distance_to > -2 * LENGTH, i.e. relative x > -10 m.
+    //   PERCEPTION_DISTANCE = 5 * Vehicle.MAX_SPEED = 200 m.
+    //   order = "sorted"    -> rows 1..4 are sorted by |longitudinal gap|,
+    //       so row 1 is the NEAREST vehicle ahead in ANY lane, not the
+    //       leader in ego's lane. Lane membership has to be read off y.
+    //   Absent rows are ZERO-FILLED: presence = 0 and x = y = vx = vy = 0.
+    //
+    // Measure declaration order below fixes the Marabou input index (0-24).
+    // The {name}LB / {name}UB constants are the verification box for each
+    // input: the generator pads every input a rule does not mention with
+    // these bounds.
+    //
+    // BOUNDS PROVENANCE: highway-env's own feature ranges, from
+    // KinematicObservation.normalize_obs (the defaults used when the config
+    // supplies no "features_range"):
+    //     x  : [-5 * Vehicle.MAX_SPEED, 5 * Vehicle.MAX_SPEED]      = [-200, 200]
+    //     y  : [-DEFAULT_WIDTH * len(side_lanes), +same]            = [ -12,  12]   (3 lanes)
+    //     vx : [-2 * Vehicle.MAX_SPEED, 2 * Vehicle.MAX_SPEED]      = [ -80,  80]
+    //     vy : [-2 * Vehicle.MAX_SPEED, 2 * Vehicle.MAX_SPEED]      = [ -80,  80]
+    //     presence: absent from features_range, never normalized, stays 0/1.
+    // These are the ranges the library clips to when normalize = True, so
+    // they are a superset of what the simulator produces -- with ONE
+    // exception, noted on egoX below. The tighter physically reachable range
+    // is given in a comment on each measure; narrowing to it makes the
+    // Marabou queries smaller and rules out counterexamples the simulator
+    // can never produce, at the cost of no longer matching the library.
+    // ============================================================
+
+    // --- Vehicle 0: Ego (index 0-4) ---
+    // presence is a flag, never anything between 0 and 1. Declared numeric
+    // (not boolean) because the current generator only handles comparisons
+    // of the form ({measure} op constant); see the rule block.
+    measure egoPresence: numeric
+    constant egoPresenceLB = 1
+    constant egoPresenceUB = 1
+
+    // EXCEPTION to the provenance note above: this row is absolute, and with
+    // normalize = False nothing clips it, so egoX runs far past the library's
+    // +-200 range. The library only gets away with +-200 because
+    // normalize = True clips it there; here +-200 would be unsound and would
+    // restrict every query to the first two seconds of an episode.
+    //
+    // Spawn: the ego is created before any other vehicle, so road.vehicles is
+    // empty and create_random puts it at x0 = 3*offset + offset*U(0.9, 1.1),
+    // with offset = ego_spacing * (12 + speed) * exp(-5/40 * lanes)
+    //             = 1.5 * (12 + 25) * exp(-0.375) = 38.1  ->  x0 in [149, 156].
+    // Travel: duration 30 s at policy_frequency 1 Hz = 30 steps at <= 30 m/s,
+    // so at most 900 m further  ->  egoX <= about 1056.
+    //
+    // Note this input carries no decision-relevant information, yet it is an
+    // order of magnitude larger than every other feature. Expect it to show up
+    // in counterexamples; the fix is a wrapper that zeroes it, not a weaker rule.
+    measure egoX: numeric
+    constant egoXLB = 140
+    constant egoXUB = 1100
+
+    // library range; reachable is [-2, 10] (3 lanes -> centres 0 / 4 / 8)
+    measure egoY: numeric
+    constant egoYLB = -12
+    constant egoYUB = 12
+
+    // library range; reachable is [15, 32] (MDPVehicle tracks {20, 25, 30},
+    // created at 25.0, and the episode terminates on collision)
+    measure egoVx: numeric
+    constant egoVxLB = -80
+    constant egoVxUB = 80
+
+    // library range; reachable is [-5, 5] (non-zero only during a lane change)
+    measure egoVy: numeric
+    constant egoVyLB = -80
+    constant egoVyUB = 80
+
+    // --- Vehicle 1 (index 5-9) ---
+    measure v1Presence: numeric
+    constant v1PresenceLB = 0
+    constant v1PresenceUB = 1
+
+    // relative: > 0 ahead of ego. Library range; reachable is (-10, 200],
+    // since see_behind = False drops anything with lane_distance_to <= -10
+    // and PERCEPTION_DISTANCE = 200 bounds the far side.
+    measure v1X: numeric
+    constant v1XLB = -200
+    constant v1XUB = 200
+
+    // library range; reachable is [-10, 10] (one lane offset = 4 m,
+    // 3 lanes -> at most 2 lanes away)
+    measure v1Y: numeric
+    constant v1YLB = -12
+    constant v1YUB = 12
+
+    // relative: v1Vx < 0 means v1 is slower than ego (ego is closing in).
+    // Library range; reachable is about [-30, 20].
+    measure v1Vx: numeric
+    constant v1VxLB = -80
+    constant v1VxUB = 80
+
+    // library range; reachable is about [-10, 10]
+    measure v1Vy: numeric
+    constant v1VyLB = -80
+    constant v1VyUB = 80
+
+    // --- Vehicle 2 (index 10-14) ---
+    measure v2Presence: numeric
+    constant v2PresenceLB = 0
+    constant v2PresenceUB = 1
+
+    measure v2X: numeric
+    constant v2XLB = -200
+    constant v2XUB = 200
+
+    measure v2Y: numeric
+    constant v2YLB = -12
+    constant v2YUB = 12
+
+    measure v2Vx: numeric
+    constant v2VxLB = -80
+    constant v2VxUB = 80
+
+    measure v2Vy: numeric
+    constant v2VyLB = -80
+    constant v2VyUB = 80
+
+    // --- Vehicle 3 (index 15-19) ---
+    measure v3Presence: numeric
+    constant v3PresenceLB = 0
+    constant v3PresenceUB = 1
+
+    measure v3X: numeric
+    constant v3XLB = -200
+    constant v3XUB = 200
+
+    measure v3Y: numeric
+    constant v3YLB = -12
+    constant v3YUB = 12
+
+    measure v3Vx: numeric
+    constant v3VxLB = -80
+    constant v3VxUB = 80
+
+    measure v3Vy: numeric
+    constant v3VyLB = -80
+    constant v3VyUB = 80
+
+    // --- Vehicle 4 (index 20-24) ---
+    measure v4Presence: numeric
+    constant v4PresenceLB = 0
+    constant v4PresenceUB = 1
+
+    measure v4X: numeric
+    constant v4XLB = -200
+    constant v4XUB = 200
+
+    measure v4Y: numeric
+    constant v4YLB = -12
+    constant v4YUB = 12
+
+    measure v4Vx: numeric
+    constant v4VxLB = -80
+    constant v4VxUB = 80
+
+    measure v4Vy: numeric
+    constant v4VyLB = -80
+    constant v4VyUB = 80
+
+    // ============================================================
+    // SEMANTIC THRESHOLDS
+    //
+    // Convention (as in the other files in this directory): a "dummy"
+    // constant with the base name exists so TextX can resolve the
+    // cross-reference in a rule condition, while the value actually read at
+    // verification time lives in {name}LB, which is what _resolve_value()
+    // looks up. Values are integers: the grammar's Value rule is INT only.
+    // ============================================================
+
+    // presence flags: "present" is 1, "absent" is 0
+    constant present = 0
+    constant presentLB = 1
+    constant absent = 0
+    constant absentLB = 0
+
+    // "in ego's lane": |dy| < 2, i.e. inside the 4 m lane
+    constant inLaneLo = 0
+    constant inLaneLoLB = -2
+    constant inLaneHi = 0
+    constant inLaneHiLB = 2
+
+    // "ahead of ego" (the front bumper, not the sensor horizon)
+    constant justAhead = 0
+    constant justAheadLB = 0
+
+    // "too close to stop in time": < 10 m. At 30 m/s that is a third of a
+    // second, and SLOWER only steps the target speed down by 5 m/s.
+    constant dangerClose = 0
+    constant dangerCloseLB = 10
+
+    // braking band: 11..30 m. Deliberately disjoint from dangerClose, since
+    // two rules demanding different actions in overlapping boxes cannot be
+    // satisfied by any argmax policy.
+    constant stopRange = 0
+    constant stopRangeLB = 11
+    constant closeAhead = 0
+    constant closeAheadLB = 30
+
+    // "ego is closing in": relative vx < -5 m/s (v1Vx = v1 speed - ego speed)
+    constant closing = 0
+    constant closingLB = -5
+
+    // "a lane exists to the right": 3 lanes -> centres 0 / 4 / 8, so the
+    // rightmost lane is y = 8 and anything below 6 has room to its right.
+    constant rightLaneExists = 0
+    constant rightLaneExistsLB = 6
+
+    // ============================================================
+    // NN OUTPUTS: PPO action logits (argmax = selected action).
+    // Declaration order must match highway-env DiscreteMetaAction:
+    //   0 = LANE_LEFT  1 = IDLE  2 = LANE_RIGHT  3 = FASTER  4 = SLOWER
+    // FASTER / SLOWER step the target speed within {20, 25, 30} m/s;
+    // there is no stop action, and no steering action.
+    // ============================================================
+    event outputLaneLeft
+    event outputIdle
+    event outputLaneRight
+    event outputFaster
+    event outputSlower
+
+def_end
+
+rule_start
+    // ============================================================
+    // AutoCar R8 -- "When an obstacle appears ahead, stop until it clears;
+    //                if stopping is unsafe, change lanes."
+    //
+    //   obstacle ahead   -> v1 present, inside ego's lane band, ahead,
+    //                       and ego closing in on it. All five rows are
+    //                       vehicles; a stationary obstacle and a much slower
+    //                       car are the same observation.
+    //   stop             -> outputSlower. There is no stop action: SLOWER
+    //                       steps the target speed down within {20, 25, 30}.
+    //   until it clears  -> no temporal operator needed. A state-based rule
+    //                       constrains EVERY state in which the obstacle is
+    //                       present, and stops applying once it is not.
+    //   stopping unsafe  -> the obstacle is too close to stop in time
+    //                       (riskLevel has no input feature).
+    //   change lanes     -> outputLaneRight, and only where a right-hand lane
+    //                       exists and no other vehicle is perceived.
+    //
+    // The original defeater ("unless stopping is unsafe then change lanes")
+    // is written as a second rule over a DISJOINT distance band, rather than
+    // an `unless`: overlapping boxes with different required actions are
+    // unsatisfiable for an argmax policy.
+    // ============================================================
+
+    // ------------------------------------------------------------
+    // Simplified for the current generator, which:
+    //   - only handles ({measure} op constant), so presence is written as
+    //     ({vNPresence} > present) and "not present" as ({vNPresence} < absent);
+    //   - can hold only ONE bound per input per rule (a second comparison on
+    //     the same input overwrites the first), so each band keeps one side:
+    //       v1Y : keeps < inLaneHi   (drops > inLaneLo)
+    //       v1X : r8 keeps > stopRange, r8_swerve keeps < dangerClose,
+    //             so the two boxes stay disjoint ([11, 200] vs [-200, 10]).
+    // Each box is therefore LARGER than the intended band: a VERIFIED result
+    // also holds for the original rule, but a counterexample must be checked
+    // against the intended bands (v1Y in (-2, 2); v1X in (11, 30) for r8 and
+    // (0, 10) for r8_swerve) before it counts as a real violation.
+    // ------------------------------------------------------------
+
+    // R8 -- obstacle ahead in ego's lane, ego closing: brake
+    // intended band: v1X in (11, 30), v1Y in (-2, 2)
+    r8 when cmdRequired and
+        (({v1Presence} > present) and
+         (({v1Y} < inLaneHi) and
+          (({v1X} > stopRange) and ({v1Vx} < closing))))
+        then outputSlower
+
+    // R8 defeater -- obstacle close ahead in ego's lane, a lane exists to the
+    // right, and no other vehicle is perceived (so that lane is clear by
+    // construction): change lanes
+    // intended band: v1X in (0, 10), v1Y in (-2, 2)
+    r8_swerve when cmdRequired and
+        (({v1Presence} > present) and
+         ((({v2Presence} < absent) and (({v3Presence} < absent) and ({v4Presence} < absent))) and
+          (({v1Y} < inLaneHi) and
+           (({v1X} < dangerClose) and ({egoY} < rightLaneExists)))))
+        then outputLaneRight
+rule_end

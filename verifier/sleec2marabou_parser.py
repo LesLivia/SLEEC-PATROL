@@ -28,13 +28,21 @@ class MarabouGenerator:
             if hasattr(item, "type") and 'Scale' in item.type.__class__.__name__:
                 self.scales[item.name] = [p.name for p in item.type.scaleParams]
 
-        # 3. Map Output Events to Indices
-        # TODO: For now, we assume output events have 'output' in their name
+        # 3. Map output events to network output indices.
+        #    Language rule: NN inputs are the measures, in declaration order;
+        #    NN outputs are the events named output<Name>, in declaration order.
+        #    Both orders must match the network's actual input/output layers.
         out_idx = 0
         for item in self.model.definitions:
-            if item.__class__.__name__ == 'Event' and 'output' in item.name:
+            if item.__class__.__name__ == 'Event' and item.name.startswith('output'):
                 self.outputs[item.name] = out_idx
                 out_idx += 1
+
+        if not self.outputs:
+            raise ValueError(
+                "No output events found. NN outputs must be declared as "
+                "'event output<Name>', in the network's output order."
+            )
 
     def _resolve_value(self, val_name, bound="LB"):
         """Resolves a value name (e.g., 'mediumDistress') to a number."""

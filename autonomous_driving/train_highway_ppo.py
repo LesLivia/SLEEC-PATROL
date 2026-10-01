@@ -8,21 +8,52 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
 TRAIN = True
-# --- highway-fast-v0: 3 lanes, 20 vehicles, 5 Hz physics, 30-step episodes (~190 steps/s) ---
-# ENV_ID = "highway-fast-v0"
-# N_CPU = 6
 
-# --- highway-v0: 4 lanes, 50 vehicles, 15 Hz physics, 40-step episodes ---
-# ~39 steps/s with 24 copies on this machine (24 physical cores), so 50k takes ~21 min.
-ENV_ID = "highway-v0"
-N_CPU = 24
-# Learning plateaus by ~30k steps; a 200k run scored no better (26% crashes vs 18% at 50k).
-TOTAL_TIMESTEPS = 50_000
-# Measured at 50k over seeds 0/1/2: 18% / 7% / 17% crashes (mean 14% +/- 5%). Seed 1 gives the
-# safest policy that still varies its actions (IDLE 72%, SLOWER 19%, LANE_RIGHT 9%).
-SEED = 1
+# ============================================================================
+# Select the environment here; everything else follows from ENV_CONFIGS.
+# ============================================================================
+ENV_ID = "highway-fast-v0"  # or "highway-v0"
+
+# Shared by both environments: 256x256 ReLU actor and critic, n_epochs=10,
+# learning_rate=5e-4, ent_coef=0.0 and the default highway-env reward.
+#
+# n_steps is the rollout length PER COPY, and that matters more than the total: 128 steps per
+# copy trains, while 32 froze the policy on highway-v0 (100% crashes, entropy 0, approx_kl 0).
+ENV_CONFIGS = {
+    # 3 lanes, 20 vehicles, 5 Hz physics, 30-step episodes; ~190 steps/s with 6 copies.
+    # Learning plateaus by ~30k steps and a 200k run scored no better. Seeds 0/1/2 at 50k gave
+    # 18% / 7% / 17% crashes; seed 1 keeps a varied mix (IDLE 72%, SLOWER 19%, LANE_RIGHT 9%).
+    "highway-fast-v0": dict(
+        n_cpu=6,
+        total_timesteps=50_000,
+        seed=1,
+        n_steps=128,      # 6 copies x 128 = 768 steps per update (the highway-env example)
+        batch_size=64,
+        gamma=0.8,        # the highway-env example value
+    ),
+    # 4 lanes, 50 vehicles, 15 Hz physics, 40-step episodes; ~39 steps/s with 24 copies.
+    # 50k converges to a single constant action (SLOWER 99%), so stop at 20k. Seeds measured
+    # with these settings over 30 episodes:
+    #   seed 0: IDLE 17% / LANE_RIGHT 55% / SLOWER 28%, 0% crashes, entropy -1.14  <- balanced
+    #   seed 1: IDLE 81% / SLOWER 19%,                  0% crashes, entropy -0.33
+    #   seed 2: IDLE 100%,                             95% crashes                 <- collapsed
+    #   seed 3: LANE_RIGHT 100%,                       97% crashes                 <- collapsed
+    # gamma 0.95 was the least degenerate of 0.8 / 0.95 / 0.99.
+    "highway-v0": dict(
+        n_cpu=24,
+        total_timesteps=20_000,
+        seed=0,
+        n_steps=128,      # 24 copies x 128 = 3072 steps per update, 12 minibatches
+        batch_size=256,
+        gamma=0.95,
+    ),
+}
+
+CONFIG = ENV_CONFIGS[ENV_ID]
+N_CPU = CONFIG["n_cpu"]
+TOTAL_TIMESTEPS = CONFIG["total_timesteps"]
+SEED = CONFIG["seed"]
 N_EVAL_EPISODES = 50
-BATCH_SIZE = 64
 
 # Models, checkpoints and logs are kept per environment so runs on different ENV_IDs don't overwrite each other.
 MODEL_DIR = os.path.join(os.path.dirname(__file__), "saved_models", ENV_ID)
@@ -77,6 +108,7 @@ def evaluate(model_path, n_episodes=N_EVAL_EPISODES):
 
 if __name__ == "__main__":
     os.makedirs(MODEL_DIR, exist_ok=True)
+    print(f"Training config for {ENV_ID}: {CONFIG}")
 
     if TRAIN:
         env = make_vec_env(
@@ -96,22 +128,14 @@ if __name__ == "__main__":
                 activation_fn=nn.ReLU,
                 net_arch=dict(pi=[256, 256], vf=[256, 256]),
             ),
-            # What matters is the rollout length PER COPY: 128 steps trains, 32 steps collapses
-            # (measured on highway-v0: 100% crashes, entropy 0, approx_kl 0 = policy frozen).
-            #
-            # highway-fast-v0 with 6 copies: the formula gives 128 steps per copy, 768 per update.
-            # n_steps=BATCH_SIZE * 12 // N_CPU,
-            # batch_size=BATCH_SIZE,
-            #
-            # highway-v0 with 24 copies: keep 128 steps per copy (3072 per update, 12 minibatches).
-            n_steps=128,
-            batch_size=256,
+            n_steps=CONFIG["n_steps"],
+            batch_size=CONFIG["batch_size"],
             n_epochs=10,
             learning_rate=5e-4,
             # No entropy bonus: ent_coef=0.01 collapsed the policy onto "always SLOWER"
             # (0% crashes, but stuck at the 20 m/s minimum and useless for SLEEC checking).
             ent_coef=0.0,
-            gamma=0.8,
+            gamma=CONFIG["gamma"],
             verbose=2,
             seed=SEED,
             # The simulation runs on CPU; a GPU only adds transfer overhead for this small MLP.
@@ -119,9 +143,10 @@ if __name__ == "__main__":
             tensorboard_log=LOG_DIR,
         )
 
-        # save_freq counts calls per vectorized step, so divide by N_CPU for ~50k timesteps.
+        # save_freq counts calls per vectorized step, so divide by N_CPU. A quarter of the budget
+        # gives four snapshots, so a late drift into a constant-action policy can be spotted.
         checkpoint = CheckpointCallback(
-            save_freq=max(50_000 // N_CPU, 1),
+            save_freq=max(TOTAL_TIMESTEPS // 4 // N_CPU, 1),
             save_path=MODEL_DIR,
             name_prefix="highway_ppo",
         )
@@ -131,7 +156,7 @@ if __name__ == "__main__":
             make_vec_env(ENV_ID, n_envs=1, seed=SEED + 123, env_kwargs={"config": OBS_CONFIG}),
             best_model_save_path=MODEL_DIR,
             log_path=LOG_DIR,
-            eval_freq=max(10_000 // N_CPU, 1),
+            eval_freq=max(TOTAL_TIMESTEPS // 5 // N_CPU, 1),
             n_eval_episodes=20,
             deterministic=True,
         )
