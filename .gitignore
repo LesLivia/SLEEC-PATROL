@@ -3,4 +3,4 @@
 __pycache__/
 *.pyc
 
-autonomous_driving/logs/
+autonomous_driving/highway/logs/

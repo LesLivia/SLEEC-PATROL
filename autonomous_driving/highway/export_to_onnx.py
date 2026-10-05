@@ -22,7 +22,7 @@ from train_highway_ppo import ENV_ID, MODEL_PATH, BEST_MODEL_PATH
 EXPORT_PATH = BEST_MODEL_PATH if os.path.exists(BEST_MODEL_PATH + ".zip") else MODEL_PATH
 
 OUTPUT_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "verifier", "resources", "models", f"ppo_{ENV_ID}.onnx"
+    os.path.dirname(__file__), "..", "..", "verifier", "resources", "models", f"ppo_{ENV_ID}.onnx"
 )
 
 OBS_DIM = 25  # 5 vehicles × 5 features (presence, x, y, vx, vy), row-major flattened

@@ -1,4 +1,6 @@
 import os
+import shutil
+
 import gymnasium as gym
 import highway_env  # noqa: F401
 import torch.nn as nn
@@ -13,6 +15,7 @@ TRAIN = True
 # Select the environment here; everything else follows from ENV_CONFIGS.
 # ============================================================================
 ENV_ID = "highway-fast-v0"  # or "highway-v0"
+# ENV_ID = "highway-v0"
 
 # Shared by both environments: 256x256 ReLU actor and critic, n_epochs=10,
 # learning_rate=5e-4, ent_coef=0.0 and the default highway-env reward.
@@ -170,15 +173,46 @@ if __name__ == "__main__":
             f"No trained model at {MODEL_PATH}.zip — set TRAIN = True first."
         )
 
+    results = {}
     for label, path in [("last", MODEL_PATH), ("best", BEST_MODEL_PATH)]:
         if not os.path.exists(path + ".zip"):
             continue
-        crash_rate, mean_len, mean_reward, mean_speed, action_mix = evaluate(path)
+        results[label] = evaluate(path)
+        crash_rate, mean_len, mean_reward, mean_speed, action_mix = results[label]
+        source = "last training step" if label == "last" else "EvalCallback pick during training"
         print(
-            f"Evaluation over {N_EVAL_EPISODES} episodes [{label}: {os.path.basename(path)}.zip]: "
+            f"Evaluation over {N_EVAL_EPISODES} episodes "
+            f"[{label}: {os.path.basename(path)}.zip, {source}]: "
             f"crash rate = {crash_rate:.0%} | "
             f"mean length = {mean_len:.1f} | "
             f"mean reward = {mean_reward:.2f} | "
             f"mean speed = {mean_speed:.1f} m/s"
         )
         print(f"    actions: {action_mix}")
+
+    # EvalCallback compares only the snapshots it evaluated during training (20 episodes on its
+    # own env), so the final policy was never in that competition and can be the better one.
+    # Settle it on the 50 fixed episodes above: the higher mean reward becomes best_model.zip,
+    # which is what export_to_onnx.py picks up.
+    if "last" in results:
+        last_reward = results["last"][2]
+        best_reward = results["best"][2] if "best" in results else float("-inf")
+        if last_reward > best_reward:
+            if "best" in results:  # keep the original EvalCallback pick for reference
+                shutil.copyfile(BEST_MODEL_PATH + ".zip",
+                                os.path.join(MODEL_DIR, "best_model_evalcallback.zip"))
+            shutil.copyfile(MODEL_PATH + ".zip", BEST_MODEL_PATH + ".zip")
+            print(f"Promoted the last policy to best_model.zip "
+                  f"(mean reward {last_reward:.2f} > {best_reward:.2f}); "
+                  f"the training pick was kept as best_model_evalcallback.zip")
+            winner = "last"
+        else:
+            print(f"Kept best_model.zip from training "
+                  f"(mean reward {best_reward:.2f} >= {last_reward:.2f})")
+            winner = "best"
+        crash_rate, mean_len, mean_reward, mean_speed, action_mix = results[winner]
+        print(
+            f"best_model.zip now holds the {winner} policy: crash rate = {crash_rate:.0%} | "
+            f"mean length = {mean_len:.1f} | mean reward = {mean_reward:.2f} | "
+            f"mean speed = {mean_speed:.1f} m/s | actions: {action_mix}"
+        )
