@@ -222,7 +222,7 @@ def evaluate_metrics(
             cs = c_pred
             p_cs = pc_pred
         elif args.dataset in ["mnmath"]:
-            ys = (y_pred > 0.5).astype(np.float)
+            ys = (y_pred > 0.5).astype(float)
             c_true = c_true.reshape(c_true.shape[0], c_true.shape[1] * c_true.shape[2], 1)
             gs = np.split(c_true, c_true.shape[1], axis=1)
             cs = np.split(c_pred, c_pred.shape[1], axis=1)
@@ -256,7 +256,7 @@ def evaluate_metrics(
             "clipboia",
             "clipsddoia",
         ]:
-            cs = (cs >= 0.5).astype(np.int)
+            cs = (cs >= 0.5).astype(int)
         elif args.dataset not in [
             "kandinsky",
             "prekandinsky",

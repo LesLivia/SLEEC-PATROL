@@ -503,6 +503,10 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
     if args.dataset in ["clipshortmnist", "shortmnist"]:
         pass
     elif not args.tuning:
+        # load best
+        if os.path.exists(save_path):
+            model.load_state_dict(torch.load(save_path))
+
         # Evaluate performances on val or test
         if args.validate:
             y_true, c_true, y_pred, c_pred, p_cs, p_ys, p_cs_all, p_ys_all = (
@@ -523,7 +527,7 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
             fprint(f"Entropy:\n     H(C): {h_c}")
 
         if args.task == "boia":
-            y_labels = ["stop", "forward", "left", "right"]
+            y_labels = ["forward", "stop", "left", "right"]
 
             concept_labels = [
                 "green_light",
@@ -633,9 +637,6 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
 
                 print("Concept collapse", 1 - compute_coverage(cf))
 
-        # load best
-        if os.path.exists(save_path):
-            model.load_state_dict(torch.load(save_path))
         # move model to cpu
         model.device = "cpu"
         model.to(model.device)
