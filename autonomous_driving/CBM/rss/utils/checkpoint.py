@@ -1,7 +1,7 @@
 # Checkpoint module
 import torch
 import os
-from utils.conf import create_path
+from utils.conf import create_path, variant_name
 
 
 def _get_tag(args):
@@ -63,7 +63,7 @@ def save_model(model, args):
     create_path("data/ckpts")
     tag = _get_tag(args)
 
-    PATH = f"data/ckpts/{args.dataset}-{args.model}-{tag}-{args.seed}-end.pt"
+    PATH = f"data/ckpts/{args.dataset}-{args.model}-{tag}-{args.seed}-{variant_name(args)}-end.pt"
 
     if args.checkout:
         print("Saved", PATH, "\n")
@@ -99,7 +99,7 @@ def load_checkpoint(model, args, checkin=None):
     if checkin is not None:
         PATH = checkin
     else:
-        PATH = f"data/ckpts/{args.dataset}-{args.model}-{tag}-{args.seed}-end.pt"
+        PATH = f"data/ckpts/{args.dataset}-{args.model}-{tag}-{args.seed}-{variant_name(args)}-end.pt"
 
     if not os.path.exists(PATH):
         raise ValueError(f"You have to train the model first, missing {PATH}")

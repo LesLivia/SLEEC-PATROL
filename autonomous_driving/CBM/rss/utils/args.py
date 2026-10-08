@@ -112,6 +112,16 @@ def add_experiment_args(parser: ArgumentParser) -> None:
     parser.add_argument("--beta", type=float, default=2, help="Multiplier of KL")
     parser.add_argument("--w_h", type=float, default=1, help="Weight of entropy")
     parser.add_argument("--w_c", type=float, default=1, help="Weight of concept sup")
+    parser.add_argument(
+        "--c_weight",
+        type=str,
+        default="none",
+        choices=["none", "sqrt", "inv"],
+        help="Weight positive concept labels by rarity in the concept loss: none, sqrt(neg/pos) or neg/pos.",
+    )
+    parser.add_argument(
+        "--c_weight_cap", type=float, default=50.0, help="Upper bound of the concept weights."
+    )
 
     # optimization params
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate.")
@@ -144,6 +154,19 @@ def add_experiment_args(parser: ArgumentParser) -> None:
         choices=["conceptizer", "neural"],
         type=str,
         help="Which backbone to use",
+    )
+    parser.add_argument(
+        "--features",
+        default="bdd2048",
+        type=str,
+        help="BOIA feature folder under data/ (same layout as data/bdd2048).",
+    )
+    parser.add_argument(
+        "--concept_hidden",
+        type=int,
+        nargs="*",
+        default=[],
+        help="Hidden layer sizes of the BOIA concept extractor, e.g. 4096 (none: linear).",
     )
     # parameters for tuning
     parser.add_argument(

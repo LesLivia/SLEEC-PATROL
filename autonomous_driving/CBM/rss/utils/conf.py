@@ -39,6 +39,24 @@ def set_random_seed(seed: int) -> None:
     torch.cuda.manual_seed_all(seed)
 
 
+def variant_name(args) -> str:
+    """Name of a run's variant: the feature folder, plus the concept-weighting mode if the concept loss is weighted
+
+    Args:
+        args: command line arguments
+
+    Returns:
+        name (str): e.g. "bdd2048" (linear extractor, default loss) or "dinov3_l_576_h4096_cw_sqrt"
+            (hidden layer of 4096, weighted concept loss)
+    """
+    name = args.features
+    if args.concept_hidden:
+        name += "_h" + "-".join(str(h) for h in args.concept_hidden)
+    if args.c_weight != "none":
+        name += f"_cw_{args.c_weight}"
+    return name
+
+
 def create_path(path) -> None:
     """Create path function, create folder if it does not exists
 

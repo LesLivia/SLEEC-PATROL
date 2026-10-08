@@ -456,8 +456,30 @@ def SDDOIA_Entropy(out_dict, args):
     return 1 - loss, losses
 
 
+def compute_concept_pos_weights(concepts, mode="sqrt", cap=50.0):
+    """Weight for the positive examples of each concept, measured from the training labels
+
+    Args:
+        concepts: (N, n_concepts) 0/1 concept labels; -1 (unlabelled) is ignored
+        mode: "sqrt" -> sqrt(neg/pos), "inv" -> neg/pos
+        cap: upper bound of the weights (lower bound is 1)
+
+    Returns:
+        weights: (n_concepts,) tensor
+    """
+    c = torch.as_tensor(np.asarray(concepts), dtype=torch.float32)
+    pos = (c == 1).sum(0).float()
+    neg = (c == 0).sum(0).float()
+    ratio = neg / pos
+    weights = ratio.sqrt() if mode == "sqrt" else ratio
+    return weights.clamp(min=1.0, max=cap)
+
+
 def SDDOIA_Concept_Match(out_dict: dict, args):
     """SDDOIA concept match loss
+
+    If args.concept_pos_weight is set, the positive label of concept i is weighted by
+    args.concept_pos_weight[i] (weighted binary cross-entropy); otherwise plain NLL.
 
     Args:
         out_dict: output dictionary
@@ -469,6 +491,7 @@ def SDDOIA_Concept_Match(out_dict: dict, args):
     """
     reprs = out_dict["pCS"]
     concepts = out_dict["CONCEPTS"].to(torch.long)
+    pos_weight = getattr(args, "concept_pos_weight", None)
 
     loss = torch.tensor(0.0, device=reprs.device)
 
@@ -481,7 +504,15 @@ def SDDOIA_Concept_Match(out_dict: dict, args):
             # Apply the mask
             filtered_rep = rep[mask]
             filtered_concepts = concepts[mask, i]
-            loss += torch.nn.NLLLoss()(filtered_rep.log(), filtered_concepts)
+            if pos_weight is None:
+                loss += torch.nn.NLLLoss()(filtered_rep.log(), filtered_concepts)
+            else:
+                # filtered_rep[:, 0] = p(absent), filtered_rep[:, 1] = p(present)
+                is_pos = (filtered_concepts == 1).float()
+                loss += -(
+                    pos_weight[i] * is_pos * filtered_rep[:, 1].log()
+                    + (1 - is_pos) * filtered_rep[:, 0].log()
+                ).mean()
 
     print("Concept supervision loss", loss.item())
 

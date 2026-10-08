@@ -21,11 +21,12 @@ class BOIAConceptizer(nn.Module):
     Inputs:
         din (int): input size
         nconcept (int): # of all concepts
+        hidden (tuple of int): hidden layer sizes; empty for a single linear layer
     Return:
         None
     """
 
-    def __init__(self, din, nconcept):
+    def __init__(self, din, nconcept, hidden=()):
         super(BOIAConceptizer, self).__init__()
 
         # set self hyperparameters
@@ -34,9 +35,16 @@ class BOIAConceptizer(nn.Module):
 
         """
         encoding
-        self.enc1: encoder for known concepts
+        self.enc1: encoder for known concepts, linear or Linear -> ReLU -> Dropout per hidden layer
         """
-        self.enc1 = nn.Linear(self.din, self.nconcept)
+        layers, d = [], self.din
+        for h in hidden:
+            layers += [nn.Linear(d, h), nn.ReLU(), nn.Dropout(0.5)]
+            d = h
+        if layers:
+            self.enc1 = nn.Sequential(*layers, nn.Linear(d, self.nconcept))
+        else:
+            self.enc1 = nn.Linear(self.din, self.nconcept)
 
     """ 
     def forward:

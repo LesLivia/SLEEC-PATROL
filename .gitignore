@@ -9,6 +9,8 @@ autonomous_driving/highway/logs/
 autonomous_driving/CBM/rss/data/bdd2048/
 autonomous_driving/CBM/rss/data/BDD-OIA-lastframe/
 autonomous_driving/CBM/rss/data/ckpts/
+# extracted feature sets (utils/extract_features.py), e.g. data/dinov3_l_576/
+autonomous_driving/CBM/rss/data/*/
 autonomous_driving/CBM/rss/*.pth
 autonomous_driving/CBM/rss/*.png
 

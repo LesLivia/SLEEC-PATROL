@@ -21,6 +21,7 @@ from utils.metrics import (
 )
 from utils.generative import conditional_gen, recon_visaulization
 from utils import fprint
+from utils.conf import variant_name
 import matplotlib.pyplot as plt
 
 from warmup_scheduler import GradualWarmupScheduler
@@ -324,7 +325,7 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
     if args.dataset in ["shortmnist"] and args.joint:
         to_add += "_joint"
 
-    save_path = f"best_model_{args.dataset}_{args.model}_{args.seed}{to_add}.pth"
+    save_path = f"best_model_{args.dataset}_{args.model}_{args.seed}{to_add}_{variant_name(args)}.pth"
 
     # save embeddings variable
     save_embeddings_flag = False

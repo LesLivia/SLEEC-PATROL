@@ -4,6 +4,8 @@ from datasets.utils.boia_creation import BOIADataset
 from datasets.utils.sddoia_creation import CONCEPTS_ORDER
 from backbones.boia_linear import BOIAConceptizer
 from backbones.boia_mlp import BOIAMLP
+from utils.losses import compute_concept_pos_weights
+import json
 import time
 
 
@@ -13,13 +15,16 @@ class BOIA(BaseDataset):
     def __init__(self, args: Namespace) -> None:
         super().__init__(args)
 
+    def _feature_dir(self):
+        return f"data/{self.args.features}/"
+
     def get_data_loaders(self):
         start = time.time()
 
-        image_dir = "data/bdd2048/"
-        train_data_path = "data/bdd2048/train_BDD_OIA.pkl"
-        val_data_path = "data/bdd2048/val_BDD_OIA.pkl"
-        test_data_path = "data/bdd2048/test_BDD_OIA.pkl"
+        image_dir = self._feature_dir()
+        train_data_path = image_dir + "train_BDD_OIA.pkl"
+        val_data_path = image_dir + "val_BDD_OIA.pkl"
+        test_data_path = image_dir + "test_BDD_OIA.pkl"
 
         self.dataset_train = BOIADataset(
             pkl_file_path=train_data_path,
@@ -51,6 +56,17 @@ class BOIA(BaseDataset):
             transform=None,
         )
 
+        # positive-label weights of the concept loss, measured on the training split
+        c_weight = self.args.c_weight
+        if c_weight != "none":
+            train_concepts = [d["attribute_label"] for d in self.dataset_train.data]
+            self.args.concept_pos_weight = compute_concept_pos_weights(
+                train_concepts, c_weight, self.args.c_weight_cap
+            )
+            print(f"Concept weights ({c_weight}):", [round(w, 2) for w in self.args.concept_pos_weight.tolist()])
+        else:
+            self.args.concept_pos_weight = None
+
         print(f"Loaded datasets in {time.time()-start} s.")
 
         print(
@@ -77,7 +93,13 @@ class BOIA(BaseDataset):
         if self.args.backbone == "neural":
             return BOIAMLP(), None
 
-        return BOIAConceptizer(din=2048, nconcept=21), None
+        # input size of the concept extractor: 2048 for the original rsbench features,
+        # otherwise the "dim" written by utils/extract_features.py
+        din = 2048
+        if self.args.features != "bdd2048":
+            with open(self._feature_dir() + "meta.json") as f:
+                din = json.load(f)["dim"]
+        return BOIAConceptizer(din=din, nconcept=21, hidden=self.args.concept_hidden), None
 
     def get_split(self):
         return 1, ()
