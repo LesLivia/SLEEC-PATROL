@@ -186,6 +186,12 @@ class BoiaCBM(CBMModule):
         Returns:
             None: This function does not return a value.
         """
-        self.opt = torch.optim.Adam(
-            self.parameters(), args.lr, weight_decay=args.weight_decay
-        )
+        if args.head_lr is None:
+            params = self.parameters()
+        else:
+            # concept extractor at --lr, action layer at --head_lr
+            params = [
+                {"params": self.encoder.parameters(), "lr": args.lr},
+                {"params": self.classifier.parameters(), "lr": args.head_lr},
+            ]
+        self.opt = torch.optim.Adam(params, args.lr, weight_decay=args.weight_decay)

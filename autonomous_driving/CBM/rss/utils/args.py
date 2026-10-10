@@ -126,6 +126,9 @@ def add_experiment_args(parser: ArgumentParser) -> None:
     # optimization params
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate.")
     parser.add_argument(
+        "--head_lr", type=float, default=None, help="Learning rate of the action layer (default: --lr)."
+    )
+    parser.add_argument(
         "--weight_decay", type=float, default=0.0001, help="Weight decay (L2 penalty)."
     )
     parser.add_argument("--warmup_steps", type=int, default=0, help="Warmup epochs.")

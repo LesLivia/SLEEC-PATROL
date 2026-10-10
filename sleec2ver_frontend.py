@@ -1,3 +1,4 @@
+import importlib
 import os
 import sys
 from os.path import dirname, join
@@ -152,10 +153,7 @@ def verify_model():
     output_write(f"Model: {selected_model.get()}")
     output_write("")
 
-    # ---- HOOK POINT FOR MARABOU / ONNX ----
-    # Replace this with your real verification routine.
-    # Keep output_write(...) calls so results land in the output box.
-    output_write("Running verification... (placeholder)")
+    output_write("Running verification...")
     grammar_file = "legos_sleec/sleec-grammar.txt"
     with open(grammar_file, 'r') as f:
         grammar = f.read()
@@ -164,11 +162,19 @@ def verify_model():
         dsl_snippet = f.read()
     meta = metamodel_from_str(grammar)
     model = meta.model_from_str(dsl_snippet)
-    gen = MarabouGenerator(model)
+    try:
+        ub = float(ub_value.get()) if require_ub.get() else None
+    except ValueError:
+        messagebox.showerror("Verification error", f"Not a number: {ub_value.get()}")
+        return
+    gen = MarabouGenerator(model, config={"target_output_ub": ub})
+    output_write(f"Config: {gen.config}")
     with open("verifier/generated_verify_model.py", 'w') as f:
         f.write(gen.generate())
-    from verifier.generated_verify_model import check_property
-    outcome = check_property(model_path)
+    # reload: the module stays cached between VERIFY clicks
+    from verifier import generated_verify_model
+    importlib.reload(generated_verify_model)
+    outcome = generated_verify_model.check_property(model_path)
 
     new_text.delete("1.0", tk.END)
     new_text.insert(
@@ -176,26 +182,18 @@ def verify_model():
         "NN Verification Report\n\n"
         f"Model: {model_path}\n"
     )
-    for res in outcome:
-        if not outcome[res][0]:
-            output_write(f"Result: PROPERTY {res} VIOLATED")
-            # output_write(f"Counterexample found: ({outcome[res][1]})")
-            output_write("")
-            new_text.delete("1.0", tk.END)
-            new_text.insert(
-                tk.INSERT,
-                f"Property: {res}\n"
-                "Outcome: violated\n"
-                f"Counterexample: {outcome[res][1]}\n"
-            )
-        else:
+    for res, (verified, counterexample, exit_code) in outcome.items():
+        if verified:
             output_write(f"Result: PROPERTY {res} VERIFIED")
-            new_text.delete("1.0", tk.END)
-            new_text.insert(
-                tk.INSERT,
-                f"Property: {res}\n"
-                "Outcome: verified\n"
-            )
+            detail = f"Property: {res}\nOutcome: verified\n"
+        elif exit_code == "sat":
+            output_write(f"Result: PROPERTY {res} VIOLATED")
+            detail = (f"Property: {res}\nOutcome: violated\n"
+                      f"Counterexample: {counterexample}\n")
+        else:
+            output_write(f"Result: PROPERTY {res} UNKNOWN (marabou: {exit_code})")
+            detail = f"Property: {res}\nOutcome: unknown ({exit_code})\n"
+        new_text.insert(tk.END, "\n" + detail)
 
 
 # -------------------------------------------------------------------
@@ -270,6 +268,13 @@ tk.Button(
     bg="#2ecc71",
     font=("Helvetica", 12, "bold"),
 ).pack(side=tk.RIGHT, padx=5)
+
+# Optional extra bound on the output under test; off by default.
+require_ub = tk.BooleanVar(value=False)
+ub_value = tk.StringVar(value="0")
+tk.Entry(action_frame, textvariable=ub_value, width=6).pack(side=tk.RIGHT)
+tk.Checkbutton(action_frame, text="bound target output <=",
+               variable=require_ub).pack(side=tk.RIGHT, padx=(12, 0))
 
 # -------------------------------------------------------------------
 # Output box: dedicated panel for SMT + NN verification output

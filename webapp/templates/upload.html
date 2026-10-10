@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SLEEC2Ver — verify a network</title>
+  <style>
+    :root {
+      --sage: #A5B68D;
+      --beige: #ECDFCC;
+      --cream: #FCFAEE;
+      --clay: #DA8359;
+      --ink: #3B3A32;
+      --muted: #7A7566;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0;
+           background: var(--cream); color: var(--ink); line-height: 1.55; }
+    header { background: var(--sage); padding: 1.6rem 1rem; }
+    header div { max-width: 44rem; margin: 0 auto; }
+    header h1 { margin: 0; font-size: 1.35rem; letter-spacing: 0.01em; color: var(--cream); }
+    header p { margin: 0.25rem 0 0; color: #F4F1E4; font-size: 0.9rem; opacity: 0.95; }
+    main { max-width: 44rem; margin: 2rem auto 4rem; padding: 0 1rem; }
+    .card { background: #fff; border: 1px solid var(--beige); border-radius: 12px;
+            padding: 1.6rem 1.8rem; box-shadow: 0 1px 2px rgba(59, 58, 50, 0.05); }
+    label { display: block; margin: 1.4rem 0 0.45rem; font-weight: 600; font-size: 0.95rem; }
+    label:first-of-type { margin-top: 0; }
+    .hint { display: block; font-weight: 400; color: var(--muted); font-size: 0.83rem;
+            margin-top: 0.15rem; }
+    input[type=file] { width: 100%; padding: 0.7rem; background: var(--cream);
+                       border: 1px dashed var(--sage); border-radius: 8px; font-size: 0.9rem;
+                       color: var(--ink); }
+    input[type=file]::file-selector-button { background: var(--beige); color: var(--ink);
+                       border: 1px solid var(--sage); border-radius: 6px; padding: 0.35rem 0.8rem;
+                       margin-right: 0.8rem; cursor: pointer; font-family: inherit; }
+    input[type=file]::file-selector-button:hover { background: var(--sage); color: var(--cream); }
+    button { margin-top: 1.8rem; padding: 0.7rem 1.6rem; font-size: 0.98rem; font-weight: 600;
+             color: var(--cream); background: var(--clay); border: none; border-radius: 8px;
+             cursor: pointer; }
+    button:hover { background: #C7724A; }
+    .error { background: #FBE9E1; border-left: 4px solid var(--clay); border-radius: 6px;
+             padding: 0.9rem 1rem; margin-bottom: 1.5rem; white-space: pre-wrap;
+             font-family: ui-monospace, "Cascadia Code", monospace; font-size: 0.82rem; }
+    .note { color: var(--muted); font-size: 0.85rem; margin: 1.6rem 0 0; padding-left: 0.9rem;
+            border-left: 3px solid var(--beige); }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>SLEEC → Marabou verification</h1>
+      <p>Upload a specification and a network; every rule is checked and reported.</p>
+    </div>
+  </header>
+
+  <main>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+    <div class="card">
+      <form method="post" action="/verify" enctype="multipart/form-data">
+        <label>SLEEC specification
+          <span class="hint">the .sleec file with the measures, constants and rules</span>
+        </label>
+        <!-- No accept filter: file dialogs grey out uncommon extensions like .sleec and .onnx. -->
+        <input type="file" name="spec" required>
+
+        <label>Neural network
+          <span class="hint">.onnx file; its inputs are the measures and its outputs the
+          output&lt;Name&gt; events, both in declaration order</span>
+        </label>
+        <input type="file" name="network" required>
+
+        <button type="submit">Verify all rules</button>
+      </form>
+    </div>
+
+    <p class="note">Every rule is solved when you submit, so this page stays put until Marabou
+    has finished. A 512-ReLU network over wide input ranges can take minutes per rule.</p>
+  </main>
+</body>
+</html>

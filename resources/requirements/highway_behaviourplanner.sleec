@@ -28,8 +28,8 @@ def_start
     //
     // Measure declaration order below fixes the Marabou input index (0-24).
     // The {name}LB / {name}UB constants are the verification box for each
-    // input: the generator pads every input a rule does not mention with
-    // these bounds.
+    // input: the generator bounds every input of every query with them. A
+    // boolean measure needs none, since its range is {0, 1} by default.
     //
     // BOUNDS PROVENANCE: highway-env's own feature ranges, from
     // KinematicObservation.normalize_obs (the defaults used when the config
@@ -48,7 +48,7 @@ def_start
     // ============================================================
 
     // --- Vehicle 0: Ego (index 0-4) ---
-    // presence is a flag, never anything between 0 and 1.
+    // the ego row is always present, so its flag is fixed at 1
     measure egoPresence: boolean
     constant egoPresenceLB = 1
     constant egoPresenceUB = 1
@@ -90,9 +90,8 @@ def_start
     constant egoVyUB = 80
 
     // --- Vehicle 1 (index 5-9) ---
+    // presence flag: 1 = observed, 0 = absent (row zero-filled)
     measure v1Presence: boolean
-    constant v1PresenceLB = 0
-    constant v1PresenceUB = 1
 
     // relative: > 0 ahead of ego. Library range; reachable is (-10, 200],
     // since see_behind = False drops anything with lane_distance_to <= -10
@@ -120,8 +119,6 @@ def_start
 
     // --- Vehicle 2 (index 10-14) ---
     measure v2Presence: boolean
-    constant v2PresenceLB = 0
-    constant v2PresenceUB = 1
 
     measure v2X: numeric
     constant v2XLB = -200
@@ -141,8 +138,6 @@ def_start
 
     // --- Vehicle 3 (index 15-19) ---
     measure v3Presence: boolean
-    constant v3PresenceLB = 0
-    constant v3PresenceUB = 1
 
     measure v3X: numeric
     constant v3XLB = -200
@@ -162,8 +157,6 @@ def_start
 
     // --- Vehicle 4 (index 20-24) ---
     measure v4Presence: boolean
-    constant v4PresenceLB = 0
-    constant v4PresenceUB = 1
 
     measure v4X: numeric
     constant v4XLB = -200
@@ -182,46 +175,29 @@ def_start
     constant v4VyUB = 80
 
     // ============================================================
-    // SEMANTIC THRESHOLDS
-    //
-    // Convention (as in the other files in this directory): a "dummy"
-    // constant with the base name exists so TextX can resolve the
-    // cross-reference in a rule condition, while the value actually read at
-    // verification time lives in {name}LB, which is what _resolve_value()
-    // looks up. Values are integers: the grammar's Value rule is INT only.
+    // SEMANTIC THRESHOLDS, in metres and m/s. A rule names the constant and
+    // the generator reads its value. Values are integers: the grammar's
+    // Value rule is INT only.
     // ============================================================
 
     // "in ego's lane": |dy| < 2, i.e. inside the 4 m lane
-    constant inLaneLo = 0
-    constant inLaneLoLB = -2
-    constant inLaneHi = 0
-    constant inLaneHiLB = 2
+    constant inLaneLo = -2
+    constant inLaneHi = 2
 
-    // "ahead of ego" (the front bumper, not the sensor horizon)
+    // "ahead of ego": past the front bumper, and within braking range
     constant justAhead = 0
-    constant justAheadLB = 0
+    constant closeAhead = 30
 
     // "too close to stop in time": < 10 m. At 30 m/s that is a third of a
     // second, and SLOWER only steps the target speed down by 5 m/s.
-    constant dangerClose = 0
-    constant dangerCloseLB = 10
-
-    // braking band: 11..30 m. Deliberately disjoint from dangerClose, since
-    // two rules demanding different actions in overlapping boxes cannot be
-    // satisfied by any argmax policy.
-    constant stopRange = 0
-    constant stopRangeLB = 11
-    constant closeAhead = 0
-    constant closeAheadLB = 30
+    constant dangerClose = 10
 
     // "ego is closing in": relative vx < -5 m/s (v1Vx = v1 speed - ego speed)
-    constant closing = 0
-    constant closingLB = -5
+    constant closing = -5
 
     // "a lane exists to the right": 3 lanes -> centres 0 / 4 / 8, so the
     // rightmost lane is y = 8 and anything below 6 has room to its right.
-    constant rightLaneExists = 0
-    constant rightLaneExistsLB = 6
+    constant rightLaneExists = 6
 
     // ============================================================
     // NN OUTPUTS: PPO action logits (argmax = selected action).
@@ -243,40 +219,36 @@ rule_start
     // AutoCar R8 -- "When an obstacle appears ahead, stop until it clears;
     //                if stopping is unsafe, change lanes."
     //
-    //   obstacle ahead   -> v1 present, inside ego's lane band, ahead,
-    //                       and ego closing in on it. All five rows are
-    //                       vehicles; a stationary obstacle and a much slower
-    //                       car are the same observation.
+    //   obstacle ahead   -> v1 present, inside ego's lane band, 0..30 m
+    //                       ahead, and ego closing in on it. All five rows
+    //                       are vehicles; a stationary obstacle and a much
+    //                       slower car are the same observation. Only row 1
+    //                       is checked: it is the nearest vehicle, but in any
+    //                       lane, so an obstacle in row 2..4 is not covered.
     //   stop             -> outputSlower. There is no stop action: SLOWER
     //                       steps the target speed down within {20, 25, 30}.
     //   until it clears  -> no temporal operator needed. A state-based rule
     //                       constrains EVERY state in which the obstacle is
     //                       present, and stops applying once it is not.
     //   stopping unsafe  -> the obstacle is too close to stop in time
-    //                       (riskLevel has no input feature).
-    //   change lanes     -> outputLaneRight, and only where a right-hand lane
-    //                       exists and no other vehicle is perceived.
+    //                       (riskLevel has no input feature)...
+    //   change lanes     -> ...and a lane change is possible: a right-hand
+    //                       lane exists and no other vehicle is perceived, so
+    //                       that lane is clear by construction. Then
+    //                       outputLaneRight. When the lane change is not
+    //                       possible, the main case still demands braking.
     //
-    // The original defeater ("unless stopping is unsafe then change lanes")
-    // is written as a second rule over a DISJOINT distance band, rather than
-    // an `unless`: overlapping boxes with different required actions are
-    // unsatisfiable for an argmax policy.
+    // The generator splits the rule into two queries with disjoint inputs:
+    //   r8_main     obstacle and not (unsafe and lane free)  -> outputSlower
+    //   r8_unless1  obstacle and unsafe and lane free        -> outputLaneRight
     // ============================================================
-
-    // R8 -- obstacle 11..30 m ahead in ego's lane, ego closing: brake
     r8 when cmdRequired and
         ({v1Presence} and
          ((({v1Y} > inLaneLo) and ({v1Y} < inLaneHi)) and
-          (({v1X} > stopRange) and (({v1X} < closeAhead) and ({v1Vx} < closing)))))
+          ((({v1X} > justAhead) and ({v1X} < closeAhead)) and ({v1Vx} < closing))))
         then outputSlower
-
-    // R8 defeater -- obstacle within 10 m in ego's lane, a lane exists to the
-    // right, and no other vehicle is perceived (so that lane is clear by
-    // construction): change lanes
-    r8_swerve when cmdRequired and
-        ({v1Presence} and
-         (((not {v2Presence}) and ((not {v3Presence}) and (not {v4Presence}))) and
-          ((({v1Y} > inLaneLo) and ({v1Y} < inLaneHi)) and
-           (({v1X} > justAhead) and (({v1X} < dangerClose) and ({egoY} < rightLaneExists))))))
+        unless (({v1X} < dangerClose) and
+                (({egoY} < rightLaneExists) and
+                 ((not {v2Presence}) and ((not {v3Presence}) and (not {v4Presence})))))
         then outputLaneRight
 rule_end

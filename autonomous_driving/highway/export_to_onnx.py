@@ -16,10 +16,26 @@ import torch
 import torch.nn as nn
 from stable_baselines3 import PPO
 
-from train_highway_ppo import ENV_ID, MODEL_PATH, BEST_MODEL_PATH
+# ============================================================================
+# Choose what to export. These are independent of train_highway_ppo.py, so the
+# training script's ENV_ID does not have to match.
+#
+#   highway-v0        ENV_ID = "highway-v0"       MODEL_SUBDIR = "highway-v0"
+#   highway-fast-v0   ENV_ID = "highway-fast-v0"  MODEL_SUBDIR = "highway-fast-v0"
+#
+# MODEL_NAME picks the file inside saved_models/<MODEL_SUBDIR>/:
+#   "best_model"                 the better of last/best on the 50-episode comparison (default)
+#   "highway_ppo_model"          the policy at the last training step
+#   "best_model_evalcallback"    EvalCallback's pick, kept only when it was superseded
+#   "highway_ppo_<N>_steps"      a specific checkpoint, e.g. "highway_ppo_49992_steps"
+# ============================================================================
+# ENV_ID = "highway-fast-v0"
+ENV_ID = "highway-v0"
+MODEL_SUBDIR = ENV_ID  # use f"{ENV_ID}-scaled" only once the input scaling is folded in
+MODEL_NAME = "best_model"
 
-# Prefer the best evaluated policy; fall back to the final one if EvalCallback wrote nothing.
-EXPORT_PATH = BEST_MODEL_PATH if os.path.exists(BEST_MODEL_PATH + ".zip") else MODEL_PATH
+MODEL_DIR = os.path.join(os.path.dirname(__file__), "saved_models", MODEL_SUBDIR)
+EXPORT_PATH = os.path.join(MODEL_DIR, MODEL_NAME)
 
 OUTPUT_PATH = os.path.join(
     os.path.dirname(__file__), "..", "..", "verifier", "resources", "models", f"ppo_{ENV_ID}.onnx"
@@ -44,10 +60,19 @@ class PPOActorNet(nn.Module):
 
 
 if __name__ == "__main__":
+    if MODEL_SUBDIR.endswith("-scaled"):
+        raise ValueError(
+            "This model expects scaled inputs (OBS_SCALE = 1, 100, 10, 30, 10 per feature). "
+            "Scale the inputs in the Marabou verifier first: divide every bound set on input i "
+            "by OBS_SCALE[i % 5] and multiply counter-example values back for reporting; the "
+            ".sleec file itself stays unchanged. Remove this check once the parser does that."
+        )
+
     if not os.path.exists(EXPORT_PATH + ".zip"):
+        available = sorted(f[:-4] for f in os.listdir(MODEL_DIR)) if os.path.isdir(MODEL_DIR) else []
         raise FileNotFoundError(
-            f"No trained model found at {EXPORT_PATH}.zip\n"
-            "Run train_highway_ppo.py first."
+            f"No model at {EXPORT_PATH}.zip\n"
+            f"Available in {MODEL_DIR}: {available or 'nothing - run train_highway_ppo.py first'}"
         )
 
     model = PPO.load(EXPORT_PATH, device="cpu")

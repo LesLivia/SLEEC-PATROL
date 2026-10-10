@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SLEEC2Ver — results</title>
+  <style>
+    :root {
+      --sage: #A5B68D;
+      --beige: #ECDFCC;
+      --cream: #FCFAEE;
+      --clay: #DA8359;
+      --ink: #3B3A32;
+      --muted: #7A7566;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0;
+           background: var(--cream); color: var(--ink); line-height: 1.55; }
+    header { background: var(--sage); padding: 1.6rem 1rem; }
+    header div { max-width: 54rem; margin: 0 auto; }
+    header h1 { margin: 0; font-size: 1.35rem; color: var(--cream); }
+    header p { margin: 0.3rem 0 0; color: #F4F1E4; font-size: 0.86rem;
+               font-family: ui-monospace, "Cascadia Code", monospace; }
+    header a { color: var(--cream); text-decoration: underline; }
+    main { max-width: 54rem; margin: 2rem auto 4rem; padding: 0 1rem; }
+
+    .tally { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 0 0 1.5rem; padding: 0; }
+    .tally li { list-style: none; background: #fff; border: 1px solid var(--beige);
+                border-radius: 999px; padding: 0.35rem 0.95rem; font-size: 0.85rem;
+                font-weight: 600; }
+    .tally .n { font-weight: 700; }
+    .tally .verified { color: #5F7A43; }
+    .tally .violated { color: #B35B33; }
+    .tally .unknown  { color: #8A7638; }
+
+    .rule { background: #fff; border: 1px solid var(--beige); border-left: 5px solid var(--beige);
+            border-radius: 10px; margin: 0.65rem 0; padding: 0.85rem 1.1rem;
+            box-shadow: 0 1px 2px rgba(59, 58, 50, 0.04); }
+    .rule.VERIFIED { border-left-color: var(--sage); }
+    .rule.VIOLATED { border-left-color: var(--clay); }
+    .rule.UNKNOWN  { border-left-color: #D8C47E; }
+    .rule summary { cursor: pointer; }
+    .rule summary::marker { color: var(--muted); }
+    .name { font-weight: 600; font-family: ui-monospace, "Cascadia Code", monospace; }
+    .origin { color: var(--muted); font-size: 0.83rem; }
+    .badge { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; padding: 0.18rem 0.6rem;
+             border-radius: 999px; margin-left: 0.55rem; vertical-align: 0.08em; }
+    .badge.VERIFIED { background: #E8EEDD; color: #4F6A36; }
+    .badge.VIOLATED { background: #FBE9E1; color: #AE5330; }
+    .badge.UNKNOWN  { background: #F6EFD8; color: #7D6A2E; }
+
+    table { border-collapse: collapse; margin: 0.9rem 0 0.2rem; width: 100%;
+            font-size: 0.83rem; font-family: ui-monospace, "Cascadia Code", monospace; }
+    th { text-align: left; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--beige);
+         padding: 0.3rem 0.8rem 0.3rem 0; font-size: 0.78rem; letter-spacing: 0.03em; }
+    td { border-bottom: 1px solid #F3EFE2; padding: 0.28rem 0.8rem 0.28rem 0; }
+    tr:hover td { background: var(--cream); }
+    .cex-note { color: var(--muted); font-size: 0.8rem; margin: 0.6rem 0 0; }
+
+    details.code { margin-top: 2rem; background: #fff; border: 1px solid var(--beige);
+                   border-radius: 10px; padding: 0.85rem 1.1rem; }
+    details.code summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+    pre { background: var(--cream); border: 1px solid var(--beige); border-radius: 8px;
+          padding: 0.9rem; overflow-x: auto; font-size: 0.75rem; line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Verification report</h1>
+      <p>{{ run.spec_name }} &nbsp;·&nbsp; {{ run.network_name }} &nbsp;·&nbsp;
+         {{ run.rules | length }} rule{{ '' if run.rules | length == 1 else 's' }}
+         &nbsp;·&nbsp; <a href="/">new run</a></p>
+    </div>
+  </header>
+
+  <main>
+    <ul class="tally">
+      <li class="verified">VERIFIED <span class="n">{{ counts.VERIFIED }}</span></li>
+      <li class="violated">VIOLATED <span class="n">{{ counts.VIOLATED }}</span></li>
+      <li class="unknown">UNKNOWN <span class="n">{{ counts.UNKNOWN }}</span></li>
+    </ul>
+
+    {% for rule in run.rules %}
+      {% set kind = rule.status.split(' ')[0] %}
+      {% if rule.counterexample %}
+        <details class="rule {{ kind }}">
+          <summary>
+            <span class="name">{{ rule.name }}</span><span class="badge {{ kind }}">{{ rule.status }}</span>
+            {% if rule.origin != rule.name %}<span class="origin">from {{ rule.origin }}</span>{% endif %}
+          </summary>
+          <table>
+            <tr><th>input / output</th><th>variable</th><th>value</th></tr>
+            {% for row in rule.counterexample %}
+              <tr><td>{{ row.name }}</td><td>{{ row.var }}</td><td>{{ row.value }}</td></tr>
+            {% endfor %}
+          </table>
+          <p class="cex-note">Marabou found this assignment inside the rule's input region:
+          the network does not do what the rule demands here.</p>
+        </details>
+      {% else %}
+        <div class="rule {{ kind }}">
+          <span class="name">{{ rule.name }}</span><span class="badge {{ kind }}">{{ rule.status }}</span>
+          {% if rule.origin != rule.name %}<span class="origin">from {{ rule.origin }}</span>{% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+
+    <details class="code">
+      <summary>generated Marabou code</summary>
+      <pre>{{ run.code }}</pre>
+    </details>
+  </main>
+</body>
+</html>

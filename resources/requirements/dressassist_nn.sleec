@@ -22,9 +22,10 @@ def_start
     measure userCommand:scale(noUserCmd,continue,stop)
 
     // NN input 4: last robot command
+    // An enum declares no LB/UB: the 5 labels already fix the range 0..4, and each
+    // label resolves to its index. Declaring LB/UB would mark this a real quantity
+    // whose labels name bands (as glucose/targetLaneGap are), which it is not.
     measure robotCommand:scale(liftArm,guideSleeve,pullOverHead,adjustCollar,smoothFabric)
-    constant robotCommandLB = 0
-    constant robotCommandUB = 4
 
     // NN output: activation logits for these 4 commands
     event outputContinue
