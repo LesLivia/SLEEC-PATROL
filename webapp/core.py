@@ -1,9 +1,11 @@
 """Verification logic behind the web UI, with no web framework involved.
 
-Kept apart from app.py so it can be exercised without FastAPI, and (up to the
-Marabou call) without maraboupy: run_verification() is the only part that needs
-the solver, so parsing, code generation and result labelling stay testable on any
-machine.
+Kept apart from app.py so it can be exercised without FastAPI, and - except for
+solve_module() - without maraboupy, so parsing, code generation and report building
+stay testable on any machine.
+
+The two phases are separate calls on purpose: the UI shows a parser error verbatim,
+while a failure inside Marabou gets a generic message with the detail tucked away.
 """
 
 import importlib.util
@@ -27,23 +29,41 @@ def build_generator(spec_text, grammar_text=None, target_output_ub=None):
     return MarabouGenerator(model, config={"target_output_ub": target_output_ub})
 
 
-def import_generated(path):
-    """Import a generated module from disk under a unique name (so runs never collide)."""
-    spec = importlib.util.spec_from_file_location(f"generated_{uuid.uuid4().hex[:6]}", str(path))
+def generate_module(spec_text, workdir, grammar_text=None, target_output_ub=None):
+    """Phase 1: parse the spec and write the Marabou query module. No solver involved.
+
+    Returns (generator, code, module_path). Anything raised here is a specification or
+    code-generation problem, which the UI reports verbatim.
+    """
+    generator = build_generator(spec_text, grammar_text, target_output_ub)
+    code = generator.generate()
+    module_path = Path(workdir) / "generated_verify_model.py"
+    module_path.write_text(code, encoding="utf-8")
+    return generator, code, module_path
+
+
+def solve_module(module_path, onnx_path):
+    """Phase 2: run the generated module. Needs maraboupy and the ONNX file.
+
+    Returns check_property()'s dict: {"results", "trace", "rules"}.
+    """
+    spec = importlib.util.spec_from_file_location(
+        f"generated_{uuid.uuid4().hex[:6]}", str(module_path)
+    )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module
+    return module.check_property(str(onnx_path))
 
 
 def label_counterexample(cex, measures, outputs):
     """Marabou reports {variable number: value}; attach names where the count matches.
 
-    _record_result() in the parser collects input variables first, then outputs, and
-    a dict comprehension keeps that insertion order, so zipping against declaration
-    order labels them. The parser's language rule is that measures are the network
-    inputs in declaration order and output events its outputs, so the orders agree.
-    A variable missing from the assignment changes the count: then the raw variable
-    numbers are shown rather than a guess that could mislabel every value.
+    _record_result() in the parser collects input variables first, then outputs, and a
+    dict comprehension keeps that insertion order, so zipping against declaration order
+    labels them. The parser's language rule is that measures are the network inputs in
+    declaration order and output events its outputs, so the orders agree. A variable
+    missing from the assignment changes the count: then the raw variable numbers are
+    shown rather than a guess that could mislabel every value.
     """
     names = ([n for n, _ in sorted(measures.items(), key=lambda kv: kv[1])]
              + [n for n, _ in sorted(outputs.items(), key=lambda kv: kv[1])])
@@ -53,38 +73,36 @@ def label_counterexample(cex, measures, outputs):
     return [{"name": f"variable {v}", "var": v, "value": f"{val:.4g}"} for v, val in items]
 
 
-def summarize(outcome, generator):
-    """Turn check_property()'s {rule: (verified, cex, exit_code)} into rows for the page.
+def build_report(outcome, generator):
+    """Shape check_property()'s dict into one panel per original rule, in spec order.
 
-    Only 'unsat' proves a rule; 'sat' means Marabou found a counter-example; anything
-    else (timeout, error) is reported as-is rather than being read as either verdict.
+    Nothing is recomputed: the grouping, the rule text and the per-rule verdict all come
+    from the generated module. Only presentation is derived here - the per-sub-rule label
+    and the names of the counter-example variables.
     """
-    rows = []
-    for name, (verified, cex, exit_code) in outcome.items():
-        if verified:
-            status = "VERIFIED"
-        elif exit_code == "sat":
-            status = "VIOLATED"
-        else:
-            status = f"UNKNOWN ({exit_code})"
-        rows.append({
+    results = outcome["results"]
+    groups = []
+    for name, info in outcome["rules"].items():
+        parts = []
+        for sub in info["subrules"]:
+            verified, cex, exit_code = results[sub]
+            if verified:
+                status = "VERIFIED"
+            elif exit_code == "sat":
+                status = "VIOLATED"
+            else:
+                status = f"UNKNOWN ({exit_code})"
+            parts.append({
+                "name": sub,
+                "status": status,
+                "counterexample": (label_counterexample(cex, generator.measures,
+                                                        generator.outputs)
+                                   if status == "VIOLATED" else []),
+            })
+        groups.append({
             "name": name,
-            "origin": generator.trace.get(name, name),
-            "status": status,
-            "counterexample": (label_counterexample(cex, generator.measures, generator.outputs)
-                               if status == "VIOLATED" else []),
+            "text": (info["text"] or "").strip(),
+            "verdict": info["verdict"],
+            "parts": parts,
         })
-    return rows
-
-
-def run_verification(spec_text, onnx_path, workdir, grammar_text=None, target_output_ub=None):
-    """Parse, generate, solve every rule, and return (rows, generated_code, generator).
-
-    Needs maraboupy, which the generated module imports.
-    """
-    generator = build_generator(spec_text, grammar_text, target_output_ub)
-    code = generator.generate()
-    code_path = Path(workdir) / "generated_verify_model.py"
-    code_path.write_text(code, encoding="utf-8")
-    outcome = import_generated(code_path).check_property(str(onnx_path))
-    return summarize(outcome, generator), code, generator
+    return groups

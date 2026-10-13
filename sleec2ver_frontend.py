@@ -182,18 +182,24 @@ def verify_model():
         "NN Verification Report\n\n"
         f"Model: {model_path}\n"
     )
-    for res, (verified, counterexample, exit_code) in outcome.items():
-        if verified:
-            output_write(f"Result: PROPERTY {res} VERIFIED")
-            detail = f"Property: {res}\nOutcome: verified\n"
-        elif exit_code == "sat":
-            output_write(f"Result: PROPERTY {res} VIOLATED")
-            detail = (f"Property: {res}\nOutcome: violated\n"
-                      f"Counterexample: {counterexample}\n")
-        else:
-            output_write(f"Result: PROPERTY {res} UNKNOWN (marabou: {exit_code})")
-            detail = f"Property: {res}\nOutcome: unknown ({exit_code})\n"
-        new_text.insert(tk.END, "\n" + detail)
+    # one verdict per original rule, then the normalized rules it was split into
+    results = outcome["results"]
+    for rule, info in outcome["rules"].items():
+        output_write(f"Result: RULE {rule} {info['verdict']}")
+        new_text.insert(tk.END, f"\nRule: {rule}\n{info['text']}\nVerdict: {info['verdict']}\n")
+        for res in info["subrules"]:
+            verified, counterexample, exit_code = results[res]
+            if verified:
+                output_write(f"  PROPERTY {res} VERIFIED")
+                detail = f"Property: {res}\nOutcome: verified\n"
+            elif exit_code == "sat":
+                output_write(f"  PROPERTY {res} VIOLATED")
+                detail = (f"Property: {res}\nOutcome: violated\n"
+                          f"Counterexample: {counterexample}\n")
+            else:
+                output_write(f"  PROPERTY {res} UNKNOWN (marabou: {exit_code})")
+                detail = f"Property: {res}\nOutcome: unknown ({exit_code})\n"
+            new_text.insert(tk.END, "\n" + detail)
 
 
 # -------------------------------------------------------------------

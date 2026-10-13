@@ -38,9 +38,25 @@
              color: var(--cream); background: var(--clay); border: none; border-radius: 8px;
              cursor: pointer; }
     button:hover { background: #C7724A; }
+    button:disabled { background: var(--sage); cursor: default; pointer-events: none;
+             opacity: 0.95; }
+    .running { display: none; align-items: center; gap: 0.6rem; margin-top: 1rem;
+             color: var(--muted); font-size: 0.85rem; }
+    .running.on { display: flex; }
+    .spinner { width: 1.05rem; height: 1.05rem; flex: none; border-radius: 50%;
+             border: 2.5px solid var(--beige); border-top-color: var(--sage);
+             animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
     .error { background: #FBE9E1; border-left: 4px solid var(--clay); border-radius: 6px;
-             padding: 0.9rem 1rem; margin-bottom: 1.5rem; white-space: pre-wrap;
-             font-family: ui-monospace, "Cascadia Code", monospace; font-size: 0.82rem; }
+             padding: 0.9rem 1rem; margin-bottom: 1.5rem; }
+    .error strong { display: block; color: #9E4826; font-size: 0.95rem; }
+    .error pre, .error summary + pre { margin: 0.6rem 0 0; white-space: pre-wrap;
+             font-family: ui-monospace, "Cascadia Code", monospace; font-size: 0.8rem;
+             background: #fff; border: 1px solid #F0D6C8; border-radius: 6px;
+             padding: 0.7rem 0.8rem; }
+    .error summary { margin-top: 0.5rem; cursor: pointer; font-size: 0.82rem;
+             color: #9E4826; }
     .note { color: var(--muted); font-size: 0.85rem; margin: 1.6rem 0 0; padding-left: 0.9rem;
             border-left: 3px solid var(--beige); }
   </style>
@@ -54,7 +70,16 @@
   </header>
 
   <main>
-    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    {% if error %}
+      <div class="error">
+        <strong>{{ error.headline }}</strong>
+        {% if error.collapse %}
+          <details><summary>show details</summary><pre>{{ error.detail }}</pre></details>
+        {% else %}
+          <pre>{{ error.detail }}</pre>
+        {% endif %}
+      </div>
+    {% endif %}
 
     <div class="card">
       <form method="post" action="/verify" enctype="multipart/form-data">
@@ -70,9 +95,39 @@
         </label>
         <input type="file" name="network" required>
 
-        <button type="submit">Verify all rules</button>
+        <button type="submit" id="go">Verify all rules</button>
+
+        <div class="running" id="running">
+          <span class="spinner"></span>
+          <span>Solving every rule — this can take several minutes. Per-rule progress is
+          printed in the terminal running uvicorn.</span>
+        </div>
       </form>
     </div>
+
+    <script>
+      // The page stays put until the response arrives, so this state is visible for the
+      // whole run. No server involvement: the POST is what does the work.
+      var form = document.querySelector("form");
+      var go = document.getElementById("go");
+      var running = document.getElementById("running");
+
+      // Only the submit button is disabled. The file inputs must stay enabled: the browser
+      // builds the request payload after this handler runs, and disabled fields are left
+      // out of it, so disabling them here would send no files at all.
+      form.addEventListener("submit", function () {
+        go.disabled = true;
+        go.textContent = "Verifying…";
+        running.classList.add("on");
+      });
+
+      // Coming back through history would otherwise leave the button stuck disabled.
+      window.addEventListener("pageshow", function () {
+        go.disabled = false;
+        go.textContent = "Verify all rules";
+        running.classList.remove("on");
+      });
+    </script>
 
     <p class="note">Every rule is solved when you submit, so this page stays put until Marabou
     has finished. A 512-ReLU network over wide input ranges can take minutes per rule.</p>

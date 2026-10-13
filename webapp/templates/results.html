@@ -12,6 +12,7 @@
       --clay: #DA8359;
       --ink: #3B3A32;
       --muted: #7A7566;
+      --ochre: #D8C47E;
     }
     * { box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0;
@@ -29,39 +30,61 @@
                 border-radius: 999px; padding: 0.35rem 0.95rem; font-size: 0.85rem;
                 font-weight: 600; }
     .tally .n { font-weight: 700; }
-    .tally .verified { color: #5F7A43; }
-    .tally .violated { color: #B35B33; }
-    .tally .unknown  { color: #8A7638; }
+    .tally .VERIFIED { color: #5F7A43; }
+    .tally .VIOLATED { color: #B35B33; }
+    .tally .UNKNOWN  { color: #8A7638; }
+    .tally .IGNORED  { color: var(--muted); }
+    .tally .checks   { color: var(--muted); font-weight: 400; }
 
-    .rule { background: #fff; border: 1px solid var(--beige); border-left: 5px solid var(--beige);
-            border-radius: 10px; margin: 0.65rem 0; padding: 0.85rem 1.1rem;
-            box-shadow: 0 1px 2px rgba(59, 58, 50, 0.04); }
-    .rule.VERIFIED { border-left-color: var(--sage); }
-    .rule.VIOLATED { border-left-color: var(--clay); }
-    .rule.UNKNOWN  { border-left-color: #D8C47E; }
-    .rule summary { cursor: pointer; }
-    .rule summary::marker { color: var(--muted); }
-    .name { font-weight: 600; font-family: ui-monospace, "Cascadia Code", monospace; }
-    .origin { color: var(--muted); font-size: 0.83rem; }
-    .badge { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; padding: 0.18rem 0.6rem;
-             border-radius: 999px; margin-left: 0.55rem; vertical-align: 0.08em; }
+    /* outer panel: one rule as written */
+    .group { background: #fff; border: 1px solid var(--beige); border-left: 6px solid var(--beige);
+             border-radius: 10px; margin: 0.8rem 0; padding: 0.95rem 1.2rem;
+             box-shadow: 0 1px 2px rgba(59, 58, 50, 0.04); }
+    .group.VERIFIED { border-left-color: var(--sage); }
+    .group.VIOLATED { border-left-color: var(--clay); }
+    .group.UNKNOWN  { border-left-color: var(--ochre); }
+    .group.IGNORED  { border-left-color: var(--beige); background: #FDFCF7; }
+    .group > summary { cursor: pointer; font-size: 1rem; }
+    .group > summary::marker { color: var(--muted); }
+    .rule-name { font-weight: 700; font-family: ui-monospace, "Cascadia Code", monospace; }
+    .count { color: var(--muted); font-size: 0.82rem; margin-left: 0.4rem; }
+    .spec { background: var(--cream); border: 1px solid var(--beige); border-radius: 8px;
+            padding: 0.8rem 0.9rem; margin: 0.9rem 0 1rem; white-space: pre-wrap;
+            font-family: ui-monospace, "Cascadia Code", monospace; font-size: 0.78rem;
+            line-height: 1.5; overflow-x: auto; }
+
+    /* inner panel: one normalized sub-rule */
+    .sub { background: var(--cream); border: 1px solid var(--beige); border-left: 4px solid var(--beige);
+           border-radius: 8px; margin: 0.45rem 0; padding: 0.6rem 0.85rem; font-size: 0.92rem; }
+    .sub.VERIFIED { border-left-color: var(--sage); }
+    .sub.VIOLATED { border-left-color: var(--clay); }
+    .sub.UNKNOWN  { border-left-color: var(--ochre); }
+    .sub summary { cursor: pointer; }
+    .sub-name { font-family: ui-monospace, "Cascadia Code", monospace; font-weight: 600;
+                font-size: 0.88rem; }
+
+    .badge { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; padding: 0.18rem 0.6rem;
+             border-radius: 999px; margin-left: 0.55rem; vertical-align: 0.1em;
+             white-space: nowrap; }
     .badge.VERIFIED { background: #E8EEDD; color: #4F6A36; }
     .badge.VIOLATED { background: #FBE9E1; color: #AE5330; }
     .badge.UNKNOWN  { background: #F6EFD8; color: #7D6A2E; }
+    .badge.IGNORED  { background: var(--beige); color: #6F6A5B; }
 
-    table { border-collapse: collapse; margin: 0.9rem 0 0.2rem; width: 100%;
-            font-size: 0.83rem; font-family: ui-monospace, "Cascadia Code", monospace; }
-    th { text-align: left; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--beige);
-         padding: 0.3rem 0.8rem 0.3rem 0; font-size: 0.78rem; letter-spacing: 0.03em; }
-    td { border-bottom: 1px solid #F3EFE2; padding: 0.28rem 0.8rem 0.28rem 0; }
-    tr:hover td { background: var(--cream); }
-    .cex-note { color: var(--muted); font-size: 0.8rem; margin: 0.6rem 0 0; }
+    table { border-collapse: collapse; margin: 0.8rem 0 0.2rem; width: 100%;
+            font-size: 0.82rem; font-family: ui-monospace, "Cascadia Code", monospace; }
+    th { text-align: left; color: var(--muted); font-weight: 600; font-size: 0.76rem;
+         letter-spacing: 0.03em; border-bottom: 1px solid var(--beige);
+         padding: 0.3rem 0.8rem 0.3rem 0; }
+    td { border-bottom: 1px solid #F3EFE2; padding: 0.26rem 0.8rem 0.26rem 0; }
+    tr:hover td { background: #fff; }
+    .note { color: var(--muted); font-size: 0.8rem; margin: 0.6rem 0 0; }
 
     details.code { margin-top: 2rem; background: #fff; border: 1px solid var(--beige);
                    border-radius: 10px; padding: 0.85rem 1.1rem; }
     details.code summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; }
-    pre { background: var(--cream); border: 1px solid var(--beige); border-radius: 8px;
-          padding: 0.9rem; overflow-x: auto; font-size: 0.75rem; line-height: 1.45; }
+    pre.code { background: var(--cream); border: 1px solid var(--beige); border-radius: 8px;
+               padding: 0.9rem; overflow-x: auto; font-size: 0.75rem; line-height: 1.45; }
   </style>
 </head>
 <body>
@@ -69,46 +92,74 @@
     <div>
       <h1>Verification report</h1>
       <p>{{ run.spec_name }} &nbsp;·&nbsp; {{ run.network_name }} &nbsp;·&nbsp;
-         {{ run.rules | length }} rule{{ '' if run.rules | length == 1 else 's' }}
+         {{ run.groups | length }} rule{{ '' if run.groups | length == 1 else 's' }},
+         {{ checks }} check{{ '' if checks == 1 else 's' }}
          &nbsp;·&nbsp; <a href="/">new run</a></p>
     </div>
   </header>
 
   <main>
     <ul class="tally">
-      <li class="verified">VERIFIED <span class="n">{{ counts.VERIFIED }}</span></li>
-      <li class="violated">VIOLATED <span class="n">{{ counts.VIOLATED }}</span></li>
-      <li class="unknown">UNKNOWN <span class="n">{{ counts.UNKNOWN }}</span></li>
+      <li class="VERIFIED">VERIFIED <span class="n">{{ counts.VERIFIED }}</span></li>
+      <li class="VIOLATED">VIOLATED <span class="n">{{ counts.VIOLATED }}</span></li>
+      <li class="UNKNOWN">UNKNOWN <span class="n">{{ counts.UNKNOWN }}</span></li>
+      {% if counts.IGNORED %}
+        <li class="IGNORED">IGNORED <span class="n">{{ counts.IGNORED }}</span></li>
+      {% endif %}
+      <li class="checks">{{ checks }} normalized check{{ '' if checks == 1 else 's' }}</li>
     </ul>
 
-    {% for rule in run.rules %}
-      {% set kind = rule.status.split(' ')[0] %}
-      {% if rule.counterexample %}
-        <details class="rule {{ kind }}">
-          <summary>
-            <span class="name">{{ rule.name }}</span><span class="badge {{ kind }}">{{ rule.status }}</span>
-            {% if rule.origin != rule.name %}<span class="origin">from {{ rule.origin }}</span>{% endif %}
-          </summary>
-          <table>
-            <tr><th>input / output</th><th>variable</th><th>value</th></tr>
-            {% for row in rule.counterexample %}
-              <tr><td>{{ row.name }}</td><td>{{ row.var }}</td><td>{{ row.value }}</td></tr>
-            {% endfor %}
-          </table>
-          <p class="cex-note">Marabou found this assignment inside the rule's input region:
-          the network does not do what the rule demands here.</p>
-        </details>
-      {% else %}
-        <div class="rule {{ kind }}">
-          <span class="name">{{ rule.name }}</span><span class="badge {{ kind }}">{{ rule.status }}</span>
-          {% if rule.origin != rule.name %}<span class="origin">from {{ rule.origin }}</span>{% endif %}
-        </div>
-      {% endif %}
+    {% for group in run.groups %}
+      <details class="group {{ group.verdict }}">
+        <summary>
+          <span class="rule-name">{{ group.name }}</span>
+          <span class="badge {{ group.verdict }}">{{ group.verdict }}</span>
+          <span class="count">
+            {% if group.parts %}
+              {{ group.parts | length }} check{{ '' if group.parts | length == 1 else 's' }}
+            {% else %}
+              not checked
+            {% endif %}
+          </span>
+        </summary>
+
+        {% if group.text %}<div class="spec">{{ group.text }}</div>{% endif %}
+
+        {% if not group.parts %}
+          <p class="note">Triggered by a network output, so there is nothing to solve: the
+          argmax head takes exactly one action, which is what such a rule states.</p>
+        {% endif %}
+
+        {% for part in group.parts %}
+          {% set kind = part.status.split(' ')[0] %}
+          {% if part.counterexample %}
+            <details class="sub {{ kind }}">
+              <summary>
+                <span class="sub-name">{{ part.name }}</span>
+                <span class="badge {{ kind }}">{{ part.status }}</span>
+              </summary>
+              <table>
+                <tr><th>input / output</th><th>variable</th><th>value</th></tr>
+                {% for row in part.counterexample %}
+                  <tr><td>{{ row.name }}</td><td>{{ row.var }}</td><td>{{ row.value }}</td></tr>
+                {% endfor %}
+              </table>
+              <p class="note">Marabou found this assignment inside the sub-rule's input
+              region: there, the network does not do what the rule demands.</p>
+            </details>
+          {% else %}
+            <div class="sub {{ kind }}">
+              <span class="sub-name">{{ part.name }}</span>
+              <span class="badge {{ kind }}">{{ part.status }}</span>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </details>
     {% endfor %}
 
     <details class="code">
       <summary>generated Marabou code</summary>
-      <pre>{{ run.code }}</pre>
+      <pre class="code">{{ run.code }}</pre>
     </details>
   </main>
 </body>
