@@ -1,3 +1,4 @@
+import os
 from argparse import Namespace
 from datasets.utils.base_dataset import BaseDataset, SDDOIA_get_loader
 from datasets.utils.sddoia_creation import SDDOIADataset, CONCEPTS_ORDER
@@ -38,12 +39,15 @@ class SDDOIA(BaseDataset):
             split="ood",
             return_embeddings=self.return_embeddings,
         )
-        self.dataset_ood_ambulance = SDDOIADataset(
-            base_path="data/mini_boia_out",
-            split="ood_ambulance",
-            return_embeddings=self.return_embeddings,
-            is_ood_k=True,
-        )
+        # the ambulance split (changed knowledge) is not part of the released data
+        self.dataset_ood_ambulance = None
+        if os.path.isdir("data/mini_boia_out/ood_ambulance"):
+            self.dataset_ood_ambulance = SDDOIADataset(
+                base_path="data/mini_boia_out",
+                split="ood_ambulance",
+                return_embeddings=self.return_embeddings,
+                is_ood_k=True,
+            )
 
         print(f"Loaded datasets in {time.time()-start} s.")
 
@@ -68,9 +72,11 @@ class SDDOIA(BaseDataset):
         self.ood_loader = SDDOIA_get_loader(
             self.dataset_ood, self.args.batch_size, val_test=True
         )
-        self.ood_loader_ambulance = SDDOIA_get_loader(
-            self.dataset_ood_ambulance, self.args.batch_size, val_test=True
-        )
+        self.ood_loader_ambulance = None
+        if self.dataset_ood_ambulance is not None:
+            self.ood_loader_ambulance = SDDOIA_get_loader(
+                self.dataset_ood_ambulance, self.args.batch_size, val_test=True
+            )
 
         return self.train_loader, self.val_loader, self.test_loader
 

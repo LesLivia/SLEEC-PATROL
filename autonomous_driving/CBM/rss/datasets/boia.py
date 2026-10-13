@@ -94,7 +94,7 @@ class BOIA(BaseDataset):
             return BOIAMLP(), None
 
         # input size of the concept extractor: 2048 for the original rsbench features,
-        # otherwise the "dim" written by utils/extract_features.py
+        # otherwise the "dim" written by utils/extract_features_bdd_oia.py (or combine_features_bdd_oia.py)
         din = 2048
         if self.args.features != "bdd2048":
             with open(self._feature_dir() + "meta.json") as f:
