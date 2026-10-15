@@ -2,11 +2,14 @@ from argparse import Namespace
 from datasets.utils.base_dataset import BaseDataset, BOIA_get_loader
 from datasets.utils.boia_creation import BOIADataset
 from datasets.utils.sddoia_creation import CONCEPTS_ORDER
-from backbones.boia_linear import BOIAConceptizer
+from backbones.conceptizer import Conceptizer
 from backbones.boia_mlp import BOIAMLP
 from utils.losses import compute_concept_pos_weights
+import glob
 import json
+import os
 import time
+import torch
 
 
 class BOIA(BaseDataset):
@@ -93,13 +96,15 @@ class BOIA(BaseDataset):
         if self.args.backbone == "neural":
             return BOIAMLP(), None
 
-        # input size of the concept extractor: 2048 for the original rsbench features,
-        # otherwise the "dim" written by utils/extract_features_bdd_oia.py (or combine_features_bdd_oia.py)
-        din = 2048
-        if self.args.features != "bdd2048":
-            with open(self._feature_dir() + "meta.json") as f:
+        # input size of the concept extractor: the "dim" written by utils/extract_features_bdd_oia.py
+        # (or combine_features_bdd_oia.py), otherwise the size of a feature file (original rsbench features)
+        feature_dir = self._feature_dir()
+        if os.path.exists(feature_dir + "meta.json"):
+            with open(feature_dir + "meta.json") as f:
                 din = json.load(f)["dim"]
-        return BOIAConceptizer(din=din, nconcept=21, hidden=self.args.concept_hidden), None
+        else:
+            din = torch.load(sorted(glob.glob(feature_dir + "train/inputs/*.pt"))[0]).numel()
+        return Conceptizer(din=din, nconcept=21, hidden=self.args.concept_hidden), None
 
     def get_split(self):
         return 1, ()

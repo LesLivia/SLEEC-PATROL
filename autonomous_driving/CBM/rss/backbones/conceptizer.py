@@ -3,17 +3,18 @@ import torch.nn as nn
 
 
 """
-class BOIAConceptizer:
-    network definitions of encoder and decoder using fully connected network
+class Conceptizer:
+    concept extractor on precomputed image features, shared by BDD-OIA (datasets/boia.py) and
+    SDD-OIA (datasets/presddoia.py)
     encoder c() is the network by computing concept c(e(x))
 def __init__:
-    define parameters (e.g., # of layers) 
+    define parameters (e.g., # of layers)
 def encode:
     compute concepts
 """
 
 
-class BOIAConceptizer(nn.Module):
+class Conceptizer(nn.Module):
     """
     def __init__:
         define parameters (e.g., # of layers)
@@ -27,7 +28,7 @@ class BOIAConceptizer(nn.Module):
     """
 
     def __init__(self, din, nconcept, hidden=()):
-        super(BOIAConceptizer, self).__init__()
+        super(Conceptizer, self).__init__()
 
         # set self hyperparameters
         self.din = din  # Input dimension

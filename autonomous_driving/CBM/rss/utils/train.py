@@ -154,16 +154,17 @@ def plot_multilabel_confusion_matrix(
     return to_rtn_cm
 
 
-def plot_actions_confusion_matrix(c_true, c_pred, title, save_path=None):
+def plot_actions_confusion_matrix(c_true, c_pred, title, save_path=None, scenarios=None):
 
-    # Define scenarios and corresponding labels
-    scenarios = {
-        "forward": [slice(0, 3), slice(0, 3)],
-        "stop": [slice(3, 9), slice(3, 9)],
-        #'forward_stop': [slice(None, 9), slice(None, 9)],
-        "left": [slice(9, 15), slice(9, 15)],
-        "right": [slice(15, 21), slice(15, 21)],
-    }
+    # Define scenarios and corresponding labels (default: BDD-OIA concept positions)
+    if scenarios is None:
+        scenarios = {
+            "forward": [slice(0, 3), slice(0, 3)],
+            "stop": [slice(3, 9), slice(3, 9)],
+            #'forward_stop': [slice(None, 9), slice(None, 9)],
+            "left": [slice(9, 15), slice(9, 15)],
+            "right": [slice(15, 21), slice(15, 21)],
+        }
 
     to_rtn = {}
 
@@ -319,7 +320,7 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
     best_f1 = 0.0
 
     to_add = ""
-    if args.model in ["kandcbm", "sddoiacbm", "boiacbm", "mnistcbm"]:
+    if args.model in ["kandcbm", "sddoiacbm", "boiacbm", "mnistcbm", "presddoiacbm"]:
         to_add = "_partial_sup"
 
     if args.dataset in ["shortmnist"] and args.joint:
@@ -527,6 +528,16 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
             fprint(f"Labels:\n      ACC: {yac}, F1: {yf1}")
             fprint(f"Entropy:\n     H(C): {h_c}")
 
+        if args.dataset == "presddoia" and not args.validate:
+            # SDD-OIA out-of-distribution split: concept combinations never seen in training
+            ood_y_true, ood_c_true, ood_y_pred, ood_c_pred, *_ = evaluate_metrics(
+                model, dataset.ood_loader, args, last=True
+            )
+            ood_yac, ood_yf1 = evaluate_mix(ood_y_true, ood_y_pred)
+            ood_cac, ood_cf1 = evaluate_mix(ood_c_true, ood_c_pred)
+            fprint(f"OOD Concepts:\n    ACC: {ood_cac}, F1: {ood_cf1}")
+            fprint(f"OOD Labels:\n      ACC: {ood_yac}, F1: {ood_yf1}")
+
         if args.task == "boia":
             y_labels = ["forward", "stop", "left", "right"]
 
@@ -553,12 +564,27 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
                 "right_obstacle",
                 "right_solid_line",
             ]
+            scenarios = None  # BDD-OIA concept groups
+
+            if args.dataset == "presddoia":
+                # SDD-OIA order: actions [stop, forward, left, right], concepts by CONCEPTS_ORDER
+                y_labels = ["stop", "forward", "left", "right"]
+                concept_labels = dataset.get_concept_labels()
+                groups = {
+                    "forward": ["green_light", "follow", "clear"],
+                    "stop": ["red_light", "stop_sign", "car", "person", "rider", "other_obstacle"],
+                    "left": [c for c in concept_labels if "left" in c],
+                    "right": [c for c in concept_labels if "right" in c],
+                }
+                scenarios = {
+                    k: [[concept_labels.index(c) for c in v]] * 2 for k, v in groups.items()
+                }
 
             plot_multilabel_confusion_matrix(
                 y_true, y_pred, y_labels, "Labels", save_path="labels.png"
             )
             cfs = plot_actions_confusion_matrix(
-                c_true, c_pred, "Concepts", save_path="total_concepts_"
+                c_true, c_pred, "Concepts", save_path="total_concepts_", scenarios=scenarios
             )
             cf = plot_multilabel_confusion_matrix(
                 c_true, c_pred, concept_labels, "Concepts", save_path="total_concepts"
