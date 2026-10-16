@@ -17,6 +17,8 @@ class BOIA(BaseDataset):
 
     def __init__(self, args: Namespace) -> None:
         super().__init__(args)
+        if args.task != "boia":
+            raise SystemExit("--dataset boia needs --task boia (BDD-OIA actions: [forward, stop, left, right])")
 
     def _feature_dir(self):
         return f"data/{self.args.features}/"

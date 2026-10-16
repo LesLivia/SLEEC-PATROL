@@ -432,7 +432,7 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
         else:
             y_pred = torch.argmax(ys, dim=-1)
 
-        if args.task == "boia":
+        if args.task in ["boia", "sddoia"]:
             acc, f1 = accuracy_binary(ys, y_true)
 
             print(
@@ -528,7 +528,7 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
             fprint(f"Labels:\n      ACC: {yac}, F1: {yf1}")
             fprint(f"Entropy:\n     H(C): {h_c}")
 
-        if args.dataset == "presddoia" and not args.validate:
+        if args.task == "sddoia" and not args.validate:
             # SDD-OIA out-of-distribution split: concept combinations never seen in training
             ood_y_true, ood_c_true, ood_y_pred, ood_c_pred, *_ = evaluate_metrics(
                 model, dataset.ood_loader, args, last=True
@@ -564,21 +564,38 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
                 "right_obstacle",
                 "right_solid_line",
             ]
-            scenarios = None  # BDD-OIA concept groups
 
-            if args.dataset == "presddoia":
-                # SDD-OIA order: actions [stop, forward, left, right], concepts by CONCEPTS_ORDER
-                y_labels = ["stop", "forward", "left", "right"]
-                concept_labels = dataset.get_concept_labels()
-                groups = {
-                    "forward": ["green_light", "follow", "clear"],
-                    "stop": ["red_light", "stop_sign", "car", "person", "rider", "other_obstacle"],
-                    "left": [c for c in concept_labels if "left" in c],
-                    "right": [c for c in concept_labels if "right" in c],
-                }
-                scenarios = {
-                    k: [[concept_labels.index(c) for c in v]] * 2 for k, v in groups.items()
-                }
+            plot_multilabel_confusion_matrix(
+                y_true, y_pred, y_labels, "Labels", save_path="labels.png"
+            )
+            cfs = plot_actions_confusion_matrix(
+                c_true, c_pred, "Concepts", save_path="total_concepts_"
+            )
+            cf = plot_multilabel_confusion_matrix(
+                c_true, c_pred, concept_labels, "Concepts", save_path="total_concepts"
+            )
+
+            print("Concept collapse", 1 - compute_coverage(cf))
+
+            for key, value in cfs.items():
+                print("Concept collapse", key, 1 - compute_coverage(value))
+
+        elif args.task == "sddoia":
+            # SDD-OIA order: actions [stop, forward, left, right], concepts of the dataset (19 distinct)
+            y_labels = ["stop", "forward", "left", "right"]
+
+            concept_labels = dataset.get_concept_labels()
+
+            # concepts of each action, by name (SDD-OIA positions differ from BDD-OIA)
+            groups = {
+                "forward": ["green_light", "follow", "clear"],
+                "stop": ["red_light", "stop_sign", "car", "person", "rider", "other_obstacle"],
+                "left": [c for c in concept_labels if "left" in c],
+                "right": [c for c in concept_labels if "right" in c],
+            }
+            scenarios = {
+                k: [[concept_labels.index(c) for c in v]] * 2 for k, v in groups.items()
+            }
 
             plot_multilabel_confusion_matrix(
                 y_true, y_pred, y_labels, "Labels", save_path="labels.png"
@@ -594,7 +611,7 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
 
             for key, value in cfs.items():
                 print("Concept collapse", key, 1 - compute_coverage(value))
-        
+
         elif args.task == "mnmath":
             y_labels = ["first", "second"]
             concept_labels = [

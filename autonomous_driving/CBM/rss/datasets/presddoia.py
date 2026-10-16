@@ -6,8 +6,7 @@ from argparse import Namespace
 
 import torch
 from datasets.utils.base_dataset import BaseDataset, BOIA_get_loader
-from datasets.utils.presddoia_creation import PreSDDOIADataset
-from datasets.utils.sddoia_creation import CONCEPTS_ORDER
+from datasets.utils.presddoia_creation import PreSDDOIADataset, PRESDDOIA_CONCEPTS_ORDER
 from backbones.conceptizer import Conceptizer
 from utils.losses import compute_concept_pos_weights
 
@@ -19,6 +18,8 @@ class PRESDDOIA(BaseDataset):
 
     def __init__(self, args: Namespace) -> None:
         super().__init__(args)
+        if args.task != "sddoia":
+            raise SystemExit("--dataset presddoia needs --task sddoia (SDD-OIA actions: [stop, forward, left, right])")
 
     def _feature_dir(self):
         feature_dir = f"data/{self.args.features}/"
@@ -89,13 +90,13 @@ class PRESDDOIA(BaseDataset):
                 din = json.load(f)["dim"]
         else:
             din = torch.load(sorted(glob.glob(feature_dir + "train/*.pt"))[0]).numel()
-        return Conceptizer(din=din, nconcept=21, hidden=self.args.concept_hidden), None
+        return Conceptizer(din=din, nconcept=len(PRESDDOIA_CONCEPTS_ORDER), hidden=self.args.concept_hidden), None
 
     def get_split(self):
         return 1, ()
 
     def get_concept_labels(self):
-        sorted_concepts = sorted(CONCEPTS_ORDER, key=CONCEPTS_ORDER.get)
+        sorted_concepts = sorted(PRESDDOIA_CONCEPTS_ORDER, key=PRESDDOIA_CONCEPTS_ORDER.get)
         return sorted_concepts
 
     def print_stats(self):

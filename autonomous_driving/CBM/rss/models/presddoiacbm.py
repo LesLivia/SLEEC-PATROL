@@ -29,7 +29,7 @@ class PreSDDOIACBM(OIACBM):
         c_split=(),
         args=None,
         model_dict=None,
-        n_facts=21,
+        n_facts=19,
         nr_classes=4,
     ):
         """Initialize method
@@ -42,7 +42,8 @@ class PreSDDOIACBM(OIACBM):
             c_split: concept splits
             args: command line arguments
             model_dict (default=None): model dictionary
-            n_facts (int, default=21): number of concepts
+            n_facts (int, default=19): number of concepts (the 19 distinct SDD-OIA concepts,
+                datasets/utils/presddoia_creation.py)
             nr_classes (int, nr_classes): number of classes for the multiclass classification problem
 
         Returns:

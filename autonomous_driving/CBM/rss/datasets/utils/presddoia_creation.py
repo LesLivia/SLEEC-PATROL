@@ -8,11 +8,24 @@ from torch.utils.data import Dataset
 from datasets.utils.mnist_creation import generate_r_seq
 from datasets.utils.sddoia_creation import CONCEPTS_ORDER
 
+# rsbench's SDD-OIA generator (rssgen/rssgen/sddoia/sddoia.py, deal_with_tl and deal_with_left_right_tl) sets
+# left_green_light and right_green_light from the same traffic light as green_light: they are copies of it
+GREEN_LIGHT_COPIES = ["left_green_light", "right_green_light"]
+
+# the 19 distinct SDD-OIA concepts: name -> position, in the CONCEPTS_ORDER order, renumbered 0-18
+PRESDDOIA_CONCEPTS_ORDER = {
+    c: i
+    for i, c in enumerate(
+        c for c in sorted(CONCEPTS_ORDER, key=CONCEPTS_ORDER.get) if c not in GREEN_LIGHT_COPIES
+    )
+}
+
 
 class PreSDDOIADataset(Dataset):
     """
     Returns a compatible Torch Dataset object for SDD-OIA on precomputed image features,
-    loaded like BOIADataset (datasets/utils/boia_creation.py) loads BDD-OIA
+    loaded like BOIADataset (datasets/utils/boia_creation.py) loads BDD-OIA, with the 19 distinct
+    concepts of PRESDDOIA_CONCEPTS_ORDER
     """
 
     def __init__(self, feature_dir, split, c_sup=1, which_c=[-1]):
@@ -30,14 +43,20 @@ class PreSDDOIADataset(Dataset):
         self.names = [os.path.basename(f)[:-3] for f in self.files]
 
         # concepts and actions in the SDD-OIA order, read from each image's scene file:
-        # concepts by name, positions from CONCEPTS_ORDER; label = [stop, forward, left, right]
-        sorted_concepts = sorted(CONCEPTS_ORDER, key=CONCEPTS_ORDER.get)
+        # concepts by name, positions from PRESDDOIA_CONCEPTS_ORDER; label = [stop, forward, left, right]
+        sorted_concepts = sorted(PRESDDOIA_CONCEPTS_ORDER, key=PRESDDOIA_CONCEPTS_ORDER.get)
         labels, concepts = [], []
         for name in self.names:
             with open(os.path.join(feature_dir, "scenes", name + ".json")) as f:
                 scene = json.load(f)
+            values = scene["concepts"]
+            if any(values[c] != values["green_light"] for c in GREEN_LIGHT_COPIES):
+                raise ValueError(
+                    f"{name}: left/right green light differ from green_light, so they are not copies "
+                    "and the 19 concepts of PRESDDOIA_CONCEPTS_ORDER would lose information"
+                )
             labels.append(scene["label"])
-            concepts.append([int(scene["concepts"][k]) for k in sorted_concepts])
+            concepts.append([int(values[k]) for k in sorted_concepts])
         self.labels = torch.tensor(labels, dtype=torch.float32)
         self.concepts = torch.tensor(concepts, dtype=torch.float32)
 
@@ -62,7 +81,8 @@ class PreSDDOIADataset(Dataset):
                     if c not in self.which_c:
                         attr_label[c] = -1
             else:
-                for k, order in CONCEPTS_ORDER.items():
+                # same list as BOIADataset; the two green-light copies are not in PRESDDOIA_CONCEPTS_ORDER
+                for k, order in PRESDDOIA_CONCEPTS_ORDER.items():
                     if k not in [
                         "red_light",
                         "green_light",

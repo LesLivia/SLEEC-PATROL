@@ -36,6 +36,7 @@ def add_experiment_args(parser: ArgumentParser) -> None:
             "patterns",
             "mini_patterns",
             "boia",
+            "sddoia",
             "xor",
             "mnmath"
         ],
