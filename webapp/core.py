@@ -18,6 +18,7 @@ from textx import metamodel_from_str
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from verifier.sleec2marabou_parser import MarabouGenerator  # noqa: E402
+from webapp import scenes  # noqa: E402
 
 DEFAULT_GRAMMAR = ROOT / "legos_sleec" / "sleec-grammar.txt"
 
@@ -55,7 +56,7 @@ def solve_module(module_path, onnx_path):
     return module.check_property(str(onnx_path))
 
 
-def label_counterexample(cex, measures, outputs):
+def label_counterexample(cex, measures, outputs, used_names):
     """Marabou reports {variable number: value}; attach names where the count matches.
 
     _record_result() in the parser collects input variables first, then outputs, and a
@@ -64,23 +65,39 @@ def label_counterexample(cex, measures, outputs):
     declaration order and output events its outputs, so the orders agree. A variable
     missing from the assignment changes the count: then the raw variable numbers are
     shown rather than a guess that could mislabel every value.
+
+    'used_names' are the inputs the sub-rule's condition compares, from the generated
+    module. Those rows are flagged related, and so is every output: the verdict turns on
+    which output wins, so the outputs are always part of reading the result.
     """
     names = ([n for n, _ in sorted(measures.items(), key=lambda kv: kv[1])]
              + [n for n, _ in sorted(outputs.items(), key=lambda kv: kv[1])])
     items = list(cex.items())
-    if len(items) == len(names):
-        return [{"name": n, "var": v, "value": f"{val:.4g}"} for n, (v, val) in zip(names, items)]
-    return [{"name": f"variable {v}", "var": v, "value": f"{val:.4g}"} for v, val in items]
+    if len(items) != len(names):
+        return [{"name": f"variable {v}", "var": v, "value": f"{val:.4g}",
+                 "raw": float(val), "related": True} for v, val in items]
+
+    related = set(used_names) | set(outputs)
+    # 'raw' is the number a scene renderer draws from; 'value' is what the table shows.
+    return [{"name": n, "var": v, "value": f"{val:.4g}", "raw": float(val),
+             "related": n in related}
+            for n, (v, val) in zip(names, items)]
+
+
+def scene_renderer(generator):
+    """The scene renderer for this specification's interface, or None if we know none."""
+    return scenes.pick_renderer(generator.measures, generator.outputs)
 
 
 def build_report(outcome, generator):
     """Shape check_property()'s dict into one panel per original rule, in spec order.
 
     Nothing is recomputed: the grouping, the rule text and the per-rule verdict all come
-    from the generated module. Only presentation is derived here - the per-sub-rule label
-    and the names of the counter-example variables.
+    from the generated module. Only presentation is derived here - the per-sub-rule label,
+    the names of the counter-example variables and the drawing of the scene.
     """
     results = outcome["results"]
+    renderer = scene_renderer(generator)
     groups = []
     for name, info in outcome["rules"].items():
         parts = []
@@ -92,12 +109,20 @@ def build_report(outcome, generator):
                 status = "VIOLATED"
             else:
                 status = f"UNKNOWN ({exit_code})"
+            # The inputs this sub-rule's condition compares; the rest of the 25 were only
+            # bounded by their declared ranges and say nothing about why the rule failed.
+            used = [field["name"] for field in outcome["inputs"][sub]]
+            violated = status == "VIOLATED"
+            rows = (label_counterexample(cex, generator.measures, generator.outputs, used)
+                    if violated else [])
             parts.append({
                 "name": sub,
                 "status": status,
-                "counterexample": (label_counterexample(cex, generator.measures,
-                                                        generator.outputs)
-                                   if status == "VIOLATED" else []),
+                "related_rows": [row for row in rows if row["related"]],
+                "all_rows": rows,
+                # Only a violation has an assignment to draw. scenes.render() refuses
+                # empty rows anyway; this says so where the decision is made.
+                "scene": scenes.render(renderer, rows) if violated else None,
             })
         groups.append({
             "name": name,

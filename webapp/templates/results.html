@@ -6,84 +6,123 @@
   <title>SLEEC2Ver — results</title>
   <style>
     :root {
-      --sage: #A5B68D;
-      --beige: #ECDFCC;
-      --cream: #FCFAEE;
-      --clay: #DA8359;
-      --ink: #3B3A32;
-      --muted: #7A7566;
-      --ochre: #D8C47E;
+      --primary: #1E3A8A;        /* header, links */
+      --highlight: #F4C430;      /* attention: the rule's own fields, unsolved checks */
+      --secondary: #C9965B;      /* borders and tags */
+      --bg: #FBF3E4;
+      --surface: #F7F9FD;        /* panels: a white tinted toward the brand navy */
+      --line: #D9E0F0;          /* hairlines, from the navy */
+      --text: #3B2A1A;
+      --muted: #64523F;
+
+      --danger: #D42A2F;         /* a real violation, and nothing else */
+      --danger-bg: #FCEBEB;
+      --danger-text: #8A1A1E;
+
+      --good: #5F7A43;           /* verified stays green: it is the one "all clear" */
+      --good-bg: #E8EEDD;
+      --good-line: #8FA876;
+
+      --warn-bg: #FDF3D5;        /* unknown: solved by nobody yet */
+      --warn-text: #7A5B10;
     }
     * { box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0;
-           background: var(--cream); color: var(--ink); line-height: 1.55; }
-    header { background: var(--sage); padding: 1.6rem 1rem; }
+           background: var(--bg); color: var(--text); line-height: 1.55; }
+    header { background: var(--primary); padding: 1.6rem 1rem; }
     header div { max-width: 54rem; margin: 0 auto; }
-    header h1 { margin: 0; font-size: 1.35rem; color: var(--cream); }
-    header p { margin: 0.3rem 0 0; color: #F4F1E4; font-size: 0.86rem;
+    header h1 { margin: 0; font-size: 1.35rem; color: var(--bg); }
+    header p { margin: 0.3rem 0 0; color: #D8E0F4; font-size: 0.86rem;
                font-family: ui-monospace, "Cascadia Code", monospace; }
-    header a { color: var(--cream); text-decoration: underline; }
+    header a { color: var(--highlight); text-decoration: underline; }
     main { max-width: 54rem; margin: 2rem auto 4rem; padding: 0 1rem; }
 
     .tally { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 0 0 1.5rem; padding: 0; }
-    .tally li { list-style: none; background: #fff; border: 1px solid var(--beige);
+    .tally li { list-style: none; background: var(--surface); border: 1px solid var(--line);
                 border-radius: 999px; padding: 0.35rem 0.95rem; font-size: 0.85rem;
                 font-weight: 600; }
     .tally .n { font-weight: 700; }
-    .tally .VERIFIED { color: #5F7A43; }
-    .tally .VIOLATED { color: #B35B33; }
-    .tally .UNKNOWN  { color: #8A7638; }
+    .tally .VERIFIED { color: var(--good); }
+    .tally .VIOLATED { color: var(--danger-text); }
+    .tally .UNKNOWN  { color: var(--warn-text); }
     .tally .IGNORED  { color: var(--muted); }
     .tally .checks   { color: var(--muted); font-weight: 400; }
 
     /* outer panel: one rule as written */
-    .group { background: #fff; border: 1px solid var(--beige); border-left: 6px solid var(--beige);
-             border-radius: 10px; margin: 0.8rem 0; padding: 0.95rem 1.2rem;
-             box-shadow: 0 1px 2px rgba(59, 58, 50, 0.04); }
-    .group.VERIFIED { border-left-color: var(--sage); }
-    .group.VIOLATED { border-left-color: var(--clay); }
-    .group.UNKNOWN  { border-left-color: var(--ochre); }
-    .group.IGNORED  { border-left-color: var(--beige); background: #FDFCF7; }
+    .group { background: var(--surface); border: 1px solid var(--line);
+             border-left: 6px solid var(--line); border-radius: 10px; margin: 0.8rem 0;
+             padding: 0.95rem 1.2rem; box-shadow: 0 1px 2px rgba(59, 42, 26, 0.05); }
+    .group.VERIFIED { border-left-color: var(--good-line); }
+    .group.VIOLATED { border-left-color: var(--danger); }
+    .group.UNKNOWN  { border-left-color: var(--highlight); }
+    .group.IGNORED  { border-left-color: var(--secondary); background: #F1F4FB; }
     .group > summary { cursor: pointer; font-size: 1rem; }
     .group > summary::marker { color: var(--muted); }
-    .rule-name { font-weight: 700; font-family: ui-monospace, "Cascadia Code", monospace; }
+    .group > summary:focus-visible { outline: 3px solid var(--highlight); outline-offset: 2px; }
+    .rule-name { font-weight: 700; font-family: ui-monospace, "Cascadia Code", monospace;
+                 color: var(--primary); }
     .count { color: var(--muted); font-size: 0.82rem; margin-left: 0.4rem; }
-    .spec { background: var(--cream); border: 1px solid var(--beige); border-radius: 8px;
+    .spec { background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
             padding: 0.8rem 0.9rem; margin: 0.9rem 0 1rem; white-space: pre-wrap;
             font-family: ui-monospace, "Cascadia Code", monospace; font-size: 0.78rem;
             line-height: 1.5; overflow-x: auto; }
 
     /* inner panel: one normalized sub-rule */
-    .sub { background: var(--cream); border: 1px solid var(--beige); border-left: 4px solid var(--beige);
-           border-radius: 8px; margin: 0.45rem 0; padding: 0.6rem 0.85rem; font-size: 0.92rem; }
-    .sub.VERIFIED { border-left-color: var(--sage); }
-    .sub.VIOLATED { border-left-color: var(--clay); }
-    .sub.UNKNOWN  { border-left-color: var(--ochre); }
+    .sub { background: var(--bg); border: 1px solid var(--line);
+           border-left: 4px solid var(--line); border-radius: 8px; margin: 0.45rem 0;
+           padding: 0.6rem 0.85rem; font-size: 0.92rem; }
+    .sub.VERIFIED { border-left-color: var(--good-line); }
+    .sub.VIOLATED { border-left-color: var(--danger); }
+    .sub.UNKNOWN  { border-left-color: var(--highlight); }
     .sub summary { cursor: pointer; }
+    .sub summary:focus-visible { outline: 3px solid var(--highlight); outline-offset: 2px; }
     .sub-name { font-family: ui-monospace, "Cascadia Code", monospace; font-weight: 600;
                 font-size: 0.88rem; }
 
     .badge { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; padding: 0.18rem 0.6rem;
              border-radius: 999px; margin-left: 0.55rem; vertical-align: 0.1em;
              white-space: nowrap; }
-    .badge.VERIFIED { background: #E8EEDD; color: #4F6A36; }
-    .badge.VIOLATED { background: #FBE9E1; color: #AE5330; }
-    .badge.UNKNOWN  { background: #F6EFD8; color: #7D6A2E; }
-    .badge.IGNORED  { background: var(--beige); color: #6F6A5B; }
+    .badge.VERIFIED { background: var(--good-bg); color: #4F6A36; }
+    .badge.VIOLATED { background: var(--danger-bg); color: var(--danger-text); }
+    .badge.UNKNOWN  { background: var(--warn-bg); color: var(--warn-text); }
+    .badge.IGNORED  { background: #E4E9F5; color: #47527A; }
 
     table { border-collapse: collapse; margin: 0.8rem 0 0.2rem; width: 100%;
             font-size: 0.82rem; font-family: ui-monospace, "Cascadia Code", monospace; }
     th { text-align: left; color: var(--muted); font-weight: 600; font-size: 0.76rem;
-         letter-spacing: 0.03em; border-bottom: 1px solid var(--beige);
+         letter-spacing: 0.03em; border-bottom: 1px solid var(--line);
          padding: 0.3rem 0.8rem 0.3rem 0; }
-    td { border-bottom: 1px solid #F3EFE2; padding: 0.26rem 0.8rem 0.26rem 0; }
-    tr:hover td { background: #fff; }
+    td { border-bottom: 1px solid #E8EDF8; padding: 0.26rem 0.8rem 0.26rem 0; }
+    tr:hover td { background: var(--surface); }
     .note { color: var(--muted); font-size: 0.8rem; margin: 0.6rem 0 0; }
 
-    details.code { margin-top: 2rem; background: #fff; border: 1px solid var(--beige);
+    /* the scene, drawn from the counter-example itself */
+    .scene { margin: 0.8rem 0 0.2rem; border: 1px solid var(--line); border-radius: 8px;
+             overflow: hidden; background: var(--bg); }
+    .scene svg { display: block; }
+    .no-scene { color: var(--muted); font-size: 0.82rem; margin: -0.9rem 0 1.5rem; }
+
+    /* the full counter-example, behind a button-looking toggle */
+    details.full { margin-top: 0.9rem; }
+    details.full > summary { display: inline-block; cursor: pointer; list-style: none;
+            background: var(--surface); border: 1px solid var(--primary); border-radius: 999px;
+            padding: 0.3rem 0.9rem; font-size: 0.8rem; font-weight: 600; color: var(--primary); }
+    details.full > summary::-webkit-details-marker { display: none; }
+    details.full > summary:hover { background: var(--primary); color: var(--bg); }
+    details.full > summary:focus-visible { outline: 3px solid var(--highlight);
+            outline-offset: 2px; }
+    /* The rule's own fields, in the palette's attention colour as in the figure. The tint
+       has to carry against a cream panel, so it is deeper than a pale wash, and the rows
+       it competes with are dimmed: the highlight reads by contrast, not by brightness. */
+    tr.related td { background: #F5DFA4; font-weight: 700; }
+    tr.related td:first-child { box-shadow: inset 4px 0 0 #B5880A; padding-left: 0.55rem; }
+    tr.related:hover td { background: #F0D590; }
+    details.full tr:not(.related) td { color: #7A6A56; }
+
+    details.code { margin-top: 2rem; background: var(--surface); border: 1px solid var(--line);
                    border-radius: 10px; padding: 0.85rem 1.1rem; }
     details.code summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; }
-    pre.code { background: var(--cream); border: 1px solid var(--beige); border-radius: 8px;
+    pre.code { background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
                padding: 0.9rem; overflow-x: auto; font-size: 0.75rem; line-height: 1.45; }
   </style>
 </head>
@@ -109,6 +148,11 @@
       <li class="checks">{{ checks }} normalized check{{ '' if checks == 1 else 's' }}</li>
     </ul>
 
+    {% if not run.has_scene %}
+      <p class="no-scene">No scene renderer is registered for this input interface, so
+      counter-examples are shown as values only.</p>
+    {% endif %}
+
     {% for group in run.groups %}
       <details class="group {{ group.verdict }}">
         <summary>
@@ -132,20 +176,36 @@
 
         {% for part in group.parts %}
           {% set kind = part.status.split(' ')[0] %}
-          {% if part.counterexample %}
+          {% if part.all_rows %}
             <details class="sub {{ kind }}">
               <summary>
                 <span class="sub-name">{{ part.name }}</span>
                 <span class="badge {{ kind }}">{{ part.status }}</span>
               </summary>
+              {% if part.scene %}<div class="scene">{{ part.scene | safe }}</div>{% endif %}
               <table>
-                <tr><th>input / output</th><th>variable</th><th>value</th></tr>
-                {% for row in part.counterexample %}
+                <tr><th>rule input / output</th><th>variable</th><th>value</th></tr>
+                {% for row in part.related_rows %}
                   <tr><td>{{ row.name }}</td><td>{{ row.var }}</td><td>{{ row.value }}</td></tr>
                 {% endfor %}
               </table>
               <p class="note">Marabou found this assignment inside the sub-rule's input
               region: there, the network does not do what the rule demands.</p>
+
+              <details class="full">
+                <summary>show the full counter-example
+                  ({{ part.all_rows | length }} values)</summary>
+                <table>
+                  <tr><th>input / output</th><th>variable</th><th>value</th></tr>
+                  {% for row in part.all_rows %}
+                    <tr class="{{ 'related' if row.related else '' }}">
+                      <td>{{ row.name }}</td><td>{{ row.var }}</td><td>{{ row.value }}</td>
+                    </tr>
+                  {% endfor %}
+                </table>
+                <p class="note">Highlighted rows are the ones the rule constrains; the
+                others were only held inside their declared ranges.</p>
+              </details>
             </details>
           {% else %}
             <div class="sub {{ kind }}">
