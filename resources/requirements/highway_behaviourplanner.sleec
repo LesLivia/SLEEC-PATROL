@@ -48,10 +48,9 @@ def_start
     // ============================================================
 
     // --- Vehicle 0: Ego (index 0-4) ---
-    // the ego row is always present, so its flag is fixed at 1
+    // the ego row is always present: its flag is fixed at 1 by the
+    // 'measure invariant' in the relation block
     measure egoPresence: boolean
-    constant egoPresenceLB = 1
-    constant egoPresenceUB = 1
 
     // EXCEPTION to the provenance note above: this row is absolute, and with
     // normalize = False nothing clips it, so egoX runs far past the library's
@@ -252,3 +251,18 @@ rule_start
                  ((not {v2Presence}) and ((not {v3Presence}) and (not {v4Presence})))))
         then outputLaneRight
 rule_end
+
+relation_start
+    // ============================================================
+    // DATASET CONSTRAINTS: facts that hold for every observation
+    // highway-env produces (KinematicObservation.observe):
+    //   - the ego row is always present (built from the ego vehicle itself);
+    //   - an absent vehicle's row is zero-filled: presence = 0 and
+    //     x = y = vx = vy = 0.
+    // ============================================================
+    measure invariant {egoPresence}
+    measure imply (not {v1Presence}) (((({v1X} = 0) and ({v1Y} = 0)) and ({v1Vx} = 0)) and ({v1Vy} = 0))
+    measure imply (not {v2Presence}) (((({v2X} = 0) and ({v2Y} = 0)) and ({v2Vx} = 0)) and ({v2Vy} = 0))
+    measure imply (not {v3Presence}) (((({v3X} = 0) and ({v3Y} = 0)) and ({v3Vx} = 0)) and ({v3Vy} = 0))
+    measure imply (not {v4Presence}) (((({v4X} = 0) and ({v4Y} = 0)) and ({v4Vx} = 0)) and ({v4Vy} = 0))
+relation_end

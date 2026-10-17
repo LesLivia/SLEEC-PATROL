@@ -1,0 +1,365 @@
+Input || R0 || EXISTS p_cmdRequired_2: cmdRequired. (p_cmdRequired_2_presence & EXISTS p_Measure_6: Measure. (p_Measure_6_presence & ((p_cmdRequired_2_time = p_Measure_6_time) & (p_Measure_6_v1Presence & (((-2 < p_Measure_6_v1Y) & (p_Measure_6_v1Y < 2)) & (((0 < p_Measure_6_v1X) & (p_Measure_6_v1X < 30)) & (p_Measure_6_v1Vx < -5)))))))
+Def || L1 || c0 <-> EXISTS p_cmdRequired_2: cmdRequired. (p_cmdRequired_2_presence & EXISTS p_Measure_6: Measure. (p_Measure_6_presence & ((p_cmdRequired_2_time = p_Measure_6_time) & (p_Measure_6_v1Presence & (((-2 < p_Measure_6_v1Y) & (p_Measure_6_v1Y < 2)) & (((0 < p_Measure_6_v1X) & (p_Measure_6_v1X < 30)) & (p_Measure_6_v1Vx < -5)))))))
+DeriveFact || F0 || c0 || L1 R0
+Input || R1 || Forall p_cmdRequired_0: cmdRequired. ( (! p_cmdRequired_0_presence) | EXISTS p_Measure_7: Measure. (p_Measure_7_presence & ((p_cmdRequired_0_time = p_Measure_7_time) & ((! (p_Measure_7_v1Presence & (((-2 < p_Measure_7_v1Y) & (p_Measure_7_v1Y < 2)) & (((0 < p_Measure_7_v1X) & (p_Measure_7_v1X < 30)) & (p_Measure_7_v1Vx < -5))))) | (((! (True & ((p_Measure_7_v1X < 10) & ((p_Measure_7_egoY < 6) & ((! p_Measure_7_v2Presence) & ((! p_Measure_7_v3Presence) & (! p_Measure_7_v4Presence))))))) | EXISTS p_outputLaneRight_1: outputLaneRight. (p_outputLaneRight_1_presence & ((p_outputLaneRight_1_time <= (p_cmdRequired_0_time + 0)) & ((p_cmdRequired_0_time + 0) <= p_outputLaneRight_1_time)))) & ((! ((True & (! ((p_Measure_7_v1X < 10) & ((p_Measure_7_egoY < 6) & ((! p_Measure_7_v2Presence) & ((! p_Measure_7_v3Presence) & (! p_Measure_7_v4Presence))))))) & True)) | EXISTS p_outputSlower_1: outputSlower. (p_outputSlower_1_presence & ((p_outputSlower_1_time <= (p_cmdRequired_0_time + 0)) & ((p_cmdRequired_0_time + 0) <= p_outputSlower_1_time)))))))))
+Def || L3 || c1 <-> Forall p_cmdRequired_0: cmdRequired. ( (! p_cmdRequired_0_presence) | EXISTS p_Measure_7: Measure. (p_Measure_7_presence & ((p_cmdRequired_0_time = p_Measure_7_time) & ((! (p_Measure_7_v1Presence & (((-2 < p_Measure_7_v1Y) & (p_Measure_7_v1Y < 2)) & (((0 < p_Measure_7_v1X) & (p_Measure_7_v1X < 30)) & (p_Measure_7_v1Vx < -5))))) | (((! (True & ((p_Measure_7_v1X < 10) & ((p_Measure_7_egoY < 6) & ((! p_Measure_7_v2Presence) & ((! p_Measure_7_v3Presence) & (! p_Measure_7_v4Presence))))))) | EXISTS p_outputLaneRight_1: outputLaneRight. (p_outputLaneRight_1_presence & ((p_outputLaneRight_1_time <= (p_cmdRequired_0_time + 0)) & ((p_cmdRequired_0_time + 0) <= p_outputLaneRight_1_time)))) & ((! ((True & (! ((p_Measure_7_v1X < 10) & ((p_Measure_7_egoY < 6) & ((! p_Measure_7_v2Presence) & ((! p_Measure_7_v3Presence) & (! p_Measure_7_v4Presence))))))) & True)) | EXISTS p_outputSlower_1: outputSlower. (p_outputSlower_1_presence & ((p_outputSlower_1_time <= (p_cmdRequired_0_time + 0)) & ((p_cmdRequired_0_time + 0) <= p_outputSlower_1_time)))))))))
+DeriveFact || F1 || c1 || L3 R1
+Input || R2 || Forall p_Measure_1: Measure. ( (! p_Measure_1_presence) | p_Measure_1_egoPresence)
+Def || L5 || c2 <-> Forall p_Measure_1: Measure. ( (! p_Measure_1_presence) | p_Measure_1_egoPresence)
+DeriveFact || F2 || c2 || L5 R2
+Input || R3 || Forall p_Measure_2: Measure. ( (! p_Measure_2_presence) | (p_Measure_2_v1Presence | ((((p_Measure_2_v1X = 0) & (p_Measure_2_v1Y = 0)) & (p_Measure_2_v1Vx = 0)) & (p_Measure_2_v1Vy = 0))))
+Def || L7 || c3 <-> Forall p_Measure_2: Measure. ( (! p_Measure_2_presence) | (p_Measure_2_v1Presence | ((((p_Measure_2_v1X = 0) & (p_Measure_2_v1Y = 0)) & (p_Measure_2_v1Vx = 0)) & (p_Measure_2_v1Vy = 0))))
+DeriveFact || F3 || c3 || L7 R3
+Input || R4 || Forall p_Measure_3: Measure. ( (! p_Measure_3_presence) | (p_Measure_3_v2Presence | ((((p_Measure_3_v2X = 0) & (p_Measure_3_v2Y = 0)) & (p_Measure_3_v2Vx = 0)) & (p_Measure_3_v2Vy = 0))))
+Def || L9 || c4 <-> Forall p_Measure_3: Measure. ( (! p_Measure_3_presence) | (p_Measure_3_v2Presence | ((((p_Measure_3_v2X = 0) & (p_Measure_3_v2Y = 0)) & (p_Measure_3_v2Vx = 0)) & (p_Measure_3_v2Vy = 0))))
+DeriveFact || F4 || c4 || L9 R4
+Input || R5 || Forall p_Measure_4: Measure. ( (! p_Measure_4_presence) | (p_Measure_4_v3Presence | ((((p_Measure_4_v3X = 0) & (p_Measure_4_v3Y = 0)) & (p_Measure_4_v3Vx = 0)) & (p_Measure_4_v3Vy = 0))))
+Def || L11 || c5 <-> Forall p_Measure_4: Measure. ( (! p_Measure_4_presence) | (p_Measure_4_v3Presence | ((((p_Measure_4_v3X = 0) & (p_Measure_4_v3Y = 0)) & (p_Measure_4_v3Vx = 0)) & (p_Measure_4_v3Vy = 0))))
+DeriveFact || F5 || c5 || L11 R5
+Input || R6 || Forall p_Measure_5: Measure. ( (! p_Measure_5_presence) | (p_Measure_5_v4Presence | ((((p_Measure_5_v4X = 0) & (p_Measure_5_v4Y = 0)) & (p_Measure_5_v4Vx = 0)) & (p_Measure_5_v4Vy = 0))))
+Def || L13 || c6 <-> Forall p_Measure_5: Measure. ( (! p_Measure_5_presence) | (p_Measure_5_v4Presence | ((((p_Measure_5_v4X = 0) & (p_Measure_5_v4Y = 0)) & (p_Measure_5_v4Vx = 0)) & (p_Measure_5_v4Vy = 0))))
+DeriveFact || F6 || c6 || L13 R6
+Input || R7 || Forall p_Measure_0: Measure. ( (! p_Measure_0_presence) | Forall p_Measure_8: Measure. ( (! p_Measure_8_presence) | ((! (p_Measure_0_time = p_Measure_8_time)) | ((p_Measure_0_time = p_Measure_8_time) & (p_Measure_0_egoPresence <-> p_Measure_8_egoPresence) & (p_Measure_0_egoX = p_Measure_8_egoX) & (p_Measure_0_egoY = p_Measure_8_egoY) & (p_Measure_0_egoVx = p_Measure_8_egoVx) & (p_Measure_0_egoVy = p_Measure_8_egoVy) & (p_Measure_0_v1Presence <-> p_Measure_8_v1Presence) & (p_Measure_0_v1X = p_Measure_8_v1X) & (p_Measure_0_v1Y = p_Measure_8_v1Y) & (p_Measure_0_v1Vx = p_Measure_8_v1Vx) & (p_Measure_0_v1Vy = p_Measure_8_v1Vy) & (p_Measure_0_v2Presence <-> p_Measure_8_v2Presence) & (p_Measure_0_v2X = p_Measure_8_v2X) & (p_Measure_0_v2Y = p_Measure_8_v2Y) & (p_Measure_0_v2Vx = p_Measure_8_v2Vx) & (p_Measure_0_v2Vy = p_Measure_8_v2Vy) & (p_Measure_0_v3Presence <-> p_Measure_8_v3Presence) & (p_Measure_0_v3X = p_Measure_8_v3X) & (p_Measure_0_v3Y = p_Measure_8_v3Y) & (p_Measure_0_v3Vx = p_Measure_8_v3Vx) & (p_Measure_0_v3Vy = p_Measure_8_v3Vy) & (p_Measure_0_v4Presence <-> p_Measure_8_v4Presence) & (p_Measure_0_v4X = p_Measure_8_v4X) & (p_Measure_0_v4Y = p_Measure_8_v4Y) & (p_Measure_0_v4Vx = p_Measure_8_v4Vx) & (p_Measure_0_v4Vy = p_Measure_8_v4Vy) & (p_Measure_0_presence <-> p_Measure_8_presence)))))
+Def || L15 || c7 <-> Forall p_Measure_0: Measure. ( (! p_Measure_0_presence) | Forall p_Measure_8: Measure. ( (! p_Measure_8_presence) | ((! (p_Measure_0_time = p_Measure_8_time)) | ((p_Measure_0_time = p_Measure_8_time) & (p_Measure_0_egoPresence <-> p_Measure_8_egoPresence) & (p_Measure_0_egoX = p_Measure_8_egoX) & (p_Measure_0_egoY = p_Measure_8_egoY) & (p_Measure_0_egoVx = p_Measure_8_egoVx) & (p_Measure_0_egoVy = p_Measure_8_egoVy) & (p_Measure_0_v1Presence <-> p_Measure_8_v1Presence) & (p_Measure_0_v1X = p_Measure_8_v1X) & (p_Measure_0_v1Y = p_Measure_8_v1Y) & (p_Measure_0_v1Vx = p_Measure_8_v1Vx) & (p_Measure_0_v1Vy = p_Measure_8_v1Vy) & (p_Measure_0_v2Presence <-> p_Measure_8_v2Presence) & (p_Measure_0_v2X = p_Measure_8_v2X) & (p_Measure_0_v2Y = p_Measure_8_v2Y) & (p_Measure_0_v2Vx = p_Measure_8_v2Vx) & (p_Measure_0_v2Vy = p_Measure_8_v2Vy) & (p_Measure_0_v3Presence <-> p_Measure_8_v3Presence) & (p_Measure_0_v3X = p_Measure_8_v3X) & (p_Measure_0_v3Y = p_Measure_8_v3Y) & (p_Measure_0_v3Vx = p_Measure_8_v3Vx) & (p_Measure_0_v3Vy = p_Measure_8_v3Vy) & (p_Measure_0_v4Presence <-> p_Measure_8_v4Presence) & (p_Measure_0_v4X = p_Measure_8_v4X) & (p_Measure_0_v4Y = p_Measure_8_v4Y) & (p_Measure_0_v4Vx = p_Measure_8_v4Vx) & (p_Measure_0_v4Vy = p_Measure_8_v4Vy) & (p_Measure_0_presence <-> p_Measure_8_presence)))))
+DeriveFact || F7 || c7 || L15 R7
+DeriveLemma || EI L1  [p_cmdRequired_2:cmdRequired<-cmdRequired_0] || L16 || c0 -> (cmdRequired_0_presence & EXISTS p_Measure_9: Measure. (p_Measure_9_presence & ((cmdRequired_0_time = p_Measure_9_time) & (p_Measure_9_v1Presence & (((-2 < p_Measure_9_v1Y) & (p_Measure_9_v1Y < 2)) & (((0 < p_Measure_9_v1X) & (p_Measure_9_v1X < 30)) & (p_Measure_9_v1Vx < -5)))))))
+Def || L17 || c8 <-> (cmdRequired_0_presence & EXISTS p_Measure_9: Measure. (p_Measure_9_presence & ((cmdRequired_0_time = p_Measure_9_time) & (p_Measure_9_v1Presence & (((-2 < p_Measure_9_v1Y) & (p_Measure_9_v1Y < 2)) & (((0 < p_Measure_9_v1X) & (p_Measure_9_v1X < 30)) & (p_Measure_9_v1Vx < -5)))))))
+DeriveFact || F8 || c0 -> c8 || L17 L16
+AddFact || F9 || c9 <-> cmdRequired_0_presence
+Def || L18 || c10 <-> EXISTS p_Measure_9: Measure. (p_Measure_9_presence & ((cmdRequired_0_time = p_Measure_9_time) & (p_Measure_9_v1Presence & (((-2 < p_Measure_9_v1Y) & (p_Measure_9_v1Y < 2)) & (((0 < p_Measure_9_v1X) & (p_Measure_9_v1X < 30)) & (p_Measure_9_v1Vx < -5))))))
+DeriveLemma || EI L18  [p_Measure_9:Measure<-Measure_0] || L19 || c10 -> (Measure_0_presence & ((cmdRequired_0_time = Measure_0_time) & (Measure_0_v1Presence & (((-2 < Measure_0_v1Y) & (Measure_0_v1Y < 2)) & (((0 < Measure_0_v1X) & (Measure_0_v1X < 30)) & (Measure_0_v1Vx < -5))))))
+Def || L20 || c11 <-> (Measure_0_presence & ((cmdRequired_0_time = Measure_0_time) & (Measure_0_v1Presence & (((-2 < Measure_0_v1Y) & (Measure_0_v1Y < 2)) & (((0 < Measure_0_v1X) & (Measure_0_v1X < 30)) & (Measure_0_v1Vx < -5))))))
+DeriveFact || F10 || c10 -> c11 || L20 L19
+AddFact || F11 || c12 <-> Measure_0_presence
+AddFact || F12 || c13 <-> (cmdRequired_0_time = Measure_0_time)
+AddFact || F13 || c14 <-> Measure_0_v1Presence || 10449 10461
+AddFact || F14 || c15 <-> (-2 < Measure_0_v1Y) || 10477 10495
+AddFact || F15 || c16 <-> (Measure_0_v1Y < 2) || 10500 10518
+Def || L21 || c17 <-> ((-2 < Measure_0_v1Y) & (Measure_0_v1Y < 2))
+DeriveFact || F16 || c17 -> (c15) || F14 L21
+DeriveFact || F17 || c17 -> (c16) || F15 L21
+AddFact || F18 || c18 <-> (0 < Measure_0_v1X) || 10536 10555
+AddFact || F19 || c19 <-> (Measure_0_v1X < 30) || 10560 10580
+Def || L22 || c20 <-> ((0 < Measure_0_v1X) & (Measure_0_v1X < 30))
+DeriveFact || F20 || c20 -> (c18) || F18 L22
+DeriveFact || F21 || c20 -> (c19) || F19 L22
+AddFact || F22 || c21 <-> (Measure_0_v1Vx < -5) || 10586 10604
+Def || L23 || c22 <-> (((0 < Measure_0_v1X) & (Measure_0_v1X < 30)) & (Measure_0_v1Vx < -5))
+DeriveFact || F23 || c22 -> (c20) || L22 L23
+DeriveFact || F24 || c22 -> (c21) || F22 L23
+Def || L24 || c23 <-> (((-2 < Measure_0_v1Y) & (Measure_0_v1Y < 2)) & (((0 < Measure_0_v1X) & (Measure_0_v1X < 30)) & (Measure_0_v1Vx < -5)))
+DeriveFact || F25 || c23 -> (c17) || L21 L24
+DeriveFact || F26 || c23 -> (c22) || L23 L24
+Def || L25 || c24 <-> (Measure_0_v1Presence & (((-2 < Measure_0_v1Y) & (Measure_0_v1Y < 2)) & (((0 < Measure_0_v1X) & (Measure_0_v1X < 30)) & (Measure_0_v1Vx < -5))))
+DeriveFact || F27 || c24 -> (c14) || F13 L25
+DeriveFact || F28 || c24 -> (c23) || L24 L25
+Def || L26 || c25 <-> ((cmdRequired_0_time = Measure_0_time) & (Measure_0_v1Presence & (((-2 < Measure_0_v1Y) & (Measure_0_v1Y < 2)) & (((0 < Measure_0_v1X) & (Measure_0_v1X < 30)) & (Measure_0_v1Vx < -5)))))
+DeriveFact || F29 || c25 -> (c13) || F12 L26
+DeriveFact || F30 || c25 -> (c24) || L25 L26
+DeriveFact || F31 || c11 -> (c12) || F11 L20
+DeriveFact || F32 || c11 -> (c25) || L26 L20
+DeriveFact || F33 || c8 -> (c9) || F9 L17
+DeriveFact || F34 || c8 -> (c10) || L18 L17
+DeriveLemma || UI L3 [p_cmdRequired_0:cmdRequired<-cmdRequired_0]  || L27 || c1 -> ((! cmdRequired_0_presence) | EXISTS p_Measure_10: Measure. (p_Measure_10_presence & ((cmdRequired_0_time = p_Measure_10_time) & ((! (p_Measure_10_v1Presence & (((-2 < p_Measure_10_v1Y) & (p_Measure_10_v1Y < 2)) & (((0 < p_Measure_10_v1X) & (p_Measure_10_v1X < 30)) & (p_Measure_10_v1Vx < -5))))) | (((! (True & ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) | EXISTS p_outputLaneRight_3: outputLaneRight. (p_outputLaneRight_3_presence & ((p_outputLaneRight_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_3_time)))) & ((! ((True & (! ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) & True)) | EXISTS p_outputSlower_3: outputSlower. (p_outputSlower_3_presence & ((p_outputSlower_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_3_time))))))))) || L16
+Def || L28 || c26 <-> ((! cmdRequired_0_presence) | EXISTS p_Measure_10: Measure. (p_Measure_10_presence & ((cmdRequired_0_time = p_Measure_10_time) & ((! (p_Measure_10_v1Presence & (((-2 < p_Measure_10_v1Y) & (p_Measure_10_v1Y < 2)) & (((0 < p_Measure_10_v1X) & (p_Measure_10_v1X < 30)) & (p_Measure_10_v1Vx < -5))))) | (((! (True & ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) | EXISTS p_outputLaneRight_3: outputLaneRight. (p_outputLaneRight_3_presence & ((p_outputLaneRight_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_3_time)))) & ((! ((True & (! ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) & True)) | EXISTS p_outputSlower_3: outputSlower. (p_outputSlower_3_presence & ((p_outputSlower_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_3_time)))))))))
+DeriveFact || F35 || c1 -> c26 || L28 L27
+AddFact || F36 || c27 <-> (! cmdRequired_0_presence) || 10424 10435
+Def || L29 || c28 <-> EXISTS p_Measure_10: Measure. (p_Measure_10_presence & ((cmdRequired_0_time = p_Measure_10_time) & ((! (p_Measure_10_v1Presence & (((-2 < p_Measure_10_v1Y) & (p_Measure_10_v1Y < 2)) & (((0 < p_Measure_10_v1X) & (p_Measure_10_v1X < 30)) & (p_Measure_10_v1Vx < -5))))) | (((! (True & ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) | EXISTS p_outputLaneRight_3: outputLaneRight. (p_outputLaneRight_3_presence & ((p_outputLaneRight_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_3_time)))) & ((! ((True & (! ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) & True)) | EXISTS p_outputSlower_3: outputSlower. (p_outputSlower_3_presence & ((p_outputSlower_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_3_time))))))))
+DeriveLemma || EI L29  [p_Measure_10:Measure<-t_Measure_0] || L30 || c28 -> (t_Measure_0_presence & ((cmdRequired_0_time = t_Measure_0_time) & ((! (t_Measure_0_v1Presence & (((-2 < t_Measure_0_v1Y) & (t_Measure_0_v1Y < 2)) & (((0 < t_Measure_0_v1X) & (t_Measure_0_v1X < 30)) & (t_Measure_0_v1Vx < -5))))) | (((! (True & ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))))))) | EXISTS p_outputLaneRight_2: outputLaneRight. (p_outputLaneRight_2_presence & ((p_outputLaneRight_2_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_2_time)))) & ((! ((True & (! ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))))))) & True)) | EXISTS p_outputSlower_2: outputSlower. (p_outputSlower_2_presence & ((p_outputSlower_2_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_2_time))))))))
+Def || L31 || c29 <-> (t_Measure_0_presence & ((cmdRequired_0_time = t_Measure_0_time) & ((! (t_Measure_0_v1Presence & (((-2 < t_Measure_0_v1Y) & (t_Measure_0_v1Y < 2)) & (((0 < t_Measure_0_v1X) & (t_Measure_0_v1X < 30)) & (t_Measure_0_v1Vx < -5))))) | (((! (True & ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))))))) | EXISTS p_outputLaneRight_2: outputLaneRight. (p_outputLaneRight_2_presence & ((p_outputLaneRight_2_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_2_time)))) & ((! ((True & (! ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))))))) & True)) | EXISTS p_outputSlower_2: outputSlower. (p_outputSlower_2_presence & ((p_outputSlower_2_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_2_time))))))))
+DeriveFact || F37 || c28 -> c29 || L31 L30
+AddFact || F38 || c30 <-> t_Measure_0_presence
+AddFact || F39 || c31 <-> (cmdRequired_0_time = t_Measure_0_time)
+AddFact || F40 || c32 <-> (! t_Measure_0_v1Presence) || 10449 10461
+AddFact || F41 || c33 <-> (! (-2 < t_Measure_0_v1Y)) || 10477 10495
+AddFact || F42 || c34 <-> (! (t_Measure_0_v1Y < 2)) || 10500 10518
+Def || L32 || c35 <-> ((! (-2 < t_Measure_0_v1Y)) | (! (t_Measure_0_v1Y < 2)))
+DeriveFact || F43 || c35 -> (c33 | c34) || F41 F42 L32
+AddFact || F44 || c36 <-> (! (0 < t_Measure_0_v1X)) || 10536 10555
+AddFact || F45 || c37 <-> (! (t_Measure_0_v1X < 30)) || 10560 10580
+Def || L33 || c38 <-> ((! (0 < t_Measure_0_v1X)) | (! (t_Measure_0_v1X < 30)))
+DeriveFact || F46 || c38 -> (c36 | c37) || F44 F45 L33
+AddFact || F47 || c39 <-> (! (t_Measure_0_v1Vx < -5)) || 10586 10604
+Def || L34 || c40 <-> (((! (0 < t_Measure_0_v1X)) | (! (t_Measure_0_v1X < 30))) | (! (t_Measure_0_v1Vx < -5)))
+DeriveFact || F48 || c40 -> (c38 | c39) || L33 F47 L34
+Def || L35 || c41 <-> (((! (-2 < t_Measure_0_v1Y)) | (! (t_Measure_0_v1Y < 2))) | (((! (0 < t_Measure_0_v1X)) | (! (t_Measure_0_v1X < 30))) | (! (t_Measure_0_v1Vx < -5))))
+DeriveFact || F49 || c41 -> (c35 | c40) || L32 L34 L35
+Def || L36 || c42 <-> ((! t_Measure_0_v1Presence) | (((! (-2 < t_Measure_0_v1Y)) | (! (t_Measure_0_v1Y < 2))) | (((! (0 < t_Measure_0_v1X)) | (! (t_Measure_0_v1X < 30))) | (! (t_Measure_0_v1Vx < -5)))))
+DeriveFact || F50 || c42 -> (c32 | c41) || F40 L35 L36
+Def || L37 || c43 <-> (! (t_Measure_0_v1Presence & (((-2 < t_Measure_0_v1Y) & (t_Measure_0_v1Y < 2)) & (((0 < t_Measure_0_v1X) & (t_Measure_0_v1X < 30)) & (t_Measure_0_v1Vx < -5)))))
+DeriveLemma || NNF L37 || L38 || c43 <-> ((! t_Measure_0_v1Presence) | (((! (-2 < t_Measure_0_v1Y)) | (! (t_Measure_0_v1Y < 2))) | (((! (0 < t_Measure_0_v1X)) | (! (t_Measure_0_v1X < 30))) | (! (t_Measure_0_v1Vx < -5))))) 
+DeriveFact || F51 || c43 -> c42 || L36 L38
+AddFact || F52 || c44 <-> (! True)
+AddFact || F53 || c45 <-> (! (t_Measure_0_v1X < 10)) || 10650 10671
+AddFact || F54 || c46 <-> (! (t_Measure_0_egoY < 6)) || 10693 10719
+AddFact || F55 || c47 <-> t_Measure_0_v2Presence || 10747 10759
+AddFact || F56 || c48 <-> t_Measure_0_v3Presence || 10771 10783
+AddFact || F57 || c49 <-> t_Measure_0_v4Presence || 10794 10806
+Def || L39 || c50 <-> (t_Measure_0_v3Presence | t_Measure_0_v4Presence)
+DeriveFact || F58 || c50 -> (c48 | c49) || F56 F57 L39
+Def || L40 || c51 <-> (t_Measure_0_v2Presence | (t_Measure_0_v3Presence | t_Measure_0_v4Presence))
+DeriveFact || F59 || c51 -> (c47 | c50) || F55 L39 L40
+Def || L41 || c52 <-> ((! (t_Measure_0_egoY < 6)) | (t_Measure_0_v2Presence | (t_Measure_0_v3Presence | t_Measure_0_v4Presence)))
+DeriveFact || F60 || c52 -> (c46 | c51) || F54 L40 L41
+Def || L42 || c53 <-> ((! (t_Measure_0_v1X < 10)) | ((! (t_Measure_0_egoY < 6)) | (t_Measure_0_v2Presence | (t_Measure_0_v3Presence | t_Measure_0_v4Presence))))
+DeriveFact || F61 || c53 -> (c45 | c52) || F53 L41 L42
+Def || L43 || c54 <-> ((! True) | ((! (t_Measure_0_v1X < 10)) | ((! (t_Measure_0_egoY < 6)) | (t_Measure_0_v2Presence | (t_Measure_0_v3Presence | t_Measure_0_v4Presence)))))
+DeriveFact || F62 || c54 -> (c44 | c53) || F52 L42 L43
+Def || L44 || c55 <-> (! (True & ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence)))))))
+DeriveLemma || NNF L44 || L45 || c55 <-> ((! True) | ((! (t_Measure_0_v1X < 10)) | ((! (t_Measure_0_egoY < 6)) | (t_Measure_0_v2Presence | (t_Measure_0_v3Presence | t_Measure_0_v4Presence))))) 
+DeriveFact || F63 || c55 -> c54 || L43 L45
+Def || L46 || c56 <-> EXISTS p_outputLaneRight_2: outputLaneRight. (p_outputLaneRight_2_presence & ((p_outputLaneRight_2_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_2_time)))
+DeriveLemma || EI L46  [p_outputLaneRight_2:outputLaneRight<-t_outputLaneRight_0] || L47 || c56 -> (t_outputLaneRight_0_presence & ((t_outputLaneRight_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputLaneRight_0_time)))
+Def || L48 || c57 <-> (t_outputLaneRight_0_presence & ((t_outputLaneRight_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputLaneRight_0_time)))
+DeriveFact || F64 || c56 -> c57 || L48 L47
+AddFact || F65 || c58 <-> t_outputLaneRight_0_presence || 10825 10840
+AddFact || F66 || c59 <-> ((t_outputLaneRight_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputLaneRight_0_time))
+DeriveFact || F67 || c57 -> (c58) || F65 L48
+DeriveFact || F68 || c57 -> (c59) || F66 L48
+Def || L49 || c60 <-> ((! (True & ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))))))) | EXISTS p_outputLaneRight_2: outputLaneRight. (p_outputLaneRight_2_presence & ((p_outputLaneRight_2_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_2_time))))
+DeriveFact || F69 || c60 -> (c55 | c56) || L44 L46 L49
+AddFact || F70 || c61 <-> (t_Measure_0_v1X < 10) || 10650 10671
+AddFact || F71 || c62 <-> (t_Measure_0_egoY < 6) || 10693 10719
+AddFact || F72 || c63 <-> (! t_Measure_0_v2Presence) || 10747 10759
+AddFact || F73 || c64 <-> (! t_Measure_0_v3Presence) || 10771 10783
+AddFact || F74 || c65 <-> (! t_Measure_0_v4Presence) || 10794 10806
+Def || L50 || c66 <-> ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))
+DeriveFact || F75 || c66 -> (c64) || F73 L50
+DeriveFact || F76 || c66 -> (c65) || F74 L50
+Def || L51 || c67 <-> ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence)))
+DeriveFact || F77 || c67 -> (c63) || F72 L51
+DeriveFact || F78 || c67 -> (c66) || L50 L51
+Def || L52 || c68 <-> ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))))
+DeriveFact || F79 || c68 -> (c62) || F71 L52
+DeriveFact || F80 || c68 -> (c67) || L51 L52
+Def || L53 || c69 <-> ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence)))))
+DeriveFact || F81 || c69 -> (c61) || F70 L53
+DeriveFact || F82 || c69 -> (c68) || L52 L53
+Def || L54 || c70 <-> ((! True) | ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))))))
+DeriveFact || F83 || c70 -> (c44 | c69) || F52 L53 L54
+Def || L55 || c71 <-> (((! True) | ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence)))))) | (! True))
+DeriveFact || F84 || c71 -> (c70 | c44) || L54 F52 L55
+Def || L56 || c72 <-> (! ((True & (! ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))))))) & True))
+DeriveLemma || NNF L56 || L57 || c72 <-> (((! True) | ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence)))))) | (! True)) 
+DeriveFact || F85 || c72 -> c71 || L55 L57
+Def || L58 || c73 <-> EXISTS p_outputSlower_2: outputSlower. (p_outputSlower_2_presence & ((p_outputSlower_2_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_2_time)))
+DeriveLemma || EI L58  [p_outputSlower_2:outputSlower<-t_outputSlower_0] || L59 || c73 -> (t_outputSlower_0_presence & ((t_outputSlower_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputSlower_0_time)))
+Def || L60 || c74 <-> (t_outputSlower_0_presence & ((t_outputSlower_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputSlower_0_time)))
+DeriveFact || F86 || c73 -> c74 || L60 L59
+AddFact || F87 || c75 <-> t_outputSlower_0_presence || 10621 10633
+AddFact || F88 || c76 <-> ((t_outputSlower_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputSlower_0_time))
+DeriveFact || F89 || c74 -> (c75) || F87 L60
+DeriveFact || F90 || c74 -> (c76) || F88 L60
+Def || L61 || c77 <-> ((! ((True & (! ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))))))) & True)) | EXISTS p_outputSlower_2: outputSlower. (p_outputSlower_2_presence & ((p_outputSlower_2_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_2_time))))
+DeriveFact || F91 || c77 -> (c72 | c73) || L56 L58 L61
+Def || L62 || c78 <-> (((! (True & ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))))))) | EXISTS p_outputLaneRight_2: outputLaneRight. (p_outputLaneRight_2_presence & ((p_outputLaneRight_2_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_2_time)))) & ((! ((True & (! ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))))))) & True)) | EXISTS p_outputSlower_2: outputSlower. (p_outputSlower_2_presence & ((p_outputSlower_2_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_2_time)))))
+DeriveFact || F92 || c78 -> (c60) || L49 L62
+DeriveFact || F93 || c78 -> (c77) || L61 L62
+Def || L63 || c79 <-> ((! (t_Measure_0_v1Presence & (((-2 < t_Measure_0_v1Y) & (t_Measure_0_v1Y < 2)) & (((0 < t_Measure_0_v1X) & (t_Measure_0_v1X < 30)) & (t_Measure_0_v1Vx < -5))))) | (((! (True & ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))))))) | EXISTS p_outputLaneRight_2: outputLaneRight. (p_outputLaneRight_2_presence & ((p_outputLaneRight_2_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_2_time)))) & ((! ((True & (! ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))))))) & True)) | EXISTS p_outputSlower_2: outputSlower. (p_outputSlower_2_presence & ((p_outputSlower_2_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_2_time))))))
+DeriveFact || F94 || c79 -> (c43 | c78) || L37 L62 L63
+Def || L64 || c80 <-> ((cmdRequired_0_time = t_Measure_0_time) & ((! (t_Measure_0_v1Presence & (((-2 < t_Measure_0_v1Y) & (t_Measure_0_v1Y < 2)) & (((0 < t_Measure_0_v1X) & (t_Measure_0_v1X < 30)) & (t_Measure_0_v1Vx < -5))))) | (((! (True & ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))))))) | EXISTS p_outputLaneRight_2: outputLaneRight. (p_outputLaneRight_2_presence & ((p_outputLaneRight_2_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_2_time)))) & ((! ((True & (! ((t_Measure_0_v1X < 10) & ((t_Measure_0_egoY < 6) & ((! t_Measure_0_v2Presence) & ((! t_Measure_0_v3Presence) & (! t_Measure_0_v4Presence))))))) & True)) | EXISTS p_outputSlower_2: outputSlower. (p_outputSlower_2_presence & ((p_outputSlower_2_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_2_time)))))))
+DeriveFact || F95 || c80 -> (c31) || F39 L64
+DeriveFact || F96 || c80 -> (c79) || L63 L64
+DeriveFact || F97 || c29 -> (c30) || F38 L31
+DeriveFact || F98 || c29 -> (c80) || L64 L31
+DeriveFact || F99 || c26 -> (c27 | c28) || F36 L29 L28
+Def || L65 || c81 <-> (t_outputLaneRight_0_presence & ((t_outputLaneRight_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputLaneRight_0_time)))
+DeriveFact || F100 || c81 -> (c58) || F65 L65
+DeriveFact || F101 || c81 -> (c59) || F66 L65
+Def || L66 || c82 <-> (t_outputSlower_0_presence & ((t_outputSlower_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputSlower_0_time)))
+DeriveFact || F102 || c82 -> (c75) || F87 L66
+DeriveFact || F103 || c82 -> (c76) || F88 L66
+Def || L67 || c83 <-> ((! cmdRequired_0_presence) | EXISTS p_Measure_10: Measure. (p_Measure_10_presence & ((cmdRequired_0_time = p_Measure_10_time) & ((! (p_Measure_10_v1Presence & (((-2 < p_Measure_10_v1Y) & (p_Measure_10_v1Y < 2)) & (((0 < p_Measure_10_v1X) & (p_Measure_10_v1X < 30)) & (p_Measure_10_v1Vx < -5))))) | (((! (True & ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) | EXISTS p_outputLaneRight_3: outputLaneRight. (p_outputLaneRight_3_presence & ((p_outputLaneRight_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_3_time)))) & ((! ((True & (! ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) & True)) | EXISTS p_outputSlower_3: outputSlower. (p_outputSlower_3_presence & ((p_outputSlower_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_3_time)))))))))
+DeriveFact || F104 || c83 -> (c27 | c28) || F36 L29 L67
+Def || L68 || c84 <-> (t_outputLaneRight_0_presence & ((t_outputLaneRight_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputLaneRight_0_time)))
+DeriveFact || F105 || c84 -> (c58) || F65 L68
+DeriveFact || F106 || c84 -> (c59) || F66 L68
+Def || L69 || c85 <-> (t_outputSlower_0_presence & ((t_outputSlower_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputSlower_0_time)))
+DeriveFact || F107 || c85 -> (c75) || F87 L69
+DeriveFact || F108 || c85 -> (c76) || F88 L69
+Def || L70 || c86 <-> ((! cmdRequired_0_presence) | EXISTS p_Measure_10: Measure. (p_Measure_10_presence & ((cmdRequired_0_time = p_Measure_10_time) & ((! (p_Measure_10_v1Presence & (((-2 < p_Measure_10_v1Y) & (p_Measure_10_v1Y < 2)) & (((0 < p_Measure_10_v1X) & (p_Measure_10_v1X < 30)) & (p_Measure_10_v1Vx < -5))))) | (((! (True & ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) | EXISTS p_outputLaneRight_3: outputLaneRight. (p_outputLaneRight_3_presence & ((p_outputLaneRight_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_3_time)))) & ((! ((True & (! ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) & True)) | EXISTS p_outputSlower_3: outputSlower. (p_outputSlower_3_presence & ((p_outputSlower_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_3_time)))))))))
+DeriveFact || F109 || c86 -> (c27 | c28) || F36 L29 L70
+DeriveLemma || UI L15 [p_Measure_0:Measure<-Measure_0]  || L71 || c7 -> ((! Measure_0_presence) | Forall p_Measure_17: Measure. ( (! p_Measure_17_presence) | ((! (Measure_0_time = p_Measure_17_time)) | ((Measure_0_time = p_Measure_17_time) & (Measure_0_egoPresence <-> p_Measure_17_egoPresence) & (Measure_0_egoX = p_Measure_17_egoX) & (Measure_0_egoY = p_Measure_17_egoY) & (Measure_0_egoVx = p_Measure_17_egoVx) & (Measure_0_egoVy = p_Measure_17_egoVy) & (Measure_0_v1Presence <-> p_Measure_17_v1Presence) & (Measure_0_v1X = p_Measure_17_v1X) & (Measure_0_v1Y = p_Measure_17_v1Y) & (Measure_0_v1Vx = p_Measure_17_v1Vx) & (Measure_0_v1Vy = p_Measure_17_v1Vy) & (Measure_0_v2Presence <-> p_Measure_17_v2Presence) & (Measure_0_v2X = p_Measure_17_v2X) & (Measure_0_v2Y = p_Measure_17_v2Y) & (Measure_0_v2Vx = p_Measure_17_v2Vx) & (Measure_0_v2Vy = p_Measure_17_v2Vy) & (Measure_0_v3Presence <-> p_Measure_17_v3Presence) & (Measure_0_v3X = p_Measure_17_v3X) & (Measure_0_v3Y = p_Measure_17_v3Y) & (Measure_0_v3Vx = p_Measure_17_v3Vx) & (Measure_0_v3Vy = p_Measure_17_v3Vy) & (Measure_0_v4Presence <-> p_Measure_17_v4Presence) & (Measure_0_v4X = p_Measure_17_v4X) & (Measure_0_v4Y = p_Measure_17_v4Y) & (Measure_0_v4Vx = p_Measure_17_v4Vx) & (Measure_0_v4Vy = p_Measure_17_v4Vy) & (Measure_0_presence <-> p_Measure_17_presence))))) || L19
+Def || L72 || c87 <-> ((! Measure_0_presence) | Forall p_Measure_17: Measure. ( (! p_Measure_17_presence) | ((! (Measure_0_time = p_Measure_17_time)) | ((Measure_0_time = p_Measure_17_time) & (Measure_0_egoPresence <-> p_Measure_17_egoPresence) & (Measure_0_egoX = p_Measure_17_egoX) & (Measure_0_egoY = p_Measure_17_egoY) & (Measure_0_egoVx = p_Measure_17_egoVx) & (Measure_0_egoVy = p_Measure_17_egoVy) & (Measure_0_v1Presence <-> p_Measure_17_v1Presence) & (Measure_0_v1X = p_Measure_17_v1X) & (Measure_0_v1Y = p_Measure_17_v1Y) & (Measure_0_v1Vx = p_Measure_17_v1Vx) & (Measure_0_v1Vy = p_Measure_17_v1Vy) & (Measure_0_v2Presence <-> p_Measure_17_v2Presence) & (Measure_0_v2X = p_Measure_17_v2X) & (Measure_0_v2Y = p_Measure_17_v2Y) & (Measure_0_v2Vx = p_Measure_17_v2Vx) & (Measure_0_v2Vy = p_Measure_17_v2Vy) & (Measure_0_v3Presence <-> p_Measure_17_v3Presence) & (Measure_0_v3X = p_Measure_17_v3X) & (Measure_0_v3Y = p_Measure_17_v3Y) & (Measure_0_v3Vx = p_Measure_17_v3Vx) & (Measure_0_v3Vy = p_Measure_17_v3Vy) & (Measure_0_v4Presence <-> p_Measure_17_v4Presence) & (Measure_0_v4X = p_Measure_17_v4X) & (Measure_0_v4Y = p_Measure_17_v4Y) & (Measure_0_v4Vx = p_Measure_17_v4Vx) & (Measure_0_v4Vy = p_Measure_17_v4Vy) & (Measure_0_presence <-> p_Measure_17_presence)))))
+DeriveFact || F110 || c7 -> c87 || L72 L71
+AddFact || F111 || c88 <-> (! Measure_0_presence)
+Def || L73 || c89 <-> Forall p_Measure_17: Measure. ( (! p_Measure_17_presence) | ((! (Measure_0_time = p_Measure_17_time)) | ((Measure_0_time = p_Measure_17_time) & (Measure_0_egoPresence <-> p_Measure_17_egoPresence) & (Measure_0_egoX = p_Measure_17_egoX) & (Measure_0_egoY = p_Measure_17_egoY) & (Measure_0_egoVx = p_Measure_17_egoVx) & (Measure_0_egoVy = p_Measure_17_egoVy) & (Measure_0_v1Presence <-> p_Measure_17_v1Presence) & (Measure_0_v1X = p_Measure_17_v1X) & (Measure_0_v1Y = p_Measure_17_v1Y) & (Measure_0_v1Vx = p_Measure_17_v1Vx) & (Measure_0_v1Vy = p_Measure_17_v1Vy) & (Measure_0_v2Presence <-> p_Measure_17_v2Presence) & (Measure_0_v2X = p_Measure_17_v2X) & (Measure_0_v2Y = p_Measure_17_v2Y) & (Measure_0_v2Vx = p_Measure_17_v2Vx) & (Measure_0_v2Vy = p_Measure_17_v2Vy) & (Measure_0_v3Presence <-> p_Measure_17_v3Presence) & (Measure_0_v3X = p_Measure_17_v3X) & (Measure_0_v3Y = p_Measure_17_v3Y) & (Measure_0_v3Vx = p_Measure_17_v3Vx) & (Measure_0_v3Vy = p_Measure_17_v3Vy) & (Measure_0_v4Presence <-> p_Measure_17_v4Presence) & (Measure_0_v4X = p_Measure_17_v4X) & (Measure_0_v4Y = p_Measure_17_v4Y) & (Measure_0_v4Vx = p_Measure_17_v4Vx) & (Measure_0_v4Vy = p_Measure_17_v4Vy) & (Measure_0_presence <-> p_Measure_17_presence))))
+DeriveLemma || UI L73 [p_Measure_17:Measure<-Measure_0]  || L74 || c89 -> True || L19
+AddFact || F112 || c90 <-> True
+DeriveFact || F113 || c89 -> c90 || F112 L74
+DeriveLemma || UI L73 [p_Measure_17:Measure<-t_Measure_0]  || L75 || c89 -> ((! t_Measure_0_presence) | ((! (Measure_0_time = t_Measure_0_time)) | ((Measure_0_time = t_Measure_0_time) & (Measure_0_egoPresence <-> t_Measure_0_egoPresence) & (Measure_0_egoX = t_Measure_0_egoX) & (Measure_0_egoY = t_Measure_0_egoY) & (Measure_0_egoVx = t_Measure_0_egoVx) & (Measure_0_egoVy = t_Measure_0_egoVy) & (Measure_0_v1Presence <-> t_Measure_0_v1Presence) & (Measure_0_v1X = t_Measure_0_v1X) & (Measure_0_v1Y = t_Measure_0_v1Y) & (Measure_0_v1Vx = t_Measure_0_v1Vx) & (Measure_0_v1Vy = t_Measure_0_v1Vy) & (Measure_0_v2Presence <-> t_Measure_0_v2Presence) & (Measure_0_v2X = t_Measure_0_v2X) & (Measure_0_v2Y = t_Measure_0_v2Y) & (Measure_0_v2Vx = t_Measure_0_v2Vx) & (Measure_0_v2Vy = t_Measure_0_v2Vy) & (Measure_0_v3Presence <-> t_Measure_0_v3Presence) & (Measure_0_v3X = t_Measure_0_v3X) & (Measure_0_v3Y = t_Measure_0_v3Y) & (Measure_0_v3Vx = t_Measure_0_v3Vx) & (Measure_0_v3Vy = t_Measure_0_v3Vy) & (Measure_0_v4Presence <-> t_Measure_0_v4Presence) & (Measure_0_v4X = t_Measure_0_v4X) & (Measure_0_v4Y = t_Measure_0_v4Y) & (Measure_0_v4Vx = t_Measure_0_v4Vx) & (Measure_0_v4Vy = t_Measure_0_v4Vy) & (Measure_0_presence <-> t_Measure_0_presence)))) || L30
+AddFact || F114 || c91 <-> ((! t_Measure_0_presence) | ((! (Measure_0_time = t_Measure_0_time)) | ((Measure_0_time = t_Measure_0_time) & (Measure_0_egoPresence <-> t_Measure_0_egoPresence) & (Measure_0_egoX = t_Measure_0_egoX) & (Measure_0_egoY = t_Measure_0_egoY) & (Measure_0_egoVx = t_Measure_0_egoVx) & (Measure_0_egoVy = t_Measure_0_egoVy) & (Measure_0_v1Presence <-> t_Measure_0_v1Presence) & (Measure_0_v1X = t_Measure_0_v1X) & (Measure_0_v1Y = t_Measure_0_v1Y) & (Measure_0_v1Vx = t_Measure_0_v1Vx) & (Measure_0_v1Vy = t_Measure_0_v1Vy) & (Measure_0_v2Presence <-> t_Measure_0_v2Presence) & (Measure_0_v2X = t_Measure_0_v2X) & (Measure_0_v2Y = t_Measure_0_v2Y) & (Measure_0_v2Vx = t_Measure_0_v2Vx) & (Measure_0_v2Vy = t_Measure_0_v2Vy) & (Measure_0_v3Presence <-> t_Measure_0_v3Presence) & (Measure_0_v3X = t_Measure_0_v3X) & (Measure_0_v3Y = t_Measure_0_v3Y) & (Measure_0_v3Vx = t_Measure_0_v3Vx) & (Measure_0_v3Vy = t_Measure_0_v3Vy) & (Measure_0_v4Presence <-> t_Measure_0_v4Presence) & (Measure_0_v4X = t_Measure_0_v4X) & (Measure_0_v4Y = t_Measure_0_v4Y) & (Measure_0_v4Vx = t_Measure_0_v4Vx) & (Measure_0_v4Vy = t_Measure_0_v4Vy) & (Measure_0_presence <-> t_Measure_0_presence))))
+DeriveFact || F115 || c89 -> c91 || F114 L75
+DeriveFact || F116 || c87 -> (c88 | c89) || F111 L73 L72
+DeriveLemma || UI L15 [p_Measure_0:Measure<-t_Measure_0]  || L76 || c7 -> ((! t_Measure_0_presence) | Forall p_Measure_19: Measure. ( (! p_Measure_19_presence) | ((! (t_Measure_0_time = p_Measure_19_time)) | ((t_Measure_0_time = p_Measure_19_time) & (t_Measure_0_egoPresence <-> p_Measure_19_egoPresence) & (t_Measure_0_egoX = p_Measure_19_egoX) & (t_Measure_0_egoY = p_Measure_19_egoY) & (t_Measure_0_egoVx = p_Measure_19_egoVx) & (t_Measure_0_egoVy = p_Measure_19_egoVy) & (t_Measure_0_v1Presence <-> p_Measure_19_v1Presence) & (t_Measure_0_v1X = p_Measure_19_v1X) & (t_Measure_0_v1Y = p_Measure_19_v1Y) & (t_Measure_0_v1Vx = p_Measure_19_v1Vx) & (t_Measure_0_v1Vy = p_Measure_19_v1Vy) & (t_Measure_0_v2Presence <-> p_Measure_19_v2Presence) & (t_Measure_0_v2X = p_Measure_19_v2X) & (t_Measure_0_v2Y = p_Measure_19_v2Y) & (t_Measure_0_v2Vx = p_Measure_19_v2Vx) & (t_Measure_0_v2Vy = p_Measure_19_v2Vy) & (t_Measure_0_v3Presence <-> p_Measure_19_v3Presence) & (t_Measure_0_v3X = p_Measure_19_v3X) & (t_Measure_0_v3Y = p_Measure_19_v3Y) & (t_Measure_0_v3Vx = p_Measure_19_v3Vx) & (t_Measure_0_v3Vy = p_Measure_19_v3Vy) & (t_Measure_0_v4Presence <-> p_Measure_19_v4Presence) & (t_Measure_0_v4X = p_Measure_19_v4X) & (t_Measure_0_v4Y = p_Measure_19_v4Y) & (t_Measure_0_v4Vx = p_Measure_19_v4Vx) & (t_Measure_0_v4Vy = p_Measure_19_v4Vy) & (t_Measure_0_presence <-> p_Measure_19_presence))))) || L30
+Def || L77 || c92 <-> ((! t_Measure_0_presence) | Forall p_Measure_19: Measure. ( (! p_Measure_19_presence) | ((! (t_Measure_0_time = p_Measure_19_time)) | ((t_Measure_0_time = p_Measure_19_time) & (t_Measure_0_egoPresence <-> p_Measure_19_egoPresence) & (t_Measure_0_egoX = p_Measure_19_egoX) & (t_Measure_0_egoY = p_Measure_19_egoY) & (t_Measure_0_egoVx = p_Measure_19_egoVx) & (t_Measure_0_egoVy = p_Measure_19_egoVy) & (t_Measure_0_v1Presence <-> p_Measure_19_v1Presence) & (t_Measure_0_v1X = p_Measure_19_v1X) & (t_Measure_0_v1Y = p_Measure_19_v1Y) & (t_Measure_0_v1Vx = p_Measure_19_v1Vx) & (t_Measure_0_v1Vy = p_Measure_19_v1Vy) & (t_Measure_0_v2Presence <-> p_Measure_19_v2Presence) & (t_Measure_0_v2X = p_Measure_19_v2X) & (t_Measure_0_v2Y = p_Measure_19_v2Y) & (t_Measure_0_v2Vx = p_Measure_19_v2Vx) & (t_Measure_0_v2Vy = p_Measure_19_v2Vy) & (t_Measure_0_v3Presence <-> p_Measure_19_v3Presence) & (t_Measure_0_v3X = p_Measure_19_v3X) & (t_Measure_0_v3Y = p_Measure_19_v3Y) & (t_Measure_0_v3Vx = p_Measure_19_v3Vx) & (t_Measure_0_v3Vy = p_Measure_19_v3Vy) & (t_Measure_0_v4Presence <-> p_Measure_19_v4Presence) & (t_Measure_0_v4X = p_Measure_19_v4X) & (t_Measure_0_v4Y = p_Measure_19_v4Y) & (t_Measure_0_v4Vx = p_Measure_19_v4Vx) & (t_Measure_0_v4Vy = p_Measure_19_v4Vy) & (t_Measure_0_presence <-> p_Measure_19_presence)))))
+DeriveFact || F117 || c7 -> c92 || L77 L76
+AddFact || F118 || c93 <-> (! t_Measure_0_presence)
+Def || L78 || c94 <-> Forall p_Measure_19: Measure. ( (! p_Measure_19_presence) | ((! (t_Measure_0_time = p_Measure_19_time)) | ((t_Measure_0_time = p_Measure_19_time) & (t_Measure_0_egoPresence <-> p_Measure_19_egoPresence) & (t_Measure_0_egoX = p_Measure_19_egoX) & (t_Measure_0_egoY = p_Measure_19_egoY) & (t_Measure_0_egoVx = p_Measure_19_egoVx) & (t_Measure_0_egoVy = p_Measure_19_egoVy) & (t_Measure_0_v1Presence <-> p_Measure_19_v1Presence) & (t_Measure_0_v1X = p_Measure_19_v1X) & (t_Measure_0_v1Y = p_Measure_19_v1Y) & (t_Measure_0_v1Vx = p_Measure_19_v1Vx) & (t_Measure_0_v1Vy = p_Measure_19_v1Vy) & (t_Measure_0_v2Presence <-> p_Measure_19_v2Presence) & (t_Measure_0_v2X = p_Measure_19_v2X) & (t_Measure_0_v2Y = p_Measure_19_v2Y) & (t_Measure_0_v2Vx = p_Measure_19_v2Vx) & (t_Measure_0_v2Vy = p_Measure_19_v2Vy) & (t_Measure_0_v3Presence <-> p_Measure_19_v3Presence) & (t_Measure_0_v3X = p_Measure_19_v3X) & (t_Measure_0_v3Y = p_Measure_19_v3Y) & (t_Measure_0_v3Vx = p_Measure_19_v3Vx) & (t_Measure_0_v3Vy = p_Measure_19_v3Vy) & (t_Measure_0_v4Presence <-> p_Measure_19_v4Presence) & (t_Measure_0_v4X = p_Measure_19_v4X) & (t_Measure_0_v4Y = p_Measure_19_v4Y) & (t_Measure_0_v4Vx = p_Measure_19_v4Vx) & (t_Measure_0_v4Vy = p_Measure_19_v4Vy) & (t_Measure_0_presence <-> p_Measure_19_presence))))
+DeriveLemma || UI L78 [p_Measure_19:Measure<-Measure_0]  || L79 || c94 -> ((! Measure_0_presence) | ((! (t_Measure_0_time = Measure_0_time)) | ((t_Measure_0_time = Measure_0_time) & (t_Measure_0_egoPresence <-> Measure_0_egoPresence) & (t_Measure_0_egoX = Measure_0_egoX) & (t_Measure_0_egoY = Measure_0_egoY) & (t_Measure_0_egoVx = Measure_0_egoVx) & (t_Measure_0_egoVy = Measure_0_egoVy) & (t_Measure_0_v1Presence <-> Measure_0_v1Presence) & (t_Measure_0_v1X = Measure_0_v1X) & (t_Measure_0_v1Y = Measure_0_v1Y) & (t_Measure_0_v1Vx = Measure_0_v1Vx) & (t_Measure_0_v1Vy = Measure_0_v1Vy) & (t_Measure_0_v2Presence <-> Measure_0_v2Presence) & (t_Measure_0_v2X = Measure_0_v2X) & (t_Measure_0_v2Y = Measure_0_v2Y) & (t_Measure_0_v2Vx = Measure_0_v2Vx) & (t_Measure_0_v2Vy = Measure_0_v2Vy) & (t_Measure_0_v3Presence <-> Measure_0_v3Presence) & (t_Measure_0_v3X = Measure_0_v3X) & (t_Measure_0_v3Y = Measure_0_v3Y) & (t_Measure_0_v3Vx = Measure_0_v3Vx) & (t_Measure_0_v3Vy = Measure_0_v3Vy) & (t_Measure_0_v4Presence <-> Measure_0_v4Presence) & (t_Measure_0_v4X = Measure_0_v4X) & (t_Measure_0_v4Y = Measure_0_v4Y) & (t_Measure_0_v4Vx = Measure_0_v4Vx) & (t_Measure_0_v4Vy = Measure_0_v4Vy) & (t_Measure_0_presence <-> Measure_0_presence)))) || L19
+AddFact || F119 || c95 <-> ((! Measure_0_presence) | ((! (t_Measure_0_time = Measure_0_time)) | ((t_Measure_0_time = Measure_0_time) & (t_Measure_0_egoPresence <-> Measure_0_egoPresence) & (t_Measure_0_egoX = Measure_0_egoX) & (t_Measure_0_egoY = Measure_0_egoY) & (t_Measure_0_egoVx = Measure_0_egoVx) & (t_Measure_0_egoVy = Measure_0_egoVy) & (t_Measure_0_v1Presence <-> Measure_0_v1Presence) & (t_Measure_0_v1X = Measure_0_v1X) & (t_Measure_0_v1Y = Measure_0_v1Y) & (t_Measure_0_v1Vx = Measure_0_v1Vx) & (t_Measure_0_v1Vy = Measure_0_v1Vy) & (t_Measure_0_v2Presence <-> Measure_0_v2Presence) & (t_Measure_0_v2X = Measure_0_v2X) & (t_Measure_0_v2Y = Measure_0_v2Y) & (t_Measure_0_v2Vx = Measure_0_v2Vx) & (t_Measure_0_v2Vy = Measure_0_v2Vy) & (t_Measure_0_v3Presence <-> Measure_0_v3Presence) & (t_Measure_0_v3X = Measure_0_v3X) & (t_Measure_0_v3Y = Measure_0_v3Y) & (t_Measure_0_v3Vx = Measure_0_v3Vx) & (t_Measure_0_v3Vy = Measure_0_v3Vy) & (t_Measure_0_v4Presence <-> Measure_0_v4Presence) & (t_Measure_0_v4X = Measure_0_v4X) & (t_Measure_0_v4Y = Measure_0_v4Y) & (t_Measure_0_v4Vx = Measure_0_v4Vx) & (t_Measure_0_v4Vy = Measure_0_v4Vy) & (t_Measure_0_presence <-> Measure_0_presence))))
+DeriveFact || F120 || c94 -> c95 || F119 L79
+DeriveLemma || UI L78 [p_Measure_19:Measure<-t_Measure_0]  || L80 || c94 -> True || L30
+DeriveFact || F121 || c94 -> c90 || F112 L80
+DeriveFact || F122 || c92 -> (c93 | c94) || F118 L78 L77
+Def || L81 || c96 <-> (t_outputLaneRight_0_presence & ((t_outputLaneRight_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputLaneRight_0_time)))
+DeriveFact || F123 || c96 -> (c58) || F65 L81
+DeriveFact || F124 || c96 -> (c59) || F66 L81
+Def || L82 || c97 <-> (t_outputSlower_0_presence & ((t_outputSlower_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputSlower_0_time)))
+DeriveFact || F125 || c97 -> (c75) || F87 L82
+DeriveFact || F126 || c97 -> (c76) || F88 L82
+Def || L83 || c98 <-> ((! cmdRequired_0_presence) | EXISTS p_Measure_10: Measure. (p_Measure_10_presence & ((cmdRequired_0_time = p_Measure_10_time) & ((! (p_Measure_10_v1Presence & (((-2 < p_Measure_10_v1Y) & (p_Measure_10_v1Y < 2)) & (((0 < p_Measure_10_v1X) & (p_Measure_10_v1X < 30)) & (p_Measure_10_v1Vx < -5))))) | (((! (True & ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) | EXISTS p_outputLaneRight_3: outputLaneRight. (p_outputLaneRight_3_presence & ((p_outputLaneRight_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_3_time)))) & ((! ((True & (! ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) & True)) | EXISTS p_outputSlower_3: outputSlower. (p_outputSlower_3_presence & ((p_outputSlower_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_3_time)))))))))
+DeriveFact || F127 || c98 -> (c27 | c28) || F36 L29 L83
+Def || L84 || c99 <-> (t_outputLaneRight_0_presence & ((t_outputLaneRight_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputLaneRight_0_time)))
+DeriveFact || F128 || c99 -> (c58) || F65 L84
+DeriveFact || F129 || c99 -> (c59) || F66 L84
+Def || L85 || c100 <-> (t_outputSlower_0_presence & ((t_outputSlower_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputSlower_0_time)))
+DeriveFact || F130 || c100 -> (c75) || F87 L85
+DeriveFact || F131 || c100 -> (c76) || F88 L85
+Def || L86 || c101 <-> ((! cmdRequired_0_presence) | EXISTS p_Measure_10: Measure. (p_Measure_10_presence & ((cmdRequired_0_time = p_Measure_10_time) & ((! (p_Measure_10_v1Presence & (((-2 < p_Measure_10_v1Y) & (p_Measure_10_v1Y < 2)) & (((0 < p_Measure_10_v1X) & (p_Measure_10_v1X < 30)) & (p_Measure_10_v1Vx < -5))))) | (((! (True & ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) | EXISTS p_outputLaneRight_3: outputLaneRight. (p_outputLaneRight_3_presence & ((p_outputLaneRight_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_3_time)))) & ((! ((True & (! ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) & True)) | EXISTS p_outputSlower_3: outputSlower. (p_outputSlower_3_presence & ((p_outputSlower_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_3_time)))))))))
+DeriveFact || F132 || c101 -> (c27 | c28) || F36 L29 L86
+DeriveLemma || UI L9 [p_Measure_3:Measure<-Measure_0]  || L87 || c4 -> ((! Measure_0_presence) | (Measure_0_v2Presence | ((((Measure_0_v2X = 0) & (Measure_0_v2Y = 0)) & (Measure_0_v2Vx = 0)) & (Measure_0_v2Vy = 0)))) || L19
+Def || L88 || c102 <-> ((! Measure_0_presence) | (Measure_0_v2Presence | ((((Measure_0_v2X = 0) & (Measure_0_v2Y = 0)) & (Measure_0_v2Vx = 0)) & (Measure_0_v2Vy = 0))))
+DeriveFact || F133 || c4 -> c102 || L88 L87
+AddFact || F134 || c103 <-> Measure_0_v2Presence || 11470 11482
+AddFact || F135 || c104 <-> (Measure_0_v2X = 0) || 11487 11498
+AddFact || F136 || c105 <-> (Measure_0_v2Y = 0) || 11503 11514
+Def || L89 || c106 <-> ((Measure_0_v2X = 0) & (Measure_0_v2Y = 0))
+DeriveFact || F137 || c106 -> (c104) || F135 L89
+DeriveFact || F138 || c106 -> (c105) || F136 L89
+AddFact || F139 || c107 <-> (Measure_0_v2Vx = 0) || 11520 11532
+Def || L90 || c108 <-> (((Measure_0_v2X = 0) & (Measure_0_v2Y = 0)) & (Measure_0_v2Vx = 0))
+DeriveFact || F140 || c108 -> (c106) || L89 L90
+DeriveFact || F141 || c108 -> (c107) || F139 L90
+AddFact || F142 || c109 <-> (Measure_0_v2Vy = 0) || 11538 11550
+Def || L91 || c110 <-> ((((Measure_0_v2X = 0) & (Measure_0_v2Y = 0)) & (Measure_0_v2Vx = 0)) & (Measure_0_v2Vy = 0))
+DeriveFact || F143 || c110 -> (c108) || L90 L91
+DeriveFact || F144 || c110 -> (c109) || F142 L91
+Def || L92 || c111 <-> (Measure_0_v2Presence | ((((Measure_0_v2X = 0) & (Measure_0_v2Y = 0)) & (Measure_0_v2Vx = 0)) & (Measure_0_v2Vy = 0)))
+DeriveFact || F145 || c111 -> (c103 | c110) || F134 L91 L92
+DeriveFact || F146 || c102 -> (c88 | c111) || F111 L92 L88
+DeriveLemma || UI L9 [p_Measure_3:Measure<-t_Measure_0]  || L93 || c4 -> ((! t_Measure_0_presence) | (t_Measure_0_v2Presence | ((((t_Measure_0_v2X = 0) & (t_Measure_0_v2Y = 0)) & (t_Measure_0_v2Vx = 0)) & (t_Measure_0_v2Vy = 0)))) || L30
+Def || L94 || c112 <-> ((! t_Measure_0_presence) | (t_Measure_0_v2Presence | ((((t_Measure_0_v2X = 0) & (t_Measure_0_v2Y = 0)) & (t_Measure_0_v2Vx = 0)) & (t_Measure_0_v2Vy = 0))))
+DeriveFact || F147 || c4 -> c112 || L94 L93
+AddFact || F148 || c113 <-> (t_Measure_0_v2X = 0) || 11487 11498
+AddFact || F149 || c114 <-> (t_Measure_0_v2Y = 0) || 11503 11514
+Def || L95 || c115 <-> ((t_Measure_0_v2X = 0) & (t_Measure_0_v2Y = 0))
+DeriveFact || F150 || c115 -> (c113) || F148 L95
+DeriveFact || F151 || c115 -> (c114) || F149 L95
+AddFact || F152 || c116 <-> (t_Measure_0_v2Vx = 0) || 11520 11532
+Def || L96 || c117 <-> (((t_Measure_0_v2X = 0) & (t_Measure_0_v2Y = 0)) & (t_Measure_0_v2Vx = 0))
+DeriveFact || F153 || c117 -> (c115) || L95 L96
+DeriveFact || F154 || c117 -> (c116) || F152 L96
+AddFact || F155 || c118 <-> (t_Measure_0_v2Vy = 0) || 11538 11550
+Def || L97 || c119 <-> ((((t_Measure_0_v2X = 0) & (t_Measure_0_v2Y = 0)) & (t_Measure_0_v2Vx = 0)) & (t_Measure_0_v2Vy = 0))
+DeriveFact || F156 || c119 -> (c117) || L96 L97
+DeriveFact || F157 || c119 -> (c118) || F155 L97
+Def || L98 || c120 <-> (t_Measure_0_v2Presence | ((((t_Measure_0_v2X = 0) & (t_Measure_0_v2Y = 0)) & (t_Measure_0_v2Vx = 0)) & (t_Measure_0_v2Vy = 0)))
+DeriveFact || F158 || c120 -> (c47 | c119) || F55 L97 L98
+DeriveFact || F159 || c112 -> (c93 | c120) || F118 L98 L94
+Def || L99 || c121 <-> (t_outputLaneRight_0_presence & ((t_outputLaneRight_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputLaneRight_0_time)))
+DeriveFact || F160 || c121 -> (c58) || F65 L99
+DeriveFact || F161 || c121 -> (c59) || F66 L99
+Def || L100 || c122 <-> (t_outputSlower_0_presence & ((t_outputSlower_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputSlower_0_time)))
+DeriveFact || F162 || c122 -> (c75) || F87 L100
+DeriveFact || F163 || c122 -> (c76) || F88 L100
+Def || L101 || c123 <-> ((! cmdRequired_0_presence) | EXISTS p_Measure_10: Measure. (p_Measure_10_presence & ((cmdRequired_0_time = p_Measure_10_time) & ((! (p_Measure_10_v1Presence & (((-2 < p_Measure_10_v1Y) & (p_Measure_10_v1Y < 2)) & (((0 < p_Measure_10_v1X) & (p_Measure_10_v1X < 30)) & (p_Measure_10_v1Vx < -5))))) | (((! (True & ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) | EXISTS p_outputLaneRight_3: outputLaneRight. (p_outputLaneRight_3_presence & ((p_outputLaneRight_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_3_time)))) & ((! ((True & (! ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) & True)) | EXISTS p_outputSlower_3: outputSlower. (p_outputSlower_3_presence & ((p_outputSlower_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_3_time)))))))))
+DeriveFact || F164 || c123 -> (c27 | c28) || F36 L29 L101
+Def || L102 || c124 <-> ((! Measure_0_presence) | (Measure_0_v2Presence | ((((Measure_0_v2X = 0) & (Measure_0_v2Y = 0)) & (Measure_0_v2Vx = 0)) & (Measure_0_v2Vy = 0))))
+DeriveFact || F165 || c124 -> (c88 | c111) || F111 L92 L102
+Def || L103 || c125 <-> ((! t_Measure_0_presence) | (t_Measure_0_v2Presence | ((((t_Measure_0_v2X = 0) & (t_Measure_0_v2Y = 0)) & (t_Measure_0_v2Vx = 0)) & (t_Measure_0_v2Vy = 0))))
+DeriveFact || F166 || c125 -> (c93 | c120) || F118 L98 L103
+DeriveLemma || UI L11 [p_Measure_4:Measure<-Measure_0]  || L104 || c5 -> ((! Measure_0_presence) | (Measure_0_v3Presence | ((((Measure_0_v3X = 0) & (Measure_0_v3Y = 0)) & (Measure_0_v3Vx = 0)) & (Measure_0_v3Vy = 0)))) || L19
+Def || L105 || c126 <-> ((! Measure_0_presence) | (Measure_0_v3Presence | ((((Measure_0_v3X = 0) & (Measure_0_v3Y = 0)) & (Measure_0_v3Vx = 0)) & (Measure_0_v3Vy = 0))))
+DeriveFact || F167 || c5 -> c126 || L105 L104
+AddFact || F168 || c127 <-> Measure_0_v3Presence || 11575 11587
+AddFact || F169 || c128 <-> (Measure_0_v3X = 0) || 11592 11603
+AddFact || F170 || c129 <-> (Measure_0_v3Y = 0) || 11608 11619
+Def || L106 || c130 <-> ((Measure_0_v3X = 0) & (Measure_0_v3Y = 0))
+DeriveFact || F171 || c130 -> (c128) || F169 L106
+DeriveFact || F172 || c130 -> (c129) || F170 L106
+AddFact || F173 || c131 <-> (Measure_0_v3Vx = 0) || 11625 11637
+Def || L107 || c132 <-> (((Measure_0_v3X = 0) & (Measure_0_v3Y = 0)) & (Measure_0_v3Vx = 0))
+DeriveFact || F174 || c132 -> (c130) || L106 L107
+DeriveFact || F175 || c132 -> (c131) || F173 L107
+AddFact || F176 || c133 <-> (Measure_0_v3Vy = 0) || 11643 11655
+Def || L108 || c134 <-> ((((Measure_0_v3X = 0) & (Measure_0_v3Y = 0)) & (Measure_0_v3Vx = 0)) & (Measure_0_v3Vy = 0))
+DeriveFact || F177 || c134 -> (c132) || L107 L108
+DeriveFact || F178 || c134 -> (c133) || F176 L108
+Def || L109 || c135 <-> (Measure_0_v3Presence | ((((Measure_0_v3X = 0) & (Measure_0_v3Y = 0)) & (Measure_0_v3Vx = 0)) & (Measure_0_v3Vy = 0)))
+DeriveFact || F179 || c135 -> (c127 | c134) || F168 L108 L109
+DeriveFact || F180 || c126 -> (c88 | c135) || F111 L109 L105
+DeriveLemma || UI L11 [p_Measure_4:Measure<-t_Measure_0]  || L110 || c5 -> ((! t_Measure_0_presence) | (t_Measure_0_v3Presence | ((((t_Measure_0_v3X = 0) & (t_Measure_0_v3Y = 0)) & (t_Measure_0_v3Vx = 0)) & (t_Measure_0_v3Vy = 0)))) || L30
+Def || L111 || c136 <-> ((! t_Measure_0_presence) | (t_Measure_0_v3Presence | ((((t_Measure_0_v3X = 0) & (t_Measure_0_v3Y = 0)) & (t_Measure_0_v3Vx = 0)) & (t_Measure_0_v3Vy = 0))))
+DeriveFact || F181 || c5 -> c136 || L111 L110
+AddFact || F182 || c137 <-> (t_Measure_0_v3X = 0) || 11592 11603
+AddFact || F183 || c138 <-> (t_Measure_0_v3Y = 0) || 11608 11619
+Def || L112 || c139 <-> ((t_Measure_0_v3X = 0) & (t_Measure_0_v3Y = 0))
+DeriveFact || F184 || c139 -> (c137) || F182 L112
+DeriveFact || F185 || c139 -> (c138) || F183 L112
+AddFact || F186 || c140 <-> (t_Measure_0_v3Vx = 0) || 11625 11637
+Def || L113 || c141 <-> (((t_Measure_0_v3X = 0) & (t_Measure_0_v3Y = 0)) & (t_Measure_0_v3Vx = 0))
+DeriveFact || F187 || c141 -> (c139) || L112 L113
+DeriveFact || F188 || c141 -> (c140) || F186 L113
+AddFact || F189 || c142 <-> (t_Measure_0_v3Vy = 0) || 11643 11655
+Def || L114 || c143 <-> ((((t_Measure_0_v3X = 0) & (t_Measure_0_v3Y = 0)) & (t_Measure_0_v3Vx = 0)) & (t_Measure_0_v3Vy = 0))
+DeriveFact || F190 || c143 -> (c141) || L113 L114
+DeriveFact || F191 || c143 -> (c142) || F189 L114
+Def || L115 || c144 <-> (t_Measure_0_v3Presence | ((((t_Measure_0_v3X = 0) & (t_Measure_0_v3Y = 0)) & (t_Measure_0_v3Vx = 0)) & (t_Measure_0_v3Vy = 0)))
+DeriveFact || F192 || c144 -> (c48 | c143) || F56 L114 L115
+DeriveFact || F193 || c136 -> (c93 | c144) || F118 L115 L111
+Def || L116 || c145 <-> (t_outputLaneRight_0_presence & ((t_outputLaneRight_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputLaneRight_0_time)))
+DeriveFact || F194 || c145 -> (c58) || F65 L116
+DeriveFact || F195 || c145 -> (c59) || F66 L116
+Def || L117 || c146 <-> (t_outputSlower_0_presence & ((t_outputSlower_0_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= t_outputSlower_0_time)))
+DeriveFact || F196 || c146 -> (c75) || F87 L117
+DeriveFact || F197 || c146 -> (c76) || F88 L117
+Def || L118 || c147 <-> ((! cmdRequired_0_presence) | EXISTS p_Measure_10: Measure. (p_Measure_10_presence & ((cmdRequired_0_time = p_Measure_10_time) & ((! (p_Measure_10_v1Presence & (((-2 < p_Measure_10_v1Y) & (p_Measure_10_v1Y < 2)) & (((0 < p_Measure_10_v1X) & (p_Measure_10_v1X < 30)) & (p_Measure_10_v1Vx < -5))))) | (((! (True & ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) | EXISTS p_outputLaneRight_3: outputLaneRight. (p_outputLaneRight_3_presence & ((p_outputLaneRight_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputLaneRight_3_time)))) & ((! ((True & (! ((p_Measure_10_v1X < 10) & ((p_Measure_10_egoY < 6) & ((! p_Measure_10_v2Presence) & ((! p_Measure_10_v3Presence) & (! p_Measure_10_v4Presence))))))) & True)) | EXISTS p_outputSlower_3: outputSlower. (p_outputSlower_3_presence & ((p_outputSlower_3_time <= (cmdRequired_0_time + 0)) & ((cmdRequired_0_time + 0) <= p_outputSlower_3_time)))))))))
+DeriveFact || F198 || c147 -> (c27 | c28) || F36 L29 L118
+Def || L119 || c148 <-> ((! Measure_0_presence) | (Measure_0_v2Presence | ((((Measure_0_v2X = 0) & (Measure_0_v2Y = 0)) & (Measure_0_v2Vx = 0)) & (Measure_0_v2Vy = 0))))
+DeriveFact || F199 || c148 -> (c88 | c111) || F111 L92 L119
+Def || L120 || c149 <-> ((! t_Measure_0_presence) | (t_Measure_0_v2Presence | ((((t_Measure_0_v2X = 0) & (t_Measure_0_v2Y = 0)) & (t_Measure_0_v2Vx = 0)) & (t_Measure_0_v2Vy = 0))))
+DeriveFact || F200 || c149 -> (c93 | c120) || F118 L98 L120
+Def || L121 || c150 <-> ((! Measure_0_presence) | (Measure_0_v3Presence | ((((Measure_0_v3X = 0) & (Measure_0_v3Y = 0)) & (Measure_0_v3Vx = 0)) & (Measure_0_v3Vy = 0))))
+DeriveFact || F201 || c150 -> (c88 | c135) || F111 L109 L121
+Def || L122 || c151 <-> ((! t_Measure_0_presence) | (t_Measure_0_v3Presence | ((((t_Measure_0_v3X = 0) & (t_Measure_0_v3Y = 0)) & (t_Measure_0_v3Vx = 0)) & (t_Measure_0_v3Vy = 0))))
+DeriveFact || F202 || c151 -> (c93 | c144) || F118 L115 L122
+DeriveLemma || UI L13 [p_Measure_5:Measure<-Measure_0]  || L123 || c6 -> ((! Measure_0_presence) | (Measure_0_v4Presence | ((((Measure_0_v4X = 0) & (Measure_0_v4Y = 0)) & (Measure_0_v4Vx = 0)) & (Measure_0_v4Vy = 0)))) || L19
+Def || L124 || c152 <-> ((! Measure_0_presence) | (Measure_0_v4Presence | ((((Measure_0_v4X = 0) & (Measure_0_v4Y = 0)) & (Measure_0_v4Vx = 0)) & (Measure_0_v4Vy = 0))))
+DeriveFact || F203 || c6 -> c152 || L124 L123
+AddFact || F204 || c153 <-> Measure_0_v4Presence || 11680 11692
+AddFact || F205 || c154 <-> (Measure_0_v4X = 0) || 11697 11708
+AddFact || F206 || c155 <-> (Measure_0_v4Y = 0) || 11713 11724
+Def || L125 || c156 <-> ((Measure_0_v4X = 0) & (Measure_0_v4Y = 0))
+DeriveFact || F207 || c156 -> (c154) || F205 L125
+DeriveFact || F208 || c156 -> (c155) || F206 L125
+AddFact || F209 || c157 <-> (Measure_0_v4Vx = 0) || 11730 11742
+Def || L126 || c158 <-> (((Measure_0_v4X = 0) & (Measure_0_v4Y = 0)) & (Measure_0_v4Vx = 0))
+DeriveFact || F210 || c158 -> (c156) || L125 L126
+DeriveFact || F211 || c158 -> (c157) || F209 L126
+AddFact || F212 || c159 <-> (Measure_0_v4Vy = 0) || 11748 11760
+Def || L127 || c160 <-> ((((Measure_0_v4X = 0) & (Measure_0_v4Y = 0)) & (Measure_0_v4Vx = 0)) & (Measure_0_v4Vy = 0))
+DeriveFact || F213 || c160 -> (c158) || L126 L127
+DeriveFact || F214 || c160 -> (c159) || F212 L127
+Def || L128 || c161 <-> (Measure_0_v4Presence | ((((Measure_0_v4X = 0) & (Measure_0_v4Y = 0)) & (Measure_0_v4Vx = 0)) & (Measure_0_v4Vy = 0)))
+DeriveFact || F215 || c161 -> (c153 | c160) || F204 L127 L128
+DeriveFact || F216 || c152 -> (c88 | c161) || F111 L128 L124
+DeriveLemma || UI L13 [p_Measure_5:Measure<-t_Measure_0]  || L129 || c6 -> ((! t_Measure_0_presence) | (t_Measure_0_v4Presence | ((((t_Measure_0_v4X = 0) & (t_Measure_0_v4Y = 0)) & (t_Measure_0_v4Vx = 0)) & (t_Measure_0_v4Vy = 0)))) || L30
+Def || L130 || c162 <-> ((! t_Measure_0_presence) | (t_Measure_0_v4Presence | ((((t_Measure_0_v4X = 0) & (t_Measure_0_v4Y = 0)) & (t_Measure_0_v4Vx = 0)) & (t_Measure_0_v4Vy = 0))))
+DeriveFact || F217 || c6 -> c162 || L130 L129
+AddFact || F218 || c163 <-> (t_Measure_0_v4X = 0) || 11697 11708
+AddFact || F219 || c164 <-> (t_Measure_0_v4Y = 0) || 11713 11724
+Def || L131 || c165 <-> ((t_Measure_0_v4X = 0) & (t_Measure_0_v4Y = 0))
+DeriveFact || F220 || c165 -> (c163) || F218 L131
+DeriveFact || F221 || c165 -> (c164) || F219 L131
+AddFact || F222 || c166 <-> (t_Measure_0_v4Vx = 0) || 11730 11742
+Def || L132 || c167 <-> (((t_Measure_0_v4X = 0) & (t_Measure_0_v4Y = 0)) & (t_Measure_0_v4Vx = 0))
+DeriveFact || F223 || c167 -> (c165) || L131 L132
+DeriveFact || F224 || c167 -> (c166) || F222 L132
+AddFact || F225 || c168 <-> (t_Measure_0_v4Vy = 0) || 11748 11760
+Def || L133 || c169 <-> ((((t_Measure_0_v4X = 0) & (t_Measure_0_v4Y = 0)) & (t_Measure_0_v4Vx = 0)) & (t_Measure_0_v4Vy = 0))
+DeriveFact || F226 || c169 -> (c167) || L132 L133
+DeriveFact || F227 || c169 -> (c168) || F225 L133
+Def || L134 || c170 <-> (t_Measure_0_v4Presence | ((((t_Measure_0_v4X = 0) & (t_Measure_0_v4Y = 0)) & (t_Measure_0_v4Vx = 0)) & (t_Measure_0_v4Vy = 0)))
+DeriveFact || F228 || c170 -> (c49 | c169) || F57 L133 L134
+DeriveFact || F229 || c162 -> (c93 | c170) || F118 L134 L130

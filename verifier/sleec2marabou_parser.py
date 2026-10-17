@@ -2,6 +2,8 @@
 # 2. THE GENERATOR LOGIC
 # ==========================================
 
+import itertools
+
 # Generation options. Override per run via MarabouGenerator(model, config={...}).
 #   target_output_ub: extra upper bound on the output under test, or None for no
 #       bound. Only narrows the search, so it can hide counterexamples; 0.0
@@ -40,6 +42,36 @@ def _not(expr):
     return _SleecNode('Negation', expr=expr, op=None)
 
 
+def _or(lhs, rhs):
+    return _SleecNode('BoolBinaryOp', lhs=lhs, op='or', rhs=rhs)
+
+
+def _number(value):
+    """A textX Value -> its number, following '-> constant' references.
+
+    Value is 'INT | -> constant'. textX fills the INT field with 0 when the
+    reference form is used, so the reference is checked first. A loop such as
+    'constant a = -> a' never reaches a number and is refused.
+    """
+    seen = []
+    while value.constant is not None:
+        if value.constant.name in seen:
+            raise ValueError("constant reference loop: "
+                             + " -> ".join(seen + [value.constant.name]))
+        seen.append(value.constant.name)
+        value = value.constant.value
+    return value.value
+
+
+# A measure relation of the relation block -> the condition it states.
+MEASURE_RELATIONS = {
+    'imply':           lambda a, b: _or(_not(a), b),
+    'iff':             lambda a, b: _or(_and(a, b), _and(_not(a), _not(b))),
+    'mutualExclusive': lambda a, b: _not(_and(a, b)),
+    'opposite':        lambda a, b: _or(_and(a, _not(b)), _and(_not(a), b)),
+}
+
+
 class NormalizedRule:
     """A rule with no defeaters: when <condition> then <occ>."""
 
@@ -54,12 +86,16 @@ class MarabouGenerator:
     def __init__(self, model, config=None):
         self.model = model
         self.config = {**DEFAULT_CONFIG, **(config or {})}
-        self.constants = {}
+        self.constants = {}  # constant name -> its number
         self.scales = {}
+        self.scale_kinds = {}  # scale measure name -> 'enum' or 'bands'
         self.measures = {}  # Map measure name to index
         self.measure_kinds = {}  # Map measure name to boolean / scale / numeric
         self.outputs = {}  # Map output event name to index
         self.trace = {}  # normalized rule name -> original rule name
+        self.rule_text = {}  # original rule name -> its text in the spec
+        self.inputs = {}  # normalized rule name -> inputs its condition uses
+        self.relations = None  # relation block's measure relations, as one condition
 
         unknown = set(self.config) - set(DEFAULT_CONFIG)
         if unknown:
@@ -67,12 +103,13 @@ class MarabouGenerator:
 
         # Populate symbol tables
         self._scan_definitions()
+        self._scan_relations()
 
     def _scan_definitions(self):
         # 1. Load Constants
         for item in self.model.definitions:
             if item.__class__.__name__ == 'Constant':
-                self.constants[item.name] = item.value
+                self.constants[item.name] = _number(item.value)
 
         # 2. Map Inputs (Measures) to Indices (0, 1, 2...)
         input_idx = 0
@@ -87,6 +124,33 @@ class MarabouGenerator:
                 input_idx += 1
             if hasattr(item, "type") and 'Scale' in item.type.__class__.__name__:
                 self.scales[item.name] = [p.name for p in item.type.scaleParams]
+
+        #    A scale measure is either a pure enum (no constants: each label is its
+        #    position) or named bands of a real quantity (its own LB/UB and an LB
+        #    for every label). Its kind is decided here, once; anything in between
+        #    would be guessed, so it is refused.
+        for name, labels in self.scales.items():
+            needed = [f"{name}LB", f"{name}UB"] + [f"{label}LB" for label in labels]
+            present = [c for c in needed if c in self.constants]
+            if not present:
+                self.scale_kinds[name] = 'enum'
+            elif len(present) == len(needed):
+                self.scale_kinds[name] = 'bands'
+            else:
+                missing = [c for c in needed if c not in self.constants]
+                raise ValueError(
+                    f"scale measure '{name}' is neither an enum (no constants) nor named "
+                    f"bands (all of {', '.join(needed)}): missing {', '.join(missing)}"
+                )
+
+        #    A boolean takes only 0 or 1, so it declares no range of its own. A
+        #    fixed value is a fact about the data and belongs in a measure invariant.
+        for name, kind in self.measure_kinds.items():
+            if kind == 'boolean' and (f"{name}LB" in self.constants or f"{name}UB" in self.constants):
+                raise ValueError(
+                    f"boolean measure '{name}' declares {name}LB/{name}UB, but a boolean's "
+                    f"range is {{0, 1}}; state a fixed value as 'measure invariant' instead"
+                )
 
         # 3. Map output events to network output indices.
         #    Language rule: NN inputs are the measures, in declaration order;
@@ -103,6 +167,25 @@ class MarabouGenerator:
                 "No output events found. NN outputs must be declared as "
                 "'event output<Name>', in the network's output order."
             )
+
+    def _scan_relations(self):
+        """The relation block's dataset constraints, conjoined into self.relations.
+
+        Only measure relations constrain a single network evaluation: 'measure
+        invariant E' states E, and 'measure <rel> A B' states MEASURE_RELATIONS[rel].
+        The others (event relations, causation, includes, forbid, the timed ones)
+        relate events over time, which a single evaluation does not have, so they
+        are skipped.
+        """
+        if self.model.relBlock is None:
+            return
+        for relation in self.model.relBlock.relations:
+            kind = relation.__class__.__name__
+            if kind == 'MeasureInv':
+                self.relations = _and(self.relations, relation.expr)
+            elif kind == 'MeasureRel':
+                self.relations = _and(self.relations,
+                                      MEASURE_RELATIONS[relation.rel](relation.lhs, relation.rhs))
 
     def _resolve_value(self, val_name, bound="LB"):
         """Resolve a value name used on the right of a comparison to a number.
@@ -121,12 +204,11 @@ class MarabouGenerator:
         it empties the box, makes Marabou answer unsat and reports the rule
         VERIFIED without it ever having been tested.
         """
-        for scale in self.scales.values():
-            if val_name in scale:
-                edge = f"{val_name}{bound}"
-                if edge in self.constants:
-                    return self.constants[edge].value
-                return scale.index(val_name)  # pure enum: the label IS the value
+        for measure, labels in self.scales.items():
+            if val_name in labels:
+                if self.scale_kinds[measure] == 'enum':
+                    return labels.index(val_name)  # pure enum: the label IS the value
+                return self.constants[f"{val_name}{bound}"]
 
         if val_name in self.constants:
             # The old generator could only read '<name>LB', so specs declared a
@@ -135,11 +217,11 @@ class MarabouGenerator:
             if f"{val_name}{bound}" in self.constants:
                 raise ValueError(
                     f"'{val_name}' is ambiguous: both '{val_name}' "
-                    f"(= {self.constants[val_name].value}) and '{val_name}{bound}' "
-                    f"(= {self.constants[f'{val_name}{bound}'].value}) are declared. "
+                    f"(= {self.constants[val_name]}) and '{val_name}{bound}' "
+                    f"(= {self.constants[f'{val_name}{bound}']}) are declared. "
                     f"Keep one constant holding the real value."
                 )
-            return self.constants[val_name].value
+            return self.constants[val_name]
 
         raise ValueError(
             f"cannot resolve '{val_name}' to a number: it is neither a declared "
@@ -159,13 +241,20 @@ class MarabouGenerator:
         a 'then' adds a rule of its own: a bare 'unless C' withdraws the
         obligation over C, it does not require the opposite, so there is nothing
         to check there. A rule with no defeater keeps its name. Defeaters are
-        assumed disjoint. Fills self.trace with {normalized: original}.
+        assumed disjoint. Fills self.trace with {normalized: original}, and
+        self.rule_text with {original: its text}, skipped rules included.
         """
         normalized = []
         self.trace = {}
+        self.rule_text = {}
+        source = self.model._tx_parser.input
         for rule in self.model.ruleBlock.rules:
+            if rule.name in self.rule_text:
+                raise ValueError(f"two rules are named '{rule.name}'; rule names must be unique")
+            self.rule_text[rule.name] = source[rule._tx_position:rule._tx_position_end]
             # Rules triggered by an NN output state that two outputs cannot occur
             # together; argmax picks exactly one, so there is nothing to check.
+            # They get no sub-rule, which the rule table reports as IGNORED.
             if rule.trigger.event.name in self.outputs:
                 continue
 
@@ -200,24 +289,71 @@ class MarabouGenerator:
     # ---------------- code generation ----------------
 
     def generate(self):
+        """The verification module. Its check_property(onnx_path) returns
+
+            {"results": {normalized rule: (verified, counterexample, exit_code)},
+             "trace":   {normalized rule: original rule},
+             "rules":   {original rule: {"text", "subrules", "verdict"}},
+             "inputs":  {normalized rule: [{"name", "index"}]}}
+
+        with "rules" in spec order; rule_verdicts() documents the verdicts.
+        """
         normalized = self.normalize_rules()
+        self.inputs = {}
+        checks = [self._generate_rule_check(nrule) for nrule in normalized]  # fills self.inputs
         output = ["from maraboupy import Marabou, MarabouCore, MarabouUtils"]
         output.append(f"\n# normalized rule -> original rule\nTRACE = {self.trace!r}")
-        output.append("\ndef check_property(onnx_path):")
+        output.append(f"\n# original rule -> its text in the spec\nRULES = {self.rule_text!r}")
+        output.append(f"\n# normalized rule -> inputs its condition uses\nINPUTS = {self.inputs!r}")
+        output.append("\n" + self._emit_rule_verdicts())
+        output.append("\n\ndef check_property(onnx_path):")
         output.append("\n    results = {}")
-        for nrule in normalized:
-            output.append(self._generate_rule_check(nrule))
-        output.append("\n    return results")
+        output += checks
+        output.append('\n    return {"results": results, "trace": TRACE, '
+                      '"rules": rule_verdicts(results), "inputs": INPUTS}')
         return "\n".join(output)
+
+    def _emit_rule_verdicts(self):
+        """The generated module's rule_verdicts(): one verdict per original rule,
+        from the results of its normalized rules. The generated module has no
+        access to the parsed spec, so it reads the RULES and TRACE constants
+        generated beside it."""
+        lines = [
+            "def rule_verdicts(results):",
+            '    """One verdict per original rule, from the results of its normalized rules.',
+            "",
+            "    VERIFIED  every sub-rule is unsat",
+            "    VIOLATED  at least one sub-rule is sat",
+            "    UNKNOWN   none is sat, and at least one ended otherwise (timeout, error)",
+            "    IGNORED   no sub-rule: rules triggered by an NN output are not checked",
+            '    """',
+            "    rules = {}",
+            "    for name, text in RULES.items():",
+            "        subrules = [n for n, origin in TRACE.items() if origin == name]",
+            "        codes = [results[n][2] for n in subrules]",
+            "        if not subrules:",
+            '            verdict = "IGNORED"',
+            '        elif "sat" in codes:',
+            '            verdict = "VIOLATED"',
+            '        elif all(code == "unsat" for code in codes):',
+            '            verdict = "VERIFIED"',
+            "        else:",
+            '            verdict = "UNKNOWN"',
+            '        rules[name] = {"text": text, "subrules": subrules, "verdict": verdict}',
+            "    return rules",
+        ]
+        return "\n".join(lines)
 
     def _generate_rule_check(self, nrule):
         target = nrule.occ.event.event
         demanded = f"not {target.name}" if nrule.occ.neg else target.name
+        condition_code, self.inputs[nrule.name] = self._apply_condition(nrule.condition,
+                                                                        self.relations)
         code = [
             f"\n    # --- {nrule.name} (from {nrule.origin}): then {demanded} ---",
             f"    print('Checking {nrule.name}...')",
             f"    net = Marabou.read_onnx(onnx_path)",
-            self._apply_condition(nrule.condition),
+            condition_code,
             self._apply_output_check(nrule.occ),
             self._record_result(nrule.name),
         ]
@@ -256,13 +392,14 @@ class MarabouGenerator:
         if val is None:
             raise ValueError("uninterpretable operand in condition")
         if val.__class__.__name__ == 'Value':  # literal INT, or "-> constant"
-            return ('const', val.value if val.value is not None
-                    else val.constant.value.value)
+            return ('const', _number(val))
         return ('const', self._resolve_value(val.name))  # ScaleParam label
 
     def _literal(self, node, negate):
         """A comparison, or a bare boolean measure, -> (name, op, value)."""
         if node.__class__.__name__ == 'BoolTerminal':  # {m} means m == 1
+            if node.ID is None:
+                raise ValueError(f"'{node.value}' is not supported in conditions; remove it")
             return (node.ID.name, '=', 0 if negate else 1)
         lhs, rhs = self._term(node.lhs), self._term(node.rhs)
         if lhs[0] != 'measure':
@@ -283,9 +420,9 @@ class MarabouGenerator:
     def _is_ordinal(self, name):
         """True when the measure's values really are the integers 0, 1, 2, ...
 
-        'scale' covers two things, told apart by whether the measure declares
-        LB/UB constants:
-          enum   -- no LB/UB. The labels already fix the range 0..n-1 and each
+        'scale' covers two things, decided once per measure by _scan_definitions
+        and kept in self.scale_kinds:
+          enum   -- no constants. The labels already fix the range 0..n-1 and each
                     resolves to its index (robotCommand -> pullOverHead = 2).
           bands  -- LB/UB declared. The measure is a real quantity and each label
                     carries its own LB threshold (glucose -> normalGlucose = 70).
@@ -297,16 +434,7 @@ class MarabouGenerator:
             return True
         if kind != 'scale':
             return False
-        declared = f"{name}LB" in self.constants and f"{name}UB" in self.constants
-        labelled = any(f"{label}LB" in self.constants for label in self.scales[name])
-        if declared != labelled:
-            raise ValueError(
-                f"scale measure '{name}' is inconsistent: it "
-                f"{'declares' if declared else 'omits'} {name}LB/{name}UB but its "
-                f"labels {'carry no' if declared else 'carry'} LB constants. An enum "
-                f"declares neither; a real quantity with named bands declares both."
-            )
-        return not declared
+        return self.scale_kinds[name] == 'enum'
 
     def _not_equal_branches(self, name, val):
         """'m <> v' -> the branches that fall inside m's range.
@@ -385,14 +513,15 @@ class MarabouGenerator:
         return [[(name, lit_op, val)]]
 
     def _measure_range(self, name):
-        """(lower, upper) for an input: the LB/UB constants, else from its type."""
-        if f"{name}LB" in self.constants and f"{name}UB" in self.constants:
-            return (self.constants[f"{name}LB"].value, self.constants[f"{name}UB"].value)
+        """(lower, upper) for an input: an enum's positions, else its LB/UB
+        constants, else a boolean's {0, 1}."""
         kind = self.measure_kinds[name]
+        if kind == 'scale' and self.scale_kinds[name] == 'enum':
+            return (0, len(self.scales[name]) - 1)  # an enum's values are its positions
+        if f"{name}LB" in self.constants and f"{name}UB" in self.constants:
+            return (self.constants[f"{name}LB"], self.constants[f"{name}UB"])
         if kind == 'boolean':
             return (0, 1)
-        if kind == 'scale':
-            return (0, len(self.scales[name]) - 1)  # scale labels are ordinals
         raise ValueError(
             f"numeric measure '{name}' needs both {name}LB and {name}UB constants"
         )
@@ -464,17 +593,47 @@ class MarabouGenerator:
         lines.append(f"    net.addDisjunctionConstraint(disjuncts{tag})")
         return lines
 
-    def _apply_condition(self, condition):
+    def _emit_part(self, kind, payload, bounds, tag):
+        """One conjoined part of _and_parts(): a comparison or an 'or'."""
+        if kind == 'lit':
+            return self._emit_literal(payload, bounds)
+        return self._emit_or(payload, tag)
+
+    def _apply_condition(self, condition, relations=None):
         """Every input bounded by its range, then one emit per conjoined part.
 
-        The bounds in force start at the declared ranges and only ever narrow.
+        The rule's condition comes first, then the relation block's constraints,
+        as in the spec. Both share the bounds in force, which start at the
+        declared ranges and only ever narrow, so a constraint can never undo a
+        bound of the rule. Last, every boolean input is split into 'm = 0 or
+        m = 1': Marabou has only real variables, and a boolean takes no value in
+        between. Returns the code, and the inputs the rule's condition compares,
+        inside an 'or' or not, as [{"name", "index"}] in input order. The relation
+        block's inputs are left out: its constraints are the same for every rule.
         """
         bounds = {name: list(self._measure_range(name)) for name in self.measures}
         lines = self._emit_full_ranges()
-        for tag, (kind, payload) in enumerate(self._and_parts(condition)):
-            lines += (self._emit_literal(payload, bounds) if kind == 'lit'
-                      else self._emit_or(payload, tag))
-        return "\n".join(lines)
+        tags = itertools.count()  # one per part, so every 'or' gets its own locals
+        used = set()
+        for kind, payload in self._and_parts(condition):
+            lines += self._emit_part(kind, payload, bounds, next(tags))
+            if kind == 'lit':
+                used.add(payload[0])
+            else:
+                used.update(name for conjunction in payload for name, _, _ in conjunction)
+        relation_parts = self._and_parts(relations)
+        if relation_parts:
+            lines.append("    # relation block")
+        for kind, payload in relation_parts:
+            lines += self._emit_part(kind, payload, bounds, next(tags))
+        booleans = [name for name, kind in self.measure_kinds.items() if kind == 'boolean']
+        if booleans:
+            lines.append("    # boolean inputs take only 0 or 1")
+        for name in booleans:
+            lines += self._emit_or([[(name, '=', 0)], [(name, '=', 1)]], next(tags))
+        inputs = [{"name": name, "index": idx}
+                  for name, idx in self.measures.items() if name in used]
+        return "\n".join(lines), inputs
 
     def _apply_output_check(self, occ):
         """occ.neg decides the property: 'then B' vs 'then not B'."""
