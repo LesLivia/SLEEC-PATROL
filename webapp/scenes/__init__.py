@@ -11,13 +11,13 @@ Unknown interface, missing value, or anything raised while drawing: no picture. 
 counter-example table is the thing that must always be right, and a misleading drawing is
 worse than none.
 
-To add an environment, write a module exposing KEY = (measures, outputs) and
-render(rows) -> svg, then register it below.
+To add an environment, write a module exposing KEY = (measures, outputs),
+render(rows) -> svg and chosen_action(rows) -> str, then register it below.
 """
 
 from webapp.scenes import highway
 
-RENDERERS = {highway.KEY: highway.render}
+RENDERERS = {highway.KEY: highway}
 
 
 def pick_renderer(measures, outputs):
@@ -35,6 +35,20 @@ def render(renderer, rows):
     if renderer is None or not rows:
         return None
     try:
-        return renderer(rows)
+        return renderer.render(rows)
     except Exception:  # noqa: BLE001 - the table already carries the same numbers
+        return None
+
+
+def chosen_action(renderer, rows):
+    """The action the model takes in this counter-example, named by the environment.
+
+    None when the interface is unknown or the outputs cannot be read: the counter-example
+    table still shows every output value.
+    """
+    if renderer is None or not rows:
+        return None
+    try:
+        return renderer.chosen_action(rows)
+    except Exception:  # noqa: BLE001
         return None

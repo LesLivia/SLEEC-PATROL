@@ -202,7 +202,7 @@ class MarabouGenerator:
         tried for it: a name is either declared or it is a typo, and silently
         defaulting a typo builds the query over the wrong input box -- which, when
         it empties the box, makes Marabou answer unsat and reports the rule
-        VERIFIED without it ever having been tested.
+        COMPLIANT without it ever having been tested.
         """
         for measure, labels in self.scales.items():
             if val_name in labels:
@@ -322,10 +322,10 @@ class MarabouGenerator:
             "def rule_verdicts(results):",
             '    """One verdict per original rule, from the results of its normalized rules.',
             "",
-            "    VERIFIED  every sub-rule is unsat",
-            "    VIOLATED  at least one sub-rule is sat",
-            "    UNKNOWN   none is sat, and at least one ended otherwise (timeout, error)",
-            "    IGNORED   no sub-rule: rules triggered by an NN output are not checked",
+            "    COMPLIANT   every sub-rule is unsat",
+            "    VIOLATED    at least one sub-rule is sat",
+            "    UNVERIFIED  none is sat, and at least one ended otherwise (timeout, error)",
+            "    IGNORED     no sub-rule: rules triggered by an NN output are not checked",
             '    """',
             "    rules = {}",
             "    for name, text in RULES.items():",
@@ -336,9 +336,9 @@ class MarabouGenerator:
             '        elif "sat" in codes:',
             '            verdict = "VIOLATED"',
             '        elif all(code == "unsat" for code in codes):',
-            '            verdict = "VERIFIED"',
+            '            verdict = "COMPLIANT"',
             "        else:",
-            '            verdict = "UNKNOWN"',
+            '            verdict = "UNVERIFIED"',
             '        rules[name] = {"text": text, "subrules": subrules, "verdict": verdict}',
             "    return rules",
         ]
@@ -721,6 +721,6 @@ class MarabouGenerator:
             lines.append(f"    net.addDisjunctionConstraint(equations)")
         lines.append(f"    result = net.solve()")
         lines.append(f"    if result[0] == 'sat': print('  -> VIOLATED: counter-example found')")
-        lines.append(f"    elif result[0] == 'unsat': print('  -> VERIFIED')")
-        lines.append(f"    else: print('  -> UNKNOWN: solver returned ' + str(result[0]))")
+        lines.append(f"    elif result[0] == 'unsat': print('  -> COMPLIANT')")
+        lines.append(f"    else: print('  -> UNVERIFIED: solver returned ' + str(result[0]))")
         return "\n".join(lines)

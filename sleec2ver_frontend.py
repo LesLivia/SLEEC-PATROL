@@ -190,15 +190,15 @@ def verify_model():
         for res in info["subrules"]:
             verified, counterexample, exit_code = results[res]
             if verified:
-                output_write(f"  PROPERTY {res} VERIFIED")
-                detail = f"Property: {res}\nOutcome: verified\n"
+                output_write(f"  PROPERTY {res} COMPLIANT")
+                detail = f"Property: {res}\nOutcome: compliant\n"
             elif exit_code == "sat":
                 output_write(f"  PROPERTY {res} VIOLATED")
                 detail = (f"Property: {res}\nOutcome: violated\n"
                           f"Counterexample: {counterexample}\n")
             else:
-                output_write(f"  PROPERTY {res} UNKNOWN (marabou: {exit_code})")
-                detail = f"Property: {res}\nOutcome: unknown ({exit_code})\n"
+                output_write(f"  PROPERTY {res} UNVERIFIED (marabou: {exit_code})")
+                detail = f"Property: {res}\nOutcome: unverified ({exit_code})\n"
             new_text.insert(tk.END, "\n" + detail)
 
 

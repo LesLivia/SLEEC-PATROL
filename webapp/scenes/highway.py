@@ -66,6 +66,12 @@ def _lane_of(y):
     return k, abs(y - k * LANE_W)
 
 
+def chosen_action(rows):
+    """The action the model takes on this counter-example: the argmax of its outputs."""
+    val = {row["name"]: row["raw"] for row in rows}
+    return ACTIONS[max(OUTPUTS, key=lambda name: val[name])]
+
+
 def render(rows):
     """rows: the labelled counter-example from core.label_counterexample(). -> svg string."""
     cell = {row["name"]: row for row in rows}
@@ -219,15 +225,13 @@ def render(rows):
     box(0.0, ego_y, "ego", ego_speed, PRIMARY, TEXT, 1.6, True,
         not _is_one(val["egoPresence"]))
 
-    # ---- what the network does here ----
-    action = max(OUTPUTS, key=lambda name: val[name])
+    # ---- where the ego is. What the model does with it is named under the figure,
+    # by chosen_action() below, for a caller that wants the environment's own name
+    # for it; the report names the output event instead, as its rules do.
     lane, off = _lane_of(ego_y)
     out.append(f'<text x="12" y="19" font-size="11" fill="{TEXT}" font-weight="700">'
                f'ego at x {ego_x:.1f} m, lane {lane} of {LANES}, {ego_speed}'
                f'{"" if off <= 0.5 else f" ({off:.1f} m off centre)"}</text>')
-    out.append(f'<text x="{W - 12}" y="19" font-size="11" fill="{PRIMARY}" '
-               f'font-weight="700" text-anchor="end">network chooses '
-               f'{ACTIONS[action]} ({val[action]:.3g})</text>')
     out.append(f'<text x="12" y="35" font-size="9.5" fill="{MUTED}">the cars in yellow '
                f'are the ones this rule constrains; the others were only held '
                f'inside their declared ranges</text>')
