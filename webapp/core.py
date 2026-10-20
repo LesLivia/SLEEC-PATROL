@@ -105,13 +105,19 @@ def _show(value, kind):
 
     Anything else is shown as the number it is - including a boolean that somehow came
     back between the two, which is worth seeing rather than rounding away.
+
+    Ten significant digits, not four. A strict comparison is encoded by moving the bound
+    just inside the threshold, by as little as 1e-6, so at four digits a value sitting
+    inside the bound prints as the threshold itself: 1.999999 reads as 2. That hides the
+    difference between a counter-example that proves something and one that only touches
+    the boundary, where the rule never applied.
     """
     if kind == "boolean":
         if abs(value) <= 1e-6:
             return "False"
         if abs(value - 1.0) <= 1e-6:
             return "True"
-    return f"{value:.4g}"
+    return f"{value:.10g}"
 
 
 def label_counterexample(cex, measures, outputs, used_names, kinds):

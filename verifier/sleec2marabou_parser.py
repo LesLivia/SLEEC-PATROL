@@ -14,14 +14,24 @@ import itertools
 #       "independent" several actions may be taken at once, or none.
 #   decision_threshold: the threshold under "independent". Export the head
 #       without its sigmoid and leave this at 0.0: sigmoid(z) >= 0.5 <=> z >= 0.
+#   strict_comparisons: how '>' and '<' are encoded on a real quantity, which a
+#       closed bound cannot express. "epsilon" moves the bound inside the
+#       threshold, so a witness really satisfies it; "closed" leaves it on the
+#       threshold and admits the boundary, as every run before this option did.
 DEFAULT_CONFIG = {
     "target_output_ub": None,
     "output_semantics": "exclusive",
     "decision_threshold": 0.0,
+    "strict_comparisons": "epsilon",
 }
 
 # Operator seen under a 'not'.
 NEGATED_OP = {'>': '<=', '<': '>=', '>=': '<', '<=': '>', '=': '<>', '<>': '='}
+
+# Marabou accepts a value that misses a bound by up to ADDITIVE + MULTIPLICATIVE *
+# |bound| (Tableau::computeBasicStatus), and reports sat on that same relaxation
+# (Engine::solve). A strict comparison survives only if it clears this.
+MARABOU_BOUND_SLACK = (1e-7, 1e-10)
 
 
 class _SleecNode:
@@ -526,10 +536,41 @@ class MarabouGenerator:
             f"numeric measure '{name}' needs both {name}LB and {name}UB constants"
         )
 
+    def _strict_step(self, val):
+        """How far inside the threshold a strict bound has to sit.
+
+        Ten times each of Marabou's two slack terms, so it clears them at any
+        magnitude. Not configurable: a value set by hand that fell below the slack
+        would silently restore the behaviour this is here to fix.
+        """
+        additive, relative = MARABOU_BOUND_SLACK
+        return max(10 * additive, 10 * relative * abs(val))
+
+    def _strict_as_closed(self, op, val):
+        """A comparison as a bound Marabou can hold: op in '=', '<=', '>='.
+
+        _literal already stepped an ordinal measure, exactly. What is still strict
+        here is a real quantity, which has no exact encoding, so the bound moves
+        inside the threshold by enough that a point on it still compares strictly.
+        """
+        if op not in ('>', '<') or self.config["strict_comparisons"] != "epsilon":
+            return op, val
+        step = self._strict_step(val)
+        return ('>=', val + step) if op == '>' else ('<=', val - step)
+
     def _check_threshold(self, name, val):
         lb, ub = self._measure_range(name)
         if not (lb <= val <= ub):
             raise ValueError(f"threshold {val} for '{name}' is outside its range [{lb}, {ub}]")
+
+    def _check_shifted(self, name, op, val, written):
+        """A strict bound moved inside the range still has to land in it."""
+        lb, ub = self._measure_range(name)
+        if not (lb <= val <= ub):
+            side = 'above' if op == '>=' else 'below'
+            raise ValueError(
+                f"'{written}' cannot be satisfied: {name} ranges over [{lb}, {ub}], so "
+                f"no value lies strictly {side} that threshold inside its range.")
 
     def _emit_full_ranges(self):
         """Every input must be bounded, so start each query from the declared ranges."""
@@ -554,7 +595,13 @@ class MarabouGenerator:
         if op not in ('=', '<', '<=', '>', '>='):
             raise ValueError(f"unsupported operator '{op}'")
         idx = self.measures[name]
-        self._check_threshold(name, val)
+        self._check_threshold(name, val)        # the threshold as the rule states it
+        written = f"{name} {op} {val}"
+        op, val = self._strict_as_closed(op, val)
+        self._check_shifted(name, op, val, written)
+        # The comment carries the comparison as written, and the step where one was
+        # taken, so the query says what it encodes.
+        note = written if f"{val}" in written else f"{written} -> {op} {val}"
         bound = bounds[name]
         calls = []
         if op in ('=', '>', '>=') and val > bound[0]:
@@ -564,9 +611,9 @@ class MarabouGenerator:
             bound[1] = val
             calls.append(f"net.setUpperBound({idx}, {val})")
         if not calls:
-            return [f"    # {name} {op} {val}: skipped, bounds already "
+            return [f"    # {note}: skipped, bounds already "
                     f"[{bound[0]}, {bound[1]}]"]
-        return ([f"    {calls[0]}  # {name} {op} {val}"]
+        return ([f"    {calls[0]}  # {note}"]
                 + [f"    {call}" for call in calls[1:]])
 
     def _emit_or(self, disjuncts, tag):
@@ -581,10 +628,14 @@ class MarabouGenerator:
             lines.append(f"    d{tag}_{n} = []")
             for name, op, val in conjunction:
                 self._check_threshold(name, val)
+                written = f"{name} {op} {val}"
+                op, val = self._strict_as_closed(op, val)
+                self._check_shifted(name, op, val, written)
+                note = written if f"{val}" in written else f"{written} -> {op} {val}"
                 rel = 'EQ' if op == '=' else ('LE' if op in ('<', '<=') else 'GE')
                 lines += [
                     f"    e = MarabouUtils.Equation(MarabouCore.Equation.{rel})"
-                    f"  # {name} {op} {val}",
+                    f"  # {note}",
                     f"    e.addAddend(1, net.inputVars[0][0][{self.measures[name]}])",
                     f"    e.setScalar({val})",
                     f"    d{tag}_{n}.append(e)",
