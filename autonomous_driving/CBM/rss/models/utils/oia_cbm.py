@@ -101,11 +101,12 @@ class OIACBM(CBMModule):
 
         query_prob = []
 
-        # put the output in a way that it has probStopTrue, probStopFalse ...
-        # going 2 by 2
+        # put the output in a way that it has probStopFalse, probStopTrue ...
+        # going 2 by 2: the loss and the metrics read index 1 of each pair as label 1 (action allowed),
+        # so the classifier output is the probability that the action is allowed
         for i in range(self.nr_classes):
-            query_prob.append(output[:, i])
             query_prob.append(1 - output[:, i])
+            query_prob.append(output[:, i])
 
         query_prob = torch.stack(query_prob, dim=1)
 

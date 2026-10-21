@@ -320,9 +320,13 @@ def build_report(outcome, generator):
                                          used, generator.measure_kinds)
                     if violated else [])
             # What the rule demanded here, in its own words: 'outputSlower', or
-            # 'not outputSlower' where the rule forbids rather than requires.
-            expected = (ruletext.response_text(normalized[sub].occ)
-                        if sub in normalized else None)
+            # 'not outputSlower' where the rule forbids rather than requires, or
+            # 'outputHalt else outputSlow' where it chains the actions it accepts.
+            # 'allowed' is the same thing as names: a violation is the network taking
+            # none of them, so every one of them is what the reader is pointed at.
+            occs = normalized[sub].occs if sub in normalized else []
+            expected = ruletext.response_text(occs) if occs else None
+            allowed = [occ.event.event.name for occ in occs]
             # What the model did instead, named as the specification names it.
             action = chosen_output(rows) if violated else None
             # The measures this part of the rule names itself. Narrower than 'used': a
@@ -332,14 +336,13 @@ def build_report(outcome, generator):
                                 if owner == sub)
             names_here = set(ruletext.names_used(own_text, generator.measures))
             # Which rows the reader is being pointed at: the measures this part names,
-            # the response it demanded, and the action the network took instead. The
-            # last wins where a rule forbids an output and the network produced it, so
-            # the same row is both demanded against and taken.
-            wanted = expected.split()[-1] if expected else None
+            # every action it would have accepted, and the one the network took instead.
+            # The last wins where a rule forbids an output and the network produced it,
+            # so the same row is both demanded against and taken.
             for row in rows:
                 if row["output"]:
                     row["role"] = ("got" if row["name"] == action
-                                   else "wanted" if row["name"] == wanted else None)
+                                   else "wanted" if row["name"] in allowed else None)
                 else:
                     row["role"] = "used" if row["name"] in names_here else None
             parts.append({
@@ -355,6 +358,9 @@ def build_report(outcome, generator):
                              for mark, owner in zip(marks, owners)],
                 "constants": constants,
                 "expected": expected,
+                # The actions accepted, so the report can say whether it is naming one
+                # demanded response or a chain of alternatives.
+                "allowed": allowed,
                 "related_rows": [row for row in rows if row["related"]],
                 "all_rows": rows,
                 "action": action,

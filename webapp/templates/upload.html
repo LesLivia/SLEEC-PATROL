@@ -453,6 +453,12 @@
      unless (&lt;condition&gt;)
      then &lt;event&gt;</pre>
         <ul>
+          <li><b>A rule always opens on a trigger event</b> &mdash;
+              <code>when cmdRequired and (&lt;condition&gt;)</code> &mdash; and it has to
+              be there even where the condition itself is entirely about measures. The
+              event stands for the moment the system is asked to decide; the measures
+              describe the situation it decides in. One representative event serves the
+              whole specification, as <code>cmdRequired</code> does in the example.</li>
           <li>A measure is read in braces, <code>{&lt;name&gt;}</code>; a constant is named
               directly.</li>
           <li><b>Every binary operation carries its own parentheses</b> — never

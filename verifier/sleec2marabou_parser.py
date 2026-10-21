@@ -8,10 +8,12 @@ import itertools
 #   target_output_ub: extra upper bound on the output under test, or None for no
 #       bound. Only narrows the search, so it can hide counterexamples; 0.0
 #       reproduces the original behaviour.
-#   output_semantics: "exclusive" for an argmax/softmax head, where an action is
-#       taken iff it beats every other output; "independent" for per-output
-#       sigmoids, where it must also clear decision_threshold. Under
-#       "independent" several actions may be taken at once, or none.
+#   output_semantics: "exclusive" for an argmax/softmax head, where an action may
+#       be taken when no other output is above it, and a rule must hold for every
+#       action that may be taken, so a tie counts against it whenever a forbidden
+#       action is among the tied ones; "independent" for per-output sigmoids,
+#       where an action must also clear decision_threshold. Under "independent"
+#       several actions may be taken at once, or none.
 #   decision_threshold: the threshold under "independent". Export the head
 #       without its sigmoid and leave this at 0.0: sigmoid(z) >= 0.5 <=> z >= 0.
 #   strict_comparisons: how '>' and '<' are encoded on a real quantity, which a
@@ -83,13 +85,17 @@ MEASURE_RELATIONS = {
 
 
 class NormalizedRule:
-    """A rule with no defeaters: when <condition> then <occ>."""
+    """A rule with no defeaters: when <condition> then <occs[0]> else <occs[1]> ...
 
-    def __init__(self, name, origin, condition, occ):
+    occs holds the actions the rule allows, one per 'else' branch; a rule with
+    no 'else' has a single one.
+    """
+
+    def __init__(self, name, origin, condition, occs):
         self.name = name
         self.origin = origin
         self.condition = condition
-        self.occ = occ
+        self.occs = occs
 
 
 class MarabouGenerator:
@@ -251,8 +257,10 @@ class MarabouGenerator:
         a 'then' adds a rule of its own: a bare 'unless C' withdraws the
         obligation over C, it does not require the opposite, so there is nothing
         to check there. A rule with no defeater keeps its name. Defeaters are
-        assumed disjoint. Fills self.trace with {normalized: original}, and
-        self.rule_text with {original: its text}, skipped rules included.
+        assumed disjoint. A 'then' may be an 'else' chain: it stays one
+        obligation, and its sub-rule carries it whole (see _branches). Fills
+        self.trace with {normalized: original}, and self.rule_text with
+        {original: its text}, skipped rules included.
         """
         normalized = []
         self.trace = {}
@@ -268,10 +276,11 @@ class MarabouGenerator:
             if rule.trigger.event.name in self.outputs:
                 continue
 
+            occs = self._branches(rule.name, rule.response)
             defeaters = list(rule.response.defeater or [])
             if not defeaters:
                 normalized.append(
-                    NormalizedRule(rule.name, rule.name, rule.condition, rule.response.occ)
+                    NormalizedRule(rule.name, rule.name, rule.condition, occs)
                 )
                 continue
 
@@ -279,7 +288,7 @@ class MarabouGenerator:
             for defeater in defeaters:
                 condition = _and(condition, _not(defeater.expr))
             normalized.append(
-                NormalizedRule(f"{rule.name}_main", rule.name, condition, rule.response.occ)
+                NormalizedRule(f"{rule.name}_main", rule.name, condition, occs)
             )
             for i, defeater in enumerate(defeaters, start=1):
                 if defeater.response is None:
@@ -287,7 +296,7 @@ class MarabouGenerator:
                 normalized.append(
                     NormalizedRule(f"{rule.name}_unless{i}", rule.name,
                                    _and(rule.condition, defeater.expr),
-                                   defeater.response.occ)
+                                   self._branches(rule.name, defeater.response))
                 )
 
         for nrule in normalized:
@@ -295,6 +304,54 @@ class MarabouGenerator:
         if len(self.trace) != len(normalized):
             raise ValueError("normalized rule name collision; rename the clashing rule")
         return normalized
+
+    def _branches(self, rule_name, response):
+        """'then A else B else C' -> [A, B, C]: the response holds if one of them does.
+
+        Each 'else' holds a response of its own, which may have its own 'else',
+        so the chain is followed to its end. A response with no 'else' gives
+        [A], and 'then not A' keeps its 'not'.
+
+        Under "exclusive" only an action at the top may be taken, which rules
+        some chains out: a 'not' in a chain collapses it ('A else not B' is
+        just 'not B') or makes it hold everywhere except where A and B tie on
+        top ('not A else not B'), and a chain naming every output can never
+        fail. Each says something other than what it seems to, so it is
+        refused, as is a repeated action. An 'unless' inside an 'else' branch
+        is refused too; it can always be written on the whole rule.
+        """
+        occs = [response.occ]
+        nd = response.nd
+        while nd is not None:
+            if nd.response.defeater:
+                raise ValueError(
+                    f"rule '{rule_name}': 'unless' inside an 'else' branch is not "
+                    f"supported. Write it on the whole rule instead: 'then A else "
+                    f"{{B unless C}}' is 'then A else B unless C', and 'then A else "
+                    f"{{B unless C then D}}' is 'then A else B unless C then A else D'.")
+            occs.append(nd.response.occ)
+            nd = nd.response.nd
+        if len(occs) == 1:
+            return occs
+
+        names = [occ.event.event.name for occ in occs]
+        chain = " else ".join(names)
+        if self.config["output_semantics"] != "exclusive":
+            raise ValueError(f"rule '{rule_name}': 'else' is supported only under "
+                             f"\"exclusive\" output semantics so far")
+        if any(occ.neg for occ in occs):
+            raise ValueError(
+                f"rule '{rule_name}': 'not' inside an 'else' chain. Only an action at "
+                f"the top may be taken, so 'then A else not B' means 'then not B', and "
+                f"'then not A else not B' holds everywhere except where A and B tie on "
+                f"top; write the rule without 'else'."
+            )
+        if len(set(names)) < len(names):
+            raise ValueError(f"rule '{rule_name}': 'then {chain}' names an action twice")
+        if set(names) == set(self.outputs):
+            raise ValueError(f"rule '{rule_name}': 'then {chain}' allows every output, "
+                             f"so it can never fail")
+        return occs
 
     # ---------------- code generation ----------------
 
@@ -355,19 +412,34 @@ class MarabouGenerator:
         return "\n".join(lines)
 
     def _generate_rule_check(self, nrule):
-        target = nrule.occ.event.event
-        demanded = f"not {target.name}" if nrule.occ.neg else target.name
+        demanded = " else ".join(f"not {occ.event.event.name}" if occ.neg
+                                 else occ.event.event.name for occ in nrule.occs)
         condition_code, self.inputs[nrule.name] = self._apply_condition(nrule.condition,
                                                                         self.relations)
+        # One action keeps the original check; an 'else' chain has its own.
+        if len(nrule.occs) == 1:
+            output_code = self._apply_output_check(nrule.occs[0])
+        else:
+            output_code = self._apply_chain_check(nrule.occs)
         code = [
             f"\n    # --- {nrule.name} (from {nrule.origin}): then {demanded} ---",
             f"    print('Checking {nrule.name}...')",
             f"    net = Marabou.read_onnx(onnx_path)",
             condition_code,
-            self._apply_output_check(nrule.occ),
+            output_code,
+            self._emit_solve(),
             self._record_result(nrule.name),
         ]
         return "\n".join(code)
+
+    def _emit_solve(self):
+        """Solve the query and print its outcome; _record_result stores it."""
+        return "\n".join([
+            f"    result = net.solve()",
+            f"    if result[0] == 'sat': print('  -> VIOLATED: counter-example found')",
+            f"    elif result[0] == 'unsat': print('  -> COMPLIANT')",
+            f"    else: print('  -> UNVERIFIED: solver returned ' + str(result[0]))",
+        ])
 
     def _record_result(self, rule_name):
         """Store (verified, counterexample, exit_code). Only 'unsat' proves a rule.
@@ -770,8 +842,49 @@ class MarabouGenerator:
 
         if use_disjunction:
             lines.append(f"    net.addDisjunctionConstraint(equations)")
-        lines.append(f"    result = net.solve()")
-        lines.append(f"    if result[0] == 'sat': print('  -> VIOLATED: counter-example found')")
-        lines.append(f"    elif result[0] == 'unsat': print('  -> COMPLIANT')")
-        lines.append(f"    else: print('  -> UNVERIFIED: solver returned ' + str(result[0]))")
+        return "\n".join(lines)
+
+    def _apply_chain_check(self, occs):
+        """'then A else B ...' holds iff each action that may be taken is in the chain.
+
+        Its negation is "some output outside the chain is >= every action in
+        it", which is exactly when an outside output may be taken; a tie
+        between two actions of the chain is fine, as either may be taken. One
+        disjunction, one option per output outside the chain, each option one
+        equation per action in it. _branches lets only plain actions under
+        "exclusive" into a chain, and never every output, so there is always at
+        least one option. Every comparison is closed: an outside output may be
+        taken as soon as it reaches the chain's best, so ">=" is exact, and
+        "strict_comparisons" has nothing to do here.
+        """
+        names = [occ.event.event.name for occ in occs]
+        allowed = [self.outputs[name] for name in names]
+        lines = [
+            f"    # Verify output is {' or '.join(names)} "
+            f"(Index {', '.join(map(str, allowed))})",
+            f"    # Assert Negation: exists other output >= {' and '.join(names)}",
+            f"    outputVars = net.outputVars[0][0]",
+            f"    equations = []",
+        ]
+        for name, idx in self.outputs.items():
+            if idx in allowed:
+                # Optional: the comparisons below are the property on their own.
+                if self.config["target_output_ub"] is not None:
+                    lines.append(f"    # optional bound on {name}")
+                    lines.append(f"    net.setUpperBound(outputVars[{idx}], "
+                                 f"{self.config['target_output_ub']})")
+            else:
+                # This output wins over the chain only if it beats every action in it.
+                lines.append(f"    # {name} >= {' and '.join(names)}")
+                lines.append(f"    option = []")
+                for target in allowed:
+                    lines += [
+                        f"    eq = MarabouUtils.Equation(MarabouCore.Equation.GE)",
+                        f"    eq.addAddend(1, outputVars[{idx}])",
+                        f"    eq.addAddend(-1, outputVars[{target}])",
+                        f"    eq.setScalar(0)",
+                        f"    option.append(eq)",
+                    ]
+                lines.append(f"    equations.append(option)")
+        lines.append(f"    net.addDisjunctionConstraint(equations)")
         return "\n".join(lines)

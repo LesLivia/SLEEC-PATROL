@@ -3,6 +3,7 @@ import shutil
 
 import gymnasium as gym
 import highway_env  # noqa: F401
+import torch
 import torch.nn as nn
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
@@ -17,7 +18,7 @@ TRAIN = True
 ENV_ID = "highway-fast-v0"  # or "highway-v0"
 # ENV_ID = "highway-v0"
 
-# Shared by both environments: 256x256 ReLU actor and critic, n_epochs=10,
+# Shared by both environments: a 64x64 ReLU actor with a 256x256 ReLU critic, n_epochs=10,
 # learning_rate=5e-4, ent_coef=0.0 and the default highway-env reward.
 #
 # n_steps is the rollout length PER COPY, and that matters more than the total: 128 steps per
@@ -110,6 +111,8 @@ def evaluate(model_path, n_episodes=N_EVAL_EPISODES):
 
 
 if __name__ == "__main__":
+    # A single PyTorch thread stabilizes the reinforcement learning computation.
+    torch.set_num_threads(1)
     os.makedirs(MODEL_DIR, exist_ok=True)
     print(f"Training config for {ENV_ID}: {CONFIG}")
 
@@ -127,9 +130,12 @@ if __name__ == "__main__":
             env,
             # ReLU (instead of SB3's default Tanh) keeps the network piecewise-linear,
             # which is what Marabou verifies exactly.
+            # Only the actor (pi) is exported and verified: at 64x64 Marabou can prove rules over
+            # the whole input region, where the 256x256 actor did not finish. The critic (vf) is
+            # used in training only, so it keeps its size.
             policy_kwargs=dict(
                 activation_fn=nn.ReLU,
-                net_arch=dict(pi=[256, 256], vf=[256, 256]),
+                net_arch=dict(pi=[64, 64], vf=[256, 256]),
             ),
             n_steps=CONFIG["n_steps"],
             batch_size=CONFIG["batch_size"],

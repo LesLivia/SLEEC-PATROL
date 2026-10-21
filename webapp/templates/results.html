@@ -686,8 +686,12 @@
               {% if part.scene %}<div class="scene">{{ part.scene | safe }}</div>{% endif %}
               {# What the rule asked for, then what the model did: the same kind of name
                  on both lines, so the two can be read against each other. #}
+              {# A rule may chain the actions it accepts with 'else', and then there is
+                 no one expected output: a violation is the network taking none of them. #}
               {% if part.expected %}
-                <p class="net-out">Expected output:
+                {% set several = part.allowed is defined and part.allowed | length > 1 %}
+                <p class="net-out">{{ "Allowed outputs:" if several
+                                      else "Expected output:" }}
                   <span class="action expected">{{ part.expected }}</span></p>
               {% endif %}
               {% if part.action %}

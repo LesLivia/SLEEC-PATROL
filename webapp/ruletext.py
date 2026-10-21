@@ -8,10 +8,15 @@ reads them.
 """
 
 
-def response_text(occ):
-    """The response of a normalized rule -> 'outputSlower', or 'not outputSlower'."""
-    event = occ.event.event
-    return f"not {event.name}" if getattr(occ, "neg", False) else event.name
+def response_text(occs):
+    """A normalized rule's response, in the language's own words.
+
+    'outputSlower', or 'not outputSlower' where the rule forbids rather than requires,
+    or 'outputHalt else outputSlow' where it chains the actions it will accept. The
+    parser refuses 'not' inside a chain, so the two forms never mix.
+    """
+    return " else ".join(f"not {occ.event.event.name}" if getattr(occ, "neg", False)
+                         else occ.event.event.name for occ in occs)
 
 
 def names_used(text, names):
