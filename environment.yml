@@ -2,29 +2,32 @@ name: ai-sleec-ver
 channels:
   - defaults
 dependencies:
-  - python==3.10.19
+  - python==3.10.21
   - matplotlib
-  - numpy
+  - numpy==1.26.4
   - pandas
   - joblib
   - tensorflow==2.19.1
-  - onnx
-  - onnxruntime
+  - onnx==1.17.0
   - scikit-learn
-  - ordered-set
+  - ordered-set==4.1.0
   - ipykernel
   - pip:
       - arpeggio==2.0.3
-      - filelock==3.20.0
-      - fsspec==2025.10.0
+      - fastapi==0.143.0
+      - filelock==3.32.3
+      - fsspec==2026.7.0
       - jinja2==3.1.6
-      - maraboupy==1.0.0
+      - maraboupy==2.0.0
       - networkx==3.4.2
-      - pip==24.3.1
+      - onnxruntime==1.23.2
+      - pip==26.2.1
       - pysmt==0.9.6
+      - python-multipart==0.0.32
       - setuptools==44.1.1
       - textx==4.2.3
       - torch==2.8.0
+      - uvicorn==0.54.0
       - z3-solver==4.15.4.0
       - highway-env>=1.8.2
       - stable-baselines3>=2.3.0

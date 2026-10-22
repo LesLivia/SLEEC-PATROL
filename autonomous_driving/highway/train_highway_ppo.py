@@ -30,7 +30,7 @@ ENV_CONFIGS = {
     "highway-fast-v0": dict(
         n_cpu=6,
         total_timesteps=50_000,
-        seed=1,
+        seed=0,
         n_steps=128,      # 6 copies x 128 = 768 steps per update (the highway-env example)
         batch_size=64,
         gamma=0.8,        # the highway-env example value

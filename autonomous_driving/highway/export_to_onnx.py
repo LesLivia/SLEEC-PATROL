@@ -29,8 +29,8 @@ from stable_baselines3 import PPO
 #   "best_model_evalcallback"    EvalCallback's pick, kept only when it was superseded
 #   "highway_ppo_<N>_steps"      a specific checkpoint, e.g. "highway_ppo_49992_steps"
 # ============================================================================
-# ENV_ID = "highway-fast-v0"
-ENV_ID = "highway-v0"
+ENV_ID = "highway-fast-v0"
+# ENV_ID = "highway-v0"
 MODEL_SUBDIR = ENV_ID  # use f"{ENV_ID}-scaled" only once the input scaling is folded in
 MODEL_NAME = "best_model"
 
@@ -50,9 +50,9 @@ class PPOActorNet(nn.Module):
 
     def __init__(self, policy):
         super().__init__()
-        # mlp_extractor.policy_net: Linear(25,256) → ReLU → Linear(256,256) → ReLU
+        # mlp_extractor.policy_net: Linear(25, h) → ReLU → Linear(h, h) → ReLU (h = net_arch["pi"] in train_highway_ppo.py)
         self.policy_net = policy.mlp_extractor.policy_net
-        # action_net: Linear(256, 5)  — outputs raw logits, no softmax
+        # action_net: Linear(h, 5)  — outputs raw logits, no softmax
         self.action_net = policy.action_net
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -104,5 +104,8 @@ if __name__ == "__main__":
     )
 
     print(f"Exported actor to: {OUTPUT_PATH}")
-    print(f"Network: [{OBS_DIM} → 256 → 256 → {N_ACTIONS}]  (ReLU, linear output)")
+    # layer sizes of the exported actor, read from its Linear layers
+    linears = [m for m in actor.modules() if isinstance(m, nn.Linear)]
+    sizes = [linears[0].in_features] + [m.out_features for m in linears]
+    print(f"Network: [{' → '.join(map(str, sizes))}]  (ReLU, linear output)")
     print("Action indices: 0=LANE_LEFT  1=IDLE  2=LANE_RIGHT  3=FASTER  4=SLOWER")

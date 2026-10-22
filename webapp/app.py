@@ -9,10 +9,10 @@ Page 3 (GET /results/x)  one panel per rule as written, holding its normalized
 Verification logic lives in core.py; the verdicts and grouping come from the generated
 module, so nothing is recomputed here. Uploads go to a temp folder, never into the repo.
 
-Run it inside WSL, where maraboupy lives:
-    pip install fastapi uvicorn jinja2 python-multipart
-    cd /mnt/d/SLEEC_verif/SLEEC2Ver && python -m uvicorn webapp.app:app --port 8000
-then open http://localhost:8000 in Windows.
+Run it from the repository root, in the environment from environment.yml (on Windows,
+inside WSL, since maraboupy has no Windows build):
+    python -m uvicorn webapp.app:app --port 8000
+then open http://localhost:8000.
 """
 
 import re

@@ -20,11 +20,18 @@ import itertools
 #       closed bound cannot express. "epsilon" moves the bound inside the
 #       threshold, so a witness really satisfies it; "closed" leaves it on the
 #       threshold and admits the boundary, as every run before this option did.
+#   splitting_strategy: how Marabou branches inside a query. "largest-interval"
+#       splits the input box, which is fast on networks with many ReLUs; None
+#       leaves Marabou's own choice. It changes only the search, not what is checked.
+#   snc_workers: Marabou's parallel split-and-conquer mode with this many
+#       workers; 0 turns it off. It changes only the search, not what is checked.
 DEFAULT_CONFIG = {
     "target_output_ub": None,
     "output_semantics": "exclusive",
     "decision_threshold": 0.0,
     "strict_comparisons": "epsilon",
+    "splitting_strategy": "largest-interval",
+    "snc_workers": 8,
 }
 
 # Operator seen under a 'not'.
@@ -312,13 +319,16 @@ class MarabouGenerator:
         so the chain is followed to its end. A response with no 'else' gives
         [A], and 'then not A' keeps its 'not'.
 
-        Under "exclusive" only an action at the top may be taken, which rules
-        some chains out: a 'not' in a chain collapses it ('A else not B' is
-        just 'not B') or makes it hold everywhere except where A and B tie on
-        top ('not A else not B'), and a chain naming every output can never
-        fail. Each says something other than what it seems to, so it is
-        refused, as is a repeated action. An 'unless' inside an 'else' branch
-        is refused too; it can always be written on the whole rule.
+        Only an action at the top may be taken (under "independent", one that
+        also clears decision_threshold), which rules some chains out: a 'not'
+        in a chain collapses it ('A else not B' is just 'not B') or makes it
+        hold everywhere except where A and B tie on top ('not A else not B'),
+        and under "exclusive" a chain naming every output can never fail.
+        Each says something other than what it seems to, so it is refused, as
+        is a repeated action. Under "independent" a chain naming every output
+        still fails when no output clears the threshold, so it is kept. An
+        'unless' inside an 'else' branch is refused too; it can always be
+        written on the whole rule.
         """
         occs = [response.occ]
         nd = response.nd
@@ -336,9 +346,6 @@ class MarabouGenerator:
 
         names = [occ.event.event.name for occ in occs]
         chain = " else ".join(names)
-        if self.config["output_semantics"] != "exclusive":
-            raise ValueError(f"rule '{rule_name}': 'else' is supported only under "
-                             f"\"exclusive\" output semantics so far")
         if any(occ.neg for occ in occs):
             raise ValueError(
                 f"rule '{rule_name}': 'not' inside an 'else' chain. Only an action at "
@@ -348,7 +355,7 @@ class MarabouGenerator:
             )
         if len(set(names)) < len(names):
             raise ValueError(f"rule '{rule_name}': 'then {chain}' names an action twice")
-        if set(names) == set(self.outputs):
+        if self.config["output_semantics"] == "exclusive" and set(names) == set(self.outputs):
             raise ValueError(f"rule '{rule_name}': 'then {chain}' allows every output, "
                              f"so it can never fail")
         return occs
@@ -419,6 +426,8 @@ class MarabouGenerator:
         # One action keeps the original check; an 'else' chain has its own.
         if len(nrule.occs) == 1:
             output_code = self._apply_output_check(nrule.occs[0])
+        elif self.config["output_semantics"] == "independent":
+            output_code = self._apply_independent_chain_check(nrule.occs)
         else:
             output_code = self._apply_chain_check(nrule.occs)
         code = [
@@ -433,9 +442,22 @@ class MarabouGenerator:
         return "\n".join(code)
 
     def _emit_solve(self):
-        """Solve the query and print its outcome; _record_result stores it."""
-        return "\n".join([
-            f"    result = net.solve()",
+        """Solve the query and print its outcome; _record_result stores it.
+
+        Only the options that are switched on are passed; with none of them the
+        call is a plain net.solve().
+        """
+        options = []
+        if self.config["snc_workers"]:
+            options.append(f"snc=True, numWorkers={self.config['snc_workers']}")
+        if self.config["splitting_strategy"] is not None:
+            options.append(f"splittingStrategy={self.config['splitting_strategy']!r}")
+        if options:
+            solve = [f"    options = Marabou.createOptions({', '.join(options)})",
+                     f"    result = net.solve(options=options)"]
+        else:
+            solve = [f"    result = net.solve()"]
+        return "\n".join(solve + [
             f"    if result[0] == 'sat': print('  -> VIOLATED: counter-example found')",
             f"    elif result[0] == 'unsat': print('  -> COMPLIANT')",
             f"    else: print('  -> UNVERIFIED: solver returned ' + str(result[0]))",
@@ -887,4 +909,53 @@ class MarabouGenerator:
                     ]
                 lines.append(f"    equations.append(option)")
         lines.append(f"    net.addDisjunctionConstraint(equations)")
+        return "\n".join(lines)
+
+    def _apply_independent_chain_check(self, occs):
+        """'then A else B ...' under "independent": the action taken is one in the chain.
+
+        The action taken is the output at the top, if it also clears
+        decision_threshold, so an action X of the chain is not taken when
+        "X <= threshold, or some output outside the chain is >= X". The
+        negation of the chain is that for every X in it: one disjunction per
+        action, all conjoined. A tie between two actions of the chain is fine,
+        as either may be taken, so they are not compared with each other. A
+        chain naming every output has no outside output: it is violated
+        exactly when every output is <= threshold, i.e. no action is taken.
+        """
+        threshold = self.config["decision_threshold"]
+        names = [occ.event.event.name for occ in occs]
+        allowed = [self.outputs[name] for name in names]
+        lines = [
+            f"    # Verify output is {' or '.join(names)} "
+            f"(Index {', '.join(map(str, allowed))})",
+            f"    # Assert Negation: each of {', '.join(names)} is <= {threshold} "
+            f"OR some output outside the chain >= it",
+            f"    outputVars = net.outputVars[0][0]",
+        ]
+        for name, idx in self.outputs.items():
+            # Optional: the comparisons below are the property on their own.
+            if idx in allowed and self.config["target_output_ub"] is not None:
+                lines.append(f"    # optional bound on {name}")
+                lines.append(f"    net.setUpperBound(outputVars[{idx}], "
+                             f"{self.config['target_output_ub']})")
+        for name, target in zip(names, allowed):
+            lines += [
+                f"    # {name} <= {threshold} OR some output outside the chain >= {name}",
+                f"    equations = []",
+                f"    eq = MarabouUtils.Equation(MarabouCore.Equation.LE)",
+                f"    eq.addAddend(1, outputVars[{target}])",
+                f"    eq.setScalar({threshold})",
+                f"    equations.append([eq])",
+            ]
+            for idx in self.outputs.values():
+                if idx not in allowed:
+                    lines += [
+                        f"    eq = MarabouUtils.Equation(MarabouCore.Equation.GE)",
+                        f"    eq.addAddend(1, outputVars[{idx}])",
+                        f"    eq.addAddend(-1, outputVars[{target}])",
+                        f"    eq.setScalar(0)",
+                        f"    equations.append([eq])",
+                    ]
+            lines.append(f"    net.addDisjunctionConstraint(equations)")
         return "\n".join(lines)

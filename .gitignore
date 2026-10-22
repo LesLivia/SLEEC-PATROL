@@ -14,4 +14,7 @@ autonomous_driving/CBM/rss/data/*/
 autonomous_driving/CBM/rss/*.pth
 autonomous_driving/CBM/rss/*.png
 
+# rsbench's SDD-OIA scene generator (local copy, not part of the repo)
+autonomous_driving/CBM/rssgen/
+
 .DS_Store

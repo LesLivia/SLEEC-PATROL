@@ -22,62 +22,33 @@ To recreate the Conda environment required for this project, follow these steps:
     conda activate ai-sleec-ver
     ```
 
-## Running the Frontend Demo (Dressing Robot)
+4.  **Optional extras** (install inside the activated environment):
+    - CBM training (`autonomous_driving/CBM/rss`):
+      ```bash
+      pip install -r requirements-cbm.txt
+      ```
+    - The LEGOS web server (`legos_sleec/analyzer/routes.py`):
+      ```bash
+      pip install -r requirements-legos.txt
+      ```
 
-The `sleec2ver_frontend.py` provides a graphical user interface to load requirements, select NN models, and perform verification.
+## Running the Web App
 
-To run the dressing robot demo:
+The web app in `webapp/` is the tool's frontend. It takes a SLEEC specification (`.sleec`) and a neural network (`.onnx`), turns the rules into Marabou queries, and reports for each rule whether the network complies with it.
 
-1.  **Launch the frontend**:
+1.  **Start the server** from the repository root, with the environment activated:
     ```bash
-    python sleec2ver_frontend.py
+    python -m uvicorn webapp.app:app --port 8000
     ```
+    Marabou has no Windows build, so on Windows run this inside WSL.
 
-2.  **Load the Dressing Robot requirements**:
-    - In the **Requirements** dropdown menu at the top, select `dressassist_nn.sleec`.
-    - The SLEEC specification will appear in the left editor pane.
+2.  **Open** http://localhost:8000 in a browser.
 
-3.  **Select the Model**:
-    - In the **Model** dropdown menu, select `carebot_decision_model_v2.onnx`.
+**Inputs.** The network's inputs must be the specification's measures, in the order they are declared, and its outputs must be the specification's output events. The specification language is defined in `legos_sleec/sleec-grammar.txt`.
 
-4.  **Perform Verification**:
-    - Click the **VERIFY** button (in green) to check the loaded requirements against the selected NN model.
-    - The results will be displayed in the **Output** panel and the right editor pane.
+**Example setups.** Each folder in `webapp/examples/` that holds exactly one `.sleec` file and one `.onnx` file is offered as a ready-made setup. Adding such a folder adds a setup.
 
-5.  **SMT Checks (Optional)**:
-    - You can also perform standard SLEEC SMT checks (redundancy, conflicts, concern, purpose, situational conflict) by clicking the respective buttons.
+## SDD-OIA Verification Notes
 
-## SDD-OIA Scene Rendering Setup
-
-SDD-OIA scenes are rendered with the rsbench generator in `autonomous_driving/CBM/rssgen`. It runs inside Blender 2.91, which has its own Python 3.7, separate from the Conda environment.
-
-1.  **Install the system packages** (virtual display and the libraries Blender needs):
-    ```bash
-    sudo apt install -y xvfb libgl1 libgl1-mesa-dri libxi6 libxxf86vm1 libxfixes3 libxrender1 libxkbcommon0 libsm6 xz-utils wget
-    ```
-
-2.  **Install Blender 2.91.2**:
-    ```bash
-    mkdir -p ~/tools && cd ~/tools
-    wget https://download.blender.org/release/Blender2.91/blender-2.91.2-linux64.tar.xz
-    tar -xf blender-2.91.2-linux64.tar.xz && rm blender-2.91.2-linux64.tar.xz
-    BLENDER=~/tools/blender-2.91.2-linux64/blender
-    $BLENDER --version
-    ```
-
-3.  **Install the generator's packages into Blender's Python**:
-    ```bash
-    BPY=~/tools/blender-2.91.2-linux64/2.91/python/bin/python3.7m
-    $BPY -m ensurepip
-    $BPY -m pip install --upgrade pip
-    $BPY -m pip install sympy==1.10.1 pyyaml
-    ```
-
-4.  **Check that rendering works** (from the repository root):
-    ```bash
-    cd autonomous_driving/CBM/rssgen/boia_config
-    xvfb-run -a $BLENDER -b base_scene_boia.blend -E BLENDER_EEVEE -o /tmp/eevee_test_#### -F PNG -f 1
-    ```
-    This writes `/tmp/eevee_test_0001.png`. On a machine with a display, `xvfb-run -a` can be left out.
-
-5.  **Add the traffic-light models**, which rsbench does not distribute: `TL_G.blend`, `TL_Y.blend` and `TL_R.blend` in `autonomous_driving/CBM/rssgen/boia_config/shapes/`, each holding one object named `TLG`, `TLY` or `TLR` with the lit lamp's colour in its own materials, saved with Blender 2.91.
+- **No yellow-light concept.** SDD-OIA renders yellow traffic lights, but the rsbench generator labels them `red_light` (`deal_with_tl` in `rssgen/rssgen/sddoia/sddoia.py` of [rsbench](https://github.com/unitn-sml/rsbench-code)), and their action label is stop, as for red. We keep this definition (no relabelling, no retraining), so `redLight` in `resources/requirements/sddoia_behaviourplanner.sleec` means "red or yellow light ahead". AutoCar R14 (yellow light) is therefore not adapted: its main part would repeat R13, and its "unless the yellow follows a red" part needs the previous light, which the single-frame model does not see.
+- **No relation block.** The head's inputs are the network's concept predictions, and the only fact about them is the [0, 1] box. The generator's concept relations hold for the ground truth, not for the predictions: e.g. `follow` and `car` never hold together in a scene, yet both are predicted above 0.5 in 104 of the 1,464 test frames.
