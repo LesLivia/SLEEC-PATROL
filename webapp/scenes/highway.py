@@ -9,6 +9,10 @@ The coordinate convention is highway-env's Kinematics observation with normalize
 the ego row is absolute, every other row is relative to the ego, lane k is centred at
 y = 4k metres, and x grows along the direction of travel.
 
+How many lanes that road has is read off the specification rather than fixed here:
+highway-v0 runs four and highway-fast-v0 three, and the two declare the same measures in
+the same order, so nothing in the interface tells them apart. See _lanes().
+
 Marabou is free to return an assignment the simulator could never produce - a fractional
 presence, a car between two lanes, two cars in the same place. Those are drawn as they
 are and listed underneath, because they say the query is under-constrained rather than
@@ -33,7 +37,6 @@ ACTIONS = {"outputLaneLeft": "LANE_LEFT", "outputIdle": "IDLE",
            "outputSlower": "SLOWER"}
 CARS = ("v1", "v2", "v3", "v4")
 
-LANES = 4            # highway-v0 and highway-fast-v0 both default to lanes_count=4
 LANE_W = 4.0         # AbstractLane.DEFAULT_WIDTH
 CAR_L, CAR_W = 5.0, 2.0
 
@@ -41,7 +44,7 @@ W = 820              # viewBox width; the svg itself scales to its container
 LANE_PX = 32         # a lane is drawn 32 px tall whatever the horizontal scale is
 VMARGIN = 16         # room above and below the road for a car that left it
 PAD_T, RULER = 48, 30
-ROAD_PX = LANES * LANE_PX
+MAX_LANES = 8        # beyond this the figure is not a road, so nothing is drawn
 
 # The page's palette. HIGHLIGHT marks the cars the rule constrains, the same role the
 # tinted rows play in the counter-example table; DANGER is kept for the warnings alone.
@@ -66,14 +69,39 @@ def _lane_of(y):
     return k, abs(y - k * LANE_W)
 
 
+def _lanes(constants):
+    """How many lanes the road has, from the range the specification declares for egoY.
+
+    Lane k is centred at 4k metres, so the top lane's centre is (n-1)*4 and the declared
+    upper bound is that centre plus however far the ego may sit outside it. Rounding
+    recovers n for any overshoot under half a lane, which is what a road the ego is meant
+    to stay on allows: egoYUB of 9 gives three lanes (centres 0, 4, 8), of 13 gives four.
+
+    None where the specification does not say, or says something that is not a road: then
+    nothing is drawn, and the counter-example table carries the numbers as it always does.
+    """
+    top = constants.get("egoYUB")
+    if not isinstance(top, (int, float)):
+        return None
+    lanes = round(top / LANE_W) + 1
+    return lanes if 1 <= lanes <= MAX_LANES else None
+
+
 def chosen_action(rows):
     """The action the model takes on this counter-example: the argmax of its outputs."""
     val = {row["name"]: row["raw"] for row in rows}
     return ACTIONS[max(OUTPUTS, key=lambda name: val[name])]
 
 
-def render(rows):
-    """rows: the labelled counter-example from core.label_counterexample(). -> svg string."""
+def render(rows, constants):
+    """rows: the labelled counter-example from core.label_counterexample(). -> svg string.
+
+    'constants' are the specification's own, read for the shape of the road.
+    """
+    lanes = _lanes(constants)
+    if lanes is None:
+        return None
+    road_px = lanes * LANE_PX
     cell = {row["name"]: row for row in rows}
     val = {name: cell[name]["raw"] for name in MEASURES + OUTPUTS}
     if not all(math.isfinite(v) for v in val.values()):
@@ -116,8 +144,8 @@ def render(rows):
                          related=any(name + f in related
                                      for f in ("Presence", "X", "Y", "Vx", "Vy"))))
         lane, off = _lane_of(ego_y + dy)
-        if not -LANE_W / 2 <= ego_y + dy <= (LANES - 1) * LANE_W + LANE_W / 2:
-            alerts.append(f"{name}: outside the {LANES} lanes of the road")
+        if not -LANE_W / 2 <= ego_y + dy <= (lanes - 1) * LANE_W + LANE_W / 2:
+            alerts.append(f"{name}: outside the {lanes} lanes of the road")
         elif off > 0.5:
             alerts.append(f"{name}: {off:.1f} m off the centre of lane {lane}")
         if abs(dx) < CAR_L and abs(dy) < CAR_W:
@@ -128,8 +156,8 @@ def render(rows):
     # The ego is bound by the same specification, so it gets the same scrutiny.
     if not _is_one(val["egoPresence"]):
         alerts.append(f"ego: presence {val['egoPresence']:.3g} is neither 0 nor 1")
-    if not -LANE_W / 2 <= ego_y <= (LANES - 1) * LANE_W + LANE_W / 2:
-        alerts.append(f"ego: outside the {LANES} lanes of the road")
+    if not -LANE_W / 2 <= ego_y <= (lanes - 1) * LANE_W + LANE_W / 2:
+        alerts.append(f"ego: outside the {lanes} lanes of the road")
     if ego_vx < 0:
         alerts.append(f"ego: driving backwards at {abs(ego_vx):.1f} m/s")
 
@@ -150,7 +178,7 @@ def render(rows):
 
     shown = alerts[:6]
     lines = len(shown) + (1 if absent else 0)
-    height = PAD_T + VMARGIN + ROAD_PX + VMARGIN + RULER + 14 * lines
+    height = PAD_T + VMARGIN + road_px + VMARGIN + RULER + 14 * lines
 
     def px(dx):
         return 12 + (dx - left) * scale
@@ -164,23 +192,23 @@ def render(rows):
 
     # ---- road ----
     road_top = PAD_T + VMARGIN
-    out.append(f'<rect x="0" y="{road_top}" width="{W}" height="{ROAD_PX}" fill="{ROAD}"/>')
-    for k in range(LANES + 1):
+    out.append(f'<rect x="0" y="{road_top}" width="{W}" height="{road_px}" fill="{ROAD}"/>')
+    for k in range(lanes + 1):
         y = road_top + k * LANE_PX
-        if k in (0, LANES):
+        if k in (0, lanes):
             out.append(f'<line x1="0" y1="{y}" x2="{W}" y2="{y}" stroke="{EDGE}" '
                        f'stroke-width="2.5"/>')
         else:
             out.append(f'<line x1="0" y1="{y}" x2="{W}" y2="{y}" stroke="{BG}" '
                        f'stroke-width="1.5" stroke-dasharray="14 12"/>')
-    for k in range(LANES):
+    for k in range(lanes):
         out.append(f'<text x="5" y="{py(k * LANE_W) + 3.5:.1f}" font-size="9" '
                    f'fill="{MUTED}">L{k}</text>')
 
     # ---- distance ruler, measured from the ego ----
     step = 20 if (right - left) <= 240 else 50
     tick = int(left // step) * step
-    ruler_y = road_top + ROAD_PX + VMARGIN
+    ruler_y = road_top + road_px + VMARGIN
     while tick <= right:
         x = px(tick)
         if not 14 <= x <= W - 14:      # a tick whose label would hang off the canvas
@@ -230,7 +258,7 @@ def render(rows):
     # for it; the report names the output event instead, as its rules do.
     lane, off = _lane_of(ego_y)
     out.append(f'<text x="12" y="19" font-size="11" fill="{TEXT}" font-weight="700">'
-               f'ego at x {ego_x:.1f} m, lane {lane} of {LANES}, {ego_speed}'
+               f'ego at x {ego_x:.1f} m, lane {lane} of {lanes}, {ego_speed}'
                f'{"" if off <= 0.5 else f" ({off:.1f} m off centre)"}</text>')
     out.append(f'<text x="12" y="35" font-size="9.5" fill="{MUTED}">the cars in yellow '
                f'are the ones this rule constrains; the others were only held '

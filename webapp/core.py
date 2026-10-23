@@ -8,11 +8,14 @@ The two phases are separate calls on purpose: the UI shows a parser error verbat
 while a failure inside Marabou gets a generic message with the detail tucked away.
 """
 
+import hashlib
 import html
 import importlib.util
+import json
 import re
 import sys
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from textx import metamodel_from_str
@@ -25,20 +28,33 @@ from webapp import ruletext, scenes  # noqa: E402
 DEFAULT_GRAMMAR = ROOT / "legos_sleec" / "sleec-grammar.txt"
 
 
-def build_generator(spec_text, grammar_text=None, target_output_ub=None):
+# What the form chooses, and all it chooses. MarabouGenerator merges what it is given
+# over its own DEFAULT_CONFIG, so every other setting - the output bound, the strict
+# comparison encoding, the solver's splitting options - keeps the parser's default by
+# not being named here, and keeps it when the parser gains another.
+SEMANTICS = ("exclusive", "independent")
+
+
+def build_generator(spec_text, grammar_text=None, output_semantics="exclusive",
+                    decision_threshold=0.0):
     """Parse the spec and return a MarabouGenerator for it."""
     grammar_text = grammar_text or DEFAULT_GRAMMAR.read_text(encoding="utf-8")
     model = metamodel_from_str(grammar_text).model_from_str(spec_text)
-    return MarabouGenerator(model, config={"target_output_ub": target_output_ub})
+    return MarabouGenerator(model, config={
+        "output_semantics": output_semantics,
+        "decision_threshold": decision_threshold,
+    })
 
 
-def generate_module(spec_text, workdir, grammar_text=None, target_output_ub=None):
+def generate_module(spec_text, workdir, grammar_text=None,
+                    output_semantics="exclusive", decision_threshold=0.0):
     """Phase 1: parse the spec and write the Marabou query module. No solver involved.
 
     Returns (generator, code, module_path). Anything raised here is a specification or
     code-generation problem, which the UI reports verbatim.
     """
-    generator = build_generator(spec_text, grammar_text, target_output_ub)
+    generator = build_generator(spec_text, grammar_text, output_semantics,
+                                decision_threshold)
     code = generator.generate()
     module_path = Path(workdir) / "generated_verify_model.py"
     module_path.write_text(code, encoding="utf-8")
@@ -56,6 +72,56 @@ def solve_module(module_path, onnx_path):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module.check_property(str(onnx_path))
+
+
+# Phase 2 solved beforehand: a bundled setup may keep solve_module()'s answer beside its
+# files, written by webapp/prerun.py, so choosing it does not wait for Marabou again.
+PRERUN = "prerun.json"
+
+
+def _sha256(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def save_prerun(path, code, onnx_path, outcome):
+    """Keep solve_module()'s answer, with the query and the model it answers.
+
+    Both are kept as hashes: the answer stands only for that exact query on that exact
+    network, and load_prerun() checks both before it is used. JSON keeps every float
+    exactly, and allow_nan makes a value it cannot hold fail here rather than be written.
+    """
+    record = {
+        "query_sha256": _sha256(code.encode("utf-8")),
+        "model_sha256": _sha256(Path(onnx_path).read_bytes()),
+        "solved": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "outcome": outcome,
+    }
+    Path(path).write_text(json.dumps(record, indent=1, allow_nan=False) + "\n",
+                          encoding="utf-8")
+
+
+def load_prerun(path, code, onnx_path):
+    """The stored answer, if it answers this query on this model; otherwise None.
+
+    None means: solve as usual. That is the answer for a missing or unreadable file, and
+    for one solved from another query or model - a changed specification, setting,
+    parser or network - so a stored answer is never shown for a question it did not ask.
+    """
+    try:
+        record = json.loads(Path(path).read_text(encoding="utf-8"))
+        current = (record["query_sha256"] == _sha256(code.encode("utf-8"))
+                   and record["model_sha256"] == _sha256(Path(onnx_path).read_bytes()))
+        if not current:
+            return None
+        outcome = record["outcome"]
+        # JSON has no tuples and only string keys: put back what check_property()
+        # returns, (verified, {variable number: value}, exit code) in the same order.
+        outcome["results"] = {
+            name: (verified, {int(var): value for var, value in cex.items()}, exit_code)
+            for name, (verified, cex, exit_code) in outcome["results"].items()}
+        return outcome
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return None
 
 
 def network_interface(onnx_path):
@@ -288,7 +354,7 @@ def build_report(outcome, generator):
 
     groups = []
     for name, info in outcome["rules"].items():
-        text = (info["text"] or "").strip()
+        text = ruletext.without_comments(info["text"] or "").strip()
         # The panel already carries the rule's name, so the text starts at 'when'.
         if text.startswith(name):
             text = text[len(name):].lstrip()
@@ -365,8 +431,11 @@ def build_report(outcome, generator):
                 "all_rows": rows,
                 "action": action,
                 # Only a violation has an assignment to draw. scenes.render() refuses
-                # empty rows anyway; this says so where the decision is made.
-                "scene": scenes.render(renderer, rows) if violated else None,
+                # empty rows anyway; this says so where the decision is made. The
+                # constants go with the rows: a renderer reads the environment's shape
+                # off the ranges the specification declares, not off a guess of its own.
+                "scene": (scenes.render(renderer, rows, generator.constants)
+                          if violated else None),
             })
         groups.append({
             "name": name,

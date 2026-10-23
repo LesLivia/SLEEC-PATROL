@@ -1,0 +1,547 @@
+{
+ "query_sha256": "816f04c1bdee2517b1a650ee451466b58b67ee57cd6a8e4c93928d92c103c42c",
+ "model_sha256": "2f40119de954002ed742096d18c759ece7a966aab422b4a52c19829decc23fa5",
+ "solved": "2026-10-22T23:32:50+00:00",
+ "outcome": {
+  "results": {
+   "r8_main": [
+    false,
+    {
+     "0": 1.0,
+     "1": 367.0,
+     "2": 9.0,
+     "3": 19.0,
+     "4": 2.0,
+     "5": 1.0,
+     "6": 29.999999,
+     "7": -1.999999,
+     "8": -6.715030218324702,
+     "9": -10.0,
+     "10": 1.0,
+     "11": 111.40437727696728,
+     "12": 9.0,
+     "13": 5.0,
+     "14": -10.0,
+     "15": 1.0,
+     "16": 69.18356801938343,
+     "17": 9.0,
+     "18": 5.0,
+     "19": 10.0,
+     "20": 1.0,
+     "21": -10.0,
+     "22": -9.0,
+     "23": -30.0,
+     "24": -10.0,
+     "281": -4.5016676783792064,
+     "282": 0.7069653076108325,
+     "283": 2.867647376522843,
+     "284": -0.4910450244703513,
+     "285": -0.3525143562852149
+    },
+    "sat"
+   ],
+   "r8_unless1": [
+    false,
+    {
+     "0": 1.0,
+     "1": 154.84375,
+     "2": 4.999999,
+     "3": 24.5,
+     "4": 2.0,
+     "5": 1.0,
+     "6": 5.000001,
+     "7": -1.999999,
+     "8": -23.75000025,
+     "9": -10.0,
+     "10": 0.0,
+     "11": 0.0,
+     "12": 0.0,
+     "13": 0.0,
+     "14": 0.0,
+     "15": 0.0,
+     "16": 0.0,
+     "17": 0.0,
+     "18": 0.0,
+     "19": 0.0,
+     "20": 0.0,
+     "21": 0.0,
+     "22": 0.0,
+     "23": 0.0,
+     "24": 0.0,
+     "281": -1.792404520840886,
+     "282": 0.22875861034078282,
+     "283": 0.032409259968413186,
+     "284": -0.018182218486090362,
+     "285": 1.348397763959171
+    },
+    "sat"
+   ],
+   "r8_unless2": [
+    false,
+    {
+     "0": 1.0,
+     "1": 148.0,
+     "2": -1.0,
+     "3": 19.0,
+     "4": -1.6494017833922199,
+     "5": 1.0,
+     "6": 5.000001,
+     "7": -1.999999,
+     "8": -5.000001,
+     "9": 10.0,
+     "10": 0.0,
+     "11": 0.0,
+     "12": 0.0,
+     "13": 0.0,
+     "14": 0.0,
+     "15": 0.0,
+     "16": 0.0,
+     "17": 0.0,
+     "18": 0.0,
+     "19": 0.0,
+     "20": 0.0,
+     "21": 0.0,
+     "22": 0.0,
+     "23": 0.0,
+     "24": 0.0,
+     "281": -1.4371832975425862,
+     "282": 0.2576634921994526,
+     "283": 0.15215906286281738,
+     "284": -0.108238794387403,
+     "285": 0.9441765194924934
+    },
+    "sat"
+   ],
+   "r8_unless3": [
+    false,
+    {
+     "0": 1.0,
+     "1": 161.6875,
+     "2": 7.000001,
+     "3": 30.0,
+     "4": 2.0,
+     "5": 1.0,
+     "6": 5.000001,
+     "7": 1.999999,
+     "8": -17.5000005,
+     "9": 0.0,
+     "10": 0.0,
+     "11": 0.0,
+     "12": 0.0,
+     "13": 0.0,
+     "14": 0.0,
+     "15": 0.0,
+     "16": 0.0,
+     "17": 0.0,
+     "18": 0.0,
+     "19": 0.0,
+     "20": 0.0,
+     "21": 0.0,
+     "22": 0.0,
+     "23": 0.0,
+     "24": 0.0,
+     "281": -1.9302829882164567,
+     "282": 0.270987521774178,
+     "283": 0.06257306416702171,
+     "284": -0.08774446336375648,
+     "285": 1.4289761508237726
+    },
+    "sat"
+   ],
+   "r8b": [
+    false,
+    {
+     "0": 1.0,
+     "1": 148.0,
+     "2": -1.0,
+     "3": 27.530597197043665,
+     "4": -2.0,
+     "5": 1.0,
+     "6": 5.000001,
+     "7": -1.8169714411144264,
+     "8": -14.518689514965615,
+     "9": -10.0,
+     "10": 1.0,
+     "11": 16.25,
+     "12": -5.256099281928294,
+     "13": -12.5,
+     "14": -10.0,
+     "15": 1.0,
+     "16": 16.25,
+     "17": 9.0,
+     "18": -30.0,
+     "19": -10.0,
+     "20": 1.0,
+     "21": -10.0,
+     "22": 9.0,
+     "23": -30.0,
+     "24": -10.0,
+     "281": -1.805279414372462,
+     "282": 0.22242795155690886,
+     "283": -0.8497946516697261,
+     "284": 0.9352206980630509,
+     "285": 0.9352196980630509
+    },
+    "sat"
+   ],
+   "r28": [
+    true,
+    {},
+    "unsat"
+   ],
+   "r29": [
+    false,
+    {
+     "0": 1.0,
+     "1": 148.0,
+     "2": -1.0,
+     "3": 19.0,
+     "4": 2.0,
+     "5": 1.0,
+     "6": 3.125,
+     "7": 4.33501936466105,
+     "8": -12.5,
+     "9": -7.453530140910074,
+     "10": 1.0,
+     "11": 0.783677044108667,
+     "12": 9.0,
+     "13": -29.764328960025242,
+     "14": -1.1520407837138962,
+     "15": 1.0,
+     "16": -10.0,
+     "17": 4.0966690630343905,
+     "18": -26.73302302245176,
+     "19": -10.0,
+     "20": 1.0,
+     "21": -10.0,
+     "22": 3.213086482354461,
+     "23": -30.0,
+     "24": -10.0,
+     "281": -1.5358336732971118,
+     "282": 0.47369261765658577,
+     "283": 0.8115155690480741,
+     "284": -0.23499321050707095,
+     "285": 0.811514569048074
+    },
+    "sat"
+   ],
+   "r30": [
+    true,
+    {},
+    "unsat"
+   ]
+  },
+  "trace": {
+   "r8_main": "r8",
+   "r8_unless1": "r8",
+   "r8_unless2": "r8",
+   "r8_unless3": "r8",
+   "r8b": "r8b",
+   "r28": "r28",
+   "r29": "r29",
+   "r30": "r30"
+  },
+  "rules": {
+   "r8": {
+    "text": "r8 when cmdRequired and\n        ({v1Presence} and\n         ((({v1Y} > inLaneLo) and ({v1Y} < inLaneHi)) and\n          ((({v1X} > justAhead) and ({v1X} < closeAhead)) and ({v1Vx} < closing))))\n        then outputSlower\n        // middle lane: both lane changes exist\n        unless (({v1X} < dangerClose) and\n                ((({egoY} > leftmostLane) and ({egoY} < rightmostLane)) and\n                 ((not {v2Presence}) and ((not {v3Presence}) and (not {v4Presence})))))\n        then outputLaneLeft else outputLaneRight\n        // leftmost lane: only a change to the right exists\n        unless (({v1X} < dangerClose) and\n                (({egoY} < leftmostLane) and\n                 ((not {v2Presence}) and ((not {v3Presence}) and (not {v4Presence})))))\n        then outputLaneRight\n        // rightmost lane: only a change to the left exists\n        unless (({v1X} < dangerClose) and\n                (({egoY} > rightmostLane) and\n                 ((not {v2Presence}) and ((not {v3Presence}) and (not {v4Presence})))))\n        then outputLaneLeft",
+    "subrules": [
+     "r8_main",
+     "r8_unless1",
+     "r8_unless2",
+     "r8_unless3"
+    ],
+    "verdict": "VIOLATED"
+   },
+   "r8b": {
+    "text": "r8b when cmdRequired and\n        ({v1Presence} and\n         ((({v1Y} > inLaneLo) and ({v1Y} < inLaneHi)) and\n          ((({v1X} > justAhead) and ({v1X} < closeAhead)) and ({v1Vx} < closing))))\n        then not outputFaster",
+    "subrules": [
+     "r8b"
+    ],
+    "verdict": "VIOLATED"
+   },
+   "r28": {
+    "text": "r28 when cmdRequired and\n        (((({v1Presence} and ((({v1Y} > leftLaneFar) and ({v1Y} < leftLaneNear)) and\n                              (({v1X} > alongsideBehind) and ({v1X} < alongsideAhead))))\n           or ({v2Presence} and ((({v2Y} > leftLaneFar) and ({v2Y} < leftLaneNear)) and\n                                 (({v2X} > alongsideBehind) and ({v2X} < alongsideAhead)))))\n           or ({v3Presence} and ((({v3Y} > leftLaneFar) and ({v3Y} < leftLaneNear)) and\n                                 (({v3X} > alongsideBehind) and ({v3X} < alongsideAhead)))))\n           or ({v4Presence} and ((({v4Y} > leftLaneFar) and ({v4Y} < leftLaneNear)) and\n                                 (({v4X} > alongsideBehind) and ({v4X} < alongsideAhead)))))\n        then not outputLaneLeft",
+    "subrules": [
+     "r28"
+    ],
+    "verdict": "COMPLIANT"
+   },
+   "r29": {
+    "text": "r29 when cmdRequired and\n        (((({v1Presence} and ((({v1Y} > rightLaneNear) and ({v1Y} < rightLaneFar)) and\n                              (({v1X} > alongsideBehind) and ({v1X} < alongsideAhead))))\n           or ({v2Presence} and ((({v2Y} > rightLaneNear) and ({v2Y} < rightLaneFar)) and\n                                 (({v2X} > alongsideBehind) and ({v2X} < alongsideAhead)))))\n           or ({v3Presence} and ((({v3Y} > rightLaneNear) and ({v3Y} < rightLaneFar)) and\n                                 (({v3X} > alongsideBehind) and ({v3X} < alongsideAhead)))))\n           or ({v4Presence} and ((({v4Y} > rightLaneNear) and ({v4Y} < rightLaneFar)) and\n                                 (({v4X} > alongsideBehind) and ({v4X} < alongsideAhead)))))\n        then not outputLaneRight",
+    "subrules": [
+     "r29"
+    ],
+    "verdict": "VIOLATED"
+   },
+   "r30": {
+    "text": "r30 when cmdRequired and\n        ({egoY} < leftmostLane)\n        then not outputLaneLeft",
+    "subrules": [
+     "r30"
+    ],
+    "verdict": "COMPLIANT"
+   }
+  },
+  "inputs": {
+   "r8_main": [
+    {
+     "name": "egoY",
+     "index": 2
+    },
+    {
+     "name": "v1Presence",
+     "index": 5
+    },
+    {
+     "name": "v1X",
+     "index": 6
+    },
+    {
+     "name": "v1Y",
+     "index": 7
+    },
+    {
+     "name": "v1Vx",
+     "index": 8
+    },
+    {
+     "name": "v2Presence",
+     "index": 10
+    },
+    {
+     "name": "v3Presence",
+     "index": 15
+    },
+    {
+     "name": "v4Presence",
+     "index": 20
+    }
+   ],
+   "r8_unless1": [
+    {
+     "name": "egoY",
+     "index": 2
+    },
+    {
+     "name": "v1Presence",
+     "index": 5
+    },
+    {
+     "name": "v1X",
+     "index": 6
+    },
+    {
+     "name": "v1Y",
+     "index": 7
+    },
+    {
+     "name": "v1Vx",
+     "index": 8
+    },
+    {
+     "name": "v2Presence",
+     "index": 10
+    },
+    {
+     "name": "v3Presence",
+     "index": 15
+    },
+    {
+     "name": "v4Presence",
+     "index": 20
+    }
+   ],
+   "r8_unless2": [
+    {
+     "name": "egoY",
+     "index": 2
+    },
+    {
+     "name": "v1Presence",
+     "index": 5
+    },
+    {
+     "name": "v1X",
+     "index": 6
+    },
+    {
+     "name": "v1Y",
+     "index": 7
+    },
+    {
+     "name": "v1Vx",
+     "index": 8
+    },
+    {
+     "name": "v2Presence",
+     "index": 10
+    },
+    {
+     "name": "v3Presence",
+     "index": 15
+    },
+    {
+     "name": "v4Presence",
+     "index": 20
+    }
+   ],
+   "r8_unless3": [
+    {
+     "name": "egoY",
+     "index": 2
+    },
+    {
+     "name": "v1Presence",
+     "index": 5
+    },
+    {
+     "name": "v1X",
+     "index": 6
+    },
+    {
+     "name": "v1Y",
+     "index": 7
+    },
+    {
+     "name": "v1Vx",
+     "index": 8
+    },
+    {
+     "name": "v2Presence",
+     "index": 10
+    },
+    {
+     "name": "v3Presence",
+     "index": 15
+    },
+    {
+     "name": "v4Presence",
+     "index": 20
+    }
+   ],
+   "r8b": [
+    {
+     "name": "v1Presence",
+     "index": 5
+    },
+    {
+     "name": "v1X",
+     "index": 6
+    },
+    {
+     "name": "v1Y",
+     "index": 7
+    },
+    {
+     "name": "v1Vx",
+     "index": 8
+    }
+   ],
+   "r28": [
+    {
+     "name": "v1Presence",
+     "index": 5
+    },
+    {
+     "name": "v1X",
+     "index": 6
+    },
+    {
+     "name": "v1Y",
+     "index": 7
+    },
+    {
+     "name": "v2Presence",
+     "index": 10
+    },
+    {
+     "name": "v2X",
+     "index": 11
+    },
+    {
+     "name": "v2Y",
+     "index": 12
+    },
+    {
+     "name": "v3Presence",
+     "index": 15
+    },
+    {
+     "name": "v3X",
+     "index": 16
+    },
+    {
+     "name": "v3Y",
+     "index": 17
+    },
+    {
+     "name": "v4Presence",
+     "index": 20
+    },
+    {
+     "name": "v4X",
+     "index": 21
+    },
+    {
+     "name": "v4Y",
+     "index": 22
+    }
+   ],
+   "r29": [
+    {
+     "name": "v1Presence",
+     "index": 5
+    },
+    {
+     "name": "v1X",
+     "index": 6
+    },
+    {
+     "name": "v1Y",
+     "index": 7
+    },
+    {
+     "name": "v2Presence",
+     "index": 10
+    },
+    {
+     "name": "v2X",
+     "index": 11
+    },
+    {
+     "name": "v2Y",
+     "index": 12
+    },
+    {
+     "name": "v3Presence",
+     "index": 15
+    },
+    {
+     "name": "v3X",
+     "index": 16
+    },
+    {
+     "name": "v3Y",
+     "index": 17
+    },
+    {
+     "name": "v4Presence",
+     "index": 20
+    },
+    {
+     "name": "v4X",
+     "index": 21
+    },
+    {
+     "name": "v4Y",
+     "index": 22
+    }
+   ],
+   "r30": [
+    {
+     "name": "egoY",
+     "index": 2
+    }
+   ]
+  }
+ }
+}

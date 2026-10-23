@@ -1,0 +1,8 @@
+# Send docker build only what the Dockerfile copies; the repository also holds
+# gigabytes of CBM data and checkpoints.
+*
+!legos_sleec/sleec-grammar.txt
+!verifier/__init__.py
+!verifier/sleec2marabou_parser.py
+!webapp/
+**/__pycache__

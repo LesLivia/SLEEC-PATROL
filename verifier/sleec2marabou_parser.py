@@ -10,16 +10,24 @@ import itertools
 #       reproduces the original behaviour.
 #   output_semantics: "exclusive" for an argmax/softmax head, where an action may
 #       be taken when no other output is above it, and a rule must hold for every
-#       action that may be taken, so a tie counts against it whenever a forbidden
-#       action is among the tied ones; "independent" for per-output sigmoids,
-#       where an action must also clear decision_threshold. Under "independent"
-#       several actions may be taken at once, or none.
+#       action that may be taken; "independent" for per-output sigmoids, where an
+#       action must also clear decision_threshold. Under "independent" several
+#       actions may be taken at once, or none. strict_marabou_verif decides how a
+#       tie is read.
 #   decision_threshold: the threshold under "independent". Export the head
 #       without its sigmoid and leave this at 0.0: sigmoid(z) >= 0.5 <=> z >= 0.
-#   strict_comparisons: how '>' and '<' are encoded on a real quantity, which a
-#       closed bound cannot express. "epsilon" moves the bound inside the
-#       threshold, so a witness really satisfies it; "closed" leaves it on the
-#       threshold and admits the boundary, as every run before this option did.
+#   strict_input_comparisons: how '>' and '<' in a rule's condition are encoded
+#       on a real quantity, which a closed bound cannot express. "epsilon" moves
+#       the bound inside the threshold, so a witness really satisfies it; "closed"
+#       leaves it on the threshold and admits the boundary, as every run before
+#       this option did.
+#   strict_marabou_verif: how the output comparisons are encoded: one output
+#       against another, and against decision_threshold. The spec writes none of
+#       them, so this decides whether a tie at the top counts against a rule.
+#       "epsilon" leaves the tie out of the search, so a counterexample really
+#       takes the action it is reported with, and a rule is unproven only within
+#       one step of a tie; "closed" keeps the tie in, as every run before this
+#       option did, and a counterexample may sit on the tie.
 #   splitting_strategy: how Marabou branches inside a query. "largest-interval"
 #       splits the input box, which is fast on networks with many ReLUs; None
 #       leaves Marabou's own choice. It changes only the search, not what is checked.
@@ -29,7 +37,8 @@ DEFAULT_CONFIG = {
     "target_output_ub": None,
     "output_semantics": "exclusive",
     "decision_threshold": 0.0,
-    "strict_comparisons": "epsilon",
+    "strict_input_comparisons": "epsilon",
+    "strict_marabou_verif": "epsilon",
     "splitting_strategy": "largest-interval",
     "snc_workers": 8,
 }
@@ -647,10 +656,21 @@ class MarabouGenerator:
         here is a real quantity, which has no exact encoding, so the bound moves
         inside the threshold by enough that a point on it still compares strictly.
         """
-        if op not in ('>', '<') or self.config["strict_comparisons"] != "epsilon":
+        if op not in ('>', '<') or self.config["strict_input_comparisons"] != "epsilon":
             return op, val
         step = self._strict_step(val)
         return ('>=', val + step) if op == '>' else ('<=', val - step)
+
+    def _output_step(self, val=0):
+        """How far an output comparison moves off the tie: 0 under "closed".
+
+        val is what the comparison is made against: 0 between two outputs,
+        decision_threshold against the threshold. The step is the input side's,
+        since it has the same slack to clear.
+        """
+        if self.config["strict_marabou_verif"] != "epsilon":
+            return 0
+        return self._strict_step(val)
 
     def _check_threshold(self, name, val):
         lb, ub = self._measure_range(name)
@@ -781,7 +801,13 @@ class MarabouGenerator:
         return "\n".join(lines), inputs
 
     def _apply_output_check(self, occ):
-        """occ.neg decides the property: 'then B' vs 'then not B'."""
+        """occ.neg decides the property: 'then B' vs 'then not B'.
+
+        Every comparison sits _output_step off the tie. Under "epsilon" a
+        counterexample then has another output strictly above B ('then B'), or B
+        strictly above every other ('then not B'), and under "independent" B
+        strictly on the searched side of the threshold.
+        """
         target_action = occ.event.event
         target_idx = self.outputs[target_action.name]
         mode = "Negate" if occ.neg else "Normal"
@@ -789,6 +815,15 @@ class MarabouGenerator:
 
         independent = self.config["output_semantics"] == "independent"
         threshold = self.config["decision_threshold"]
+        # Two outputs are compared through their difference, set against 0; one
+        # output against the threshold is set against the threshold, moved to the
+        # side the negation searches: below it for "Normal", above it for "Negate".
+        step = self._output_step()
+        shifted_threshold = (threshold - self._output_step(threshold)
+                             if mode == "Normal"
+                             else threshold + self._output_step(threshold))
+        plus = f" + {step}" if step else ""
+        minus = f" - {step}" if step else ""
         # The threshold is itself a disjunct, so one output still needs the list.
         use_disjunction = mode == "Normal" and (len(self.outputs) > 1 or independent)
 
@@ -805,17 +840,21 @@ class MarabouGenerator:
         if mode == "Normal":
             lines.append(f"    # Verify output is {target_action.name} (Index {target_idx})")
             if independent:
-                lines.append(f"    # Assert Negation: {target_action.name} <= {threshold} "
-                             f"OR exists other output >= {target_action.name}")
+                lines.append(f"    # Assert Negation: {target_action.name} <= "
+                             f"{shifted_threshold} "
+                             f"OR exists other output >= {target_action.name}{plus}")
             else:
-                lines.append(f"    # Assert Negation: exists other output >= {target_action.name}")
+                lines.append(f"    # Assert Negation: exists other output >= "
+                             f"{target_action.name}{plus}")
         else:
             lines.append(f"    # Verify output is NOT {target_action.name} (Index {target_idx})")
             if independent:
-                lines.append(f"    # Assert Negation:  {target_action.name} >= {threshold} "
-                             f"AND >= all other outputs")
+                lines.append(f"    # Assert Negation:  {target_action.name} >= "
+                             f"{shifted_threshold} "
+                             f"AND >= all other outputs{plus}")
             else:
-                lines.append(f"    # Assert Negation:  {target_action.name} >= all other outputs")
+                lines.append(f"    # Assert Negation:  {target_action.name} >= "
+                             f"all other outputs{plus}")
 
         lines.append(f"    outputVars = net.outputVars[0][0]")
         if use_disjunction:
@@ -830,20 +869,20 @@ class MarabouGenerator:
                                  f"{self.config['target_output_ub']})")
             else:
                 if mode == "Normal":
-                    lines.append(f"    # {name} >= {target_action.name}")
+                    lines.append(f"    # {name} >= {target_action.name}{plus}")
                     # Marabou 2.0 reads EquationType/addendList/scalar off this object,
                     # so it must be a MarabouUtils.Equation with an explicit scalar.
                     lines.append(f"    eq = MarabouUtils.Equation(MarabouCore.Equation.GE)")
                     lines.append(f"    eq.addAddend(1, outputVars[{idx}])")
                     lines.append(f"    eq.addAddend(-1, outputVars[{target_idx}])")
-                    lines.append(f"    eq.setScalar(0)")
+                    lines.append(f"    eq.setScalar({step})")
                     lines.append(f"    equations.append([eq])")
                 else:
-                    lines.append(f"    # {name} <= {target_action.name}")
+                    lines.append(f"    # {name} <= {target_action.name}{minus}")
                     lines.append(f"    eq = MarabouUtils.Equation(MarabouCore.Equation.GE)")
                     lines.append(f"    eq.addAddend(1, outputVars[{target_idx}])")
                     lines.append(f"    eq.addAddend(-1, outputVars[{idx}])")
-                    lines.append(f"    eq.setScalar(0)")
+                    lines.append(f"    eq.setScalar({step})")
                     lines.append(f"    net.addEquation(eq)")
 
         # Clearing the threshold is one more way the property can hold, so its
@@ -853,13 +892,13 @@ class MarabouGenerator:
                 lines.append(f"    # {target_action.name} not permitted")
                 lines.append(f"    eq = MarabouUtils.Equation(MarabouCore.Equation.LE)")
                 lines.append(f"    eq.addAddend(1, outputVars[{target_idx}])")
-                lines.append(f"    eq.setScalar({threshold})")
+                lines.append(f"    eq.setScalar({shifted_threshold})")
                 lines.append(f"    equations.append([eq])")
             else:
                 lines.append(f"    # {target_action.name} permitted")
                 lines.append(f"    eq = MarabouUtils.Equation(MarabouCore.Equation.GE)")
                 lines.append(f"    eq.addAddend(1, outputVars[{target_idx}])")
-                lines.append(f"    eq.setScalar({threshold})")
+                lines.append(f"    eq.setScalar({shifted_threshold})")
                 lines.append(f"    net.addEquation(eq)")
 
         if use_disjunction:
@@ -875,16 +914,19 @@ class MarabouGenerator:
         disjunction, one option per output outside the chain, each option one
         equation per action in it. _branches lets only plain actions under
         "exclusive" into a chain, and never every output, so there is always at
-        least one option. Every comparison is closed: an outside output may be
-        taken as soon as it reaches the chain's best, so ">=" is exact, and
-        "strict_comparisons" has nothing to do here.
+        least one option. Under "closed" every comparison is exact: an outside
+        output may be taken as soon as it reaches the chain's best. Under
+        "epsilon" it has to beat each action of the chain by _output_step, so a
+        tie with the chain counts for the rule.
         """
         names = [occ.event.event.name for occ in occs]
         allowed = [self.outputs[name] for name in names]
+        step = self._output_step()
+        each = f", each + {step}" if step else ""
         lines = [
             f"    # Verify output is {' or '.join(names)} "
             f"(Index {', '.join(map(str, allowed))})",
-            f"    # Assert Negation: exists other output >= {' and '.join(names)}",
+            f"    # Assert Negation: exists other output >= {' and '.join(names)}{each}",
             f"    outputVars = net.outputVars[0][0]",
             f"    equations = []",
         ]
@@ -897,14 +939,14 @@ class MarabouGenerator:
                                  f"{self.config['target_output_ub']})")
             else:
                 # This output wins over the chain only if it beats every action in it.
-                lines.append(f"    # {name} >= {' and '.join(names)}")
+                lines.append(f"    # {name} >= {' and '.join(names)}{each}")
                 lines.append(f"    option = []")
                 for target in allowed:
                     lines += [
                         f"    eq = MarabouUtils.Equation(MarabouCore.Equation.GE)",
                         f"    eq.addAddend(1, outputVars[{idx}])",
                         f"    eq.addAddend(-1, outputVars[{target}])",
-                        f"    eq.setScalar(0)",
+                        f"    eq.setScalar({step})",
                         f"    option.append(eq)",
                     ]
                 lines.append(f"    equations.append(option)")
@@ -922,15 +964,20 @@ class MarabouGenerator:
         as either may be taken, so they are not compared with each other. A
         chain naming every output has no outside output: it is violated
         exactly when every output is <= threshold, i.e. no action is taken.
+        Under "epsilon" both comparisons sit _output_step off the tie: X below
+        the threshold, or an outside output above X, by at least that step.
         """
         threshold = self.config["decision_threshold"]
+        shifted_threshold = threshold - self._output_step(threshold)
+        step = self._output_step()
+        plus = f" + {step}" if step else ""
         names = [occ.event.event.name for occ in occs]
         allowed = [self.outputs[name] for name in names]
         lines = [
             f"    # Verify output is {' or '.join(names)} "
             f"(Index {', '.join(map(str, allowed))})",
-            f"    # Assert Negation: each of {', '.join(names)} is <= {threshold} "
-            f"OR some output outside the chain >= it",
+            f"    # Assert Negation: each of {', '.join(names)} is <= {shifted_threshold} "
+            f"OR some output outside the chain >= it{plus}",
             f"    outputVars = net.outputVars[0][0]",
         ]
         for name, idx in self.outputs.items():
@@ -941,11 +988,12 @@ class MarabouGenerator:
                              f"{self.config['target_output_ub']})")
         for name, target in zip(names, allowed):
             lines += [
-                f"    # {name} <= {threshold} OR some output outside the chain >= {name}",
+                f"    # {name} <= {shifted_threshold} "
+                f"OR some output outside the chain >= {name}{plus}",
                 f"    equations = []",
                 f"    eq = MarabouUtils.Equation(MarabouCore.Equation.LE)",
                 f"    eq.addAddend(1, outputVars[{target}])",
-                f"    eq.setScalar({threshold})",
+                f"    eq.setScalar({shifted_threshold})",
                 f"    equations.append([eq])",
             ]
             for idx in self.outputs.values():
@@ -954,7 +1002,7 @@ class MarabouGenerator:
                         f"    eq = MarabouUtils.Equation(MarabouCore.Equation.GE)",
                         f"    eq.addAddend(1, outputVars[{idx}])",
                         f"    eq.addAddend(-1, outputVars[{target}])",
-                        f"    eq.setScalar(0)",
+                        f"    eq.setScalar({step})",
                         f"    equations.append([eq])",
                     ]
             lines.append(f"    net.addDisjunctionConstraint(equations)")

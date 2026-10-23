@@ -15,6 +15,7 @@ inside WSL, since maraboupy has no Windows build):
 then open http://localhost:8000.
 """
 
+import json
 import re
 import tempfile
 import traceback
@@ -67,12 +68,14 @@ def _without_comments(text):
     return "\n".join(kept).strip() + "\n"
 
 
-EXAMPLE_SPEC_PATH = ROOT / "resources" / "requirements" / "highway_behaviourplanner.sleec"
-EXAMPLE_SPEC = (_without_comments(EXAMPLE_SPEC_PATH.read_text(encoding="utf-8"))
-                if EXAMPLE_SPEC_PATH.exists() else "")
-
-
 EXAMPLES = Path(__file__).parent / "examples"
+
+# The example in the instructions is the specification the first bundled setup verifies,
+# found by scanning rather than named: a specification renamed upstream would otherwise
+# leave this pointing at nothing, and the instructions would quietly lose their example.
+EXAMPLE_SPEC_PATH = next(iter(sorted(EXAMPLES.glob("*/*.sleec"))), None)
+EXAMPLE_SPEC = (_without_comments(EXAMPLE_SPEC_PATH.read_text(encoding="utf-8"))
+                if EXAMPLE_SPEC_PATH is not None else "")
 
 
 def examples():
@@ -81,12 +84,29 @@ def examples():
     A folder counts only if it holds exactly one specification and one model, so a
     half-filled one is passed over rather than offered and then failing at verification.
     Adding a setup is adding a folder; nothing here needs to know about it.
+
+    How the model's head decides is a property of that model, not of the person running
+    it, so each folder states it in a setup.json beside the two files. A folder without
+    one is read as an argmax head, which is what every setup was before the file existed.
     """
     found = []
     for folder in sorted(p for p in EXAMPLES.glob("*") if p.is_dir()):
         specs, models = sorted(folder.glob("*.sleec")), sorted(folder.glob("*.onnx"))
-        if len(specs) == 1 and len(models) == 1:
-            found.append({"name": folder.name, "spec": specs[0], "model": models[0]})
+        if len(specs) != 1 or len(models) != 1:
+            continue
+        settings = folder / "setup.json"
+        try:
+            config = json.loads(settings.read_text(encoding="utf-8")) \
+                if settings.exists() else {}
+        except ValueError:
+            config = {}                 # unreadable: the defaults, not a broken setup
+        found.append({
+            "name": folder.name, "spec": specs[0], "model": models[0],
+            "semantics": (config.get("output_semantics")
+                          if config.get("output_semantics") in core.SEMANTICS
+                          else "exclusive"),
+            "threshold": config.get("decision_threshold", 0),
+        })
     return found
 
 
@@ -101,6 +121,9 @@ def _upload_context(**extra):
             # What the page was holding. A run that fails comes back here, and rules
             # someone typed are not theirs to lose over a missing 'then'.
             "spec_text": "", "source": "ide", "setup": "",
+            # How the model's head decides, and the threshold that only the second of
+            # them uses.
+            "semantics": "exclusive", "threshold": 0,
             # Each setup carries its rules with it, so the page can show them without
             # asking for them again.
             "setups": [dict(e, text=e["spec"].read_text(encoding="utf-8"))
@@ -146,7 +169,9 @@ async def verify(request: Request,
                  spec: Optional[UploadFile] = File(None),
                  spec_text: str = Form(""),
                  source: str = Form("ide"),
-                 setup: str = Form("")):
+                 setup: str = Form(""),
+                 output_semantics: str = Form("exclusive"),
+                 decision_threshold: str = Form("0")):
     """Either the inputs given on the page, or a setup that ships with the tool.
 
     On the page, the network arrives as a file and the specification as the editor's
@@ -157,11 +182,31 @@ async def verify(request: Request,
 
     'source' says which. A setup is named, never pathed: the name has to be one of the
     folders found under webapp/examples, so nothing a form can say reaches another file.
+
+    The two settings are checked here because the parser does not check them: it asks
+    whether output_semantics is the word "independent" and treats everything else as
+    "exclusive", so a malformed field would quietly verify the other property and report
+    a confident verdict for a question nobody asked.
     """
     workdir = Path(tempfile.mkdtemp(prefix="sleec2ver_"))
     # What to put the page back to if this run does not start. The editor's text is kept
     # as it was typed; a file read on the server is not, since the file is still there.
-    was = {"spec_text": spec_text, "source": source, "setup": setup}
+    was = {"spec_text": spec_text, "source": source, "setup": setup,
+           "semantics": output_semantics, "threshold": decision_threshold}
+
+    if output_semantics not in core.SEMANTICS:
+        return _error_page(request, "That output semantics is not available",
+                           f"Choose one of {', '.join(core.SEMANTICS)}.",
+                           collapse=False, **was)
+    try:
+        # Only "independent" uses it, and a disabled field is not posted at all, so an
+        # empty one is the ordinary case rather than a mistake.
+        threshold = float(decision_threshold or 0)
+    except ValueError:
+        return _error_page(request, "The decision threshold is not a number",
+                           f"{decision_threshold!r} is not a number. Leave it at 0 "
+                           f"unless the head was exported with its sigmoid.",
+                           collapse=False, **was)
 
     if source == "existing":
         chosen = next((e for e in examples() if e["name"] == setup), None)
@@ -172,6 +217,8 @@ async def verify(request: Request,
         spec_text = chosen["spec"].read_text(encoding="utf-8")
         spec_name, onnx_path = chosen["spec"].name, chosen["model"]
         network_name = chosen["model"].name
+        # A setup's own head, not whatever the form was showing: it ships with the model.
+        output_semantics, threshold = chosen["semantics"], chosen["threshold"]
     else:
         if network is None or not network.filename:
             return _error_page(request, "No neural network was chosen",
@@ -196,7 +243,9 @@ async def verify(request: Request,
     # Phase 1: the spec and the generated query. The parser's messages name the exact
     # constant, measure or rule at fault, so they are shown as they are.
     try:
-        generator, code, module_path = core.generate_module(spec_text, workdir)
+        generator, code, module_path = core.generate_module(
+            spec_text, workdir, output_semantics=output_semantics,
+            decision_threshold=threshold)
     except Exception as exc:
         return _error_page(request, "The specification could not be turned into a query",
                            f"{type(exc).__name__}: {exc}", collapse=False, **was)
@@ -209,10 +258,17 @@ async def verify(request: Request,
         return _error_page(request, "The model does not match the specification",
                            mismatch, collapse=False, **was)
 
+    # A setup that ships with the tool may carry its answer, solved beforehand by
+    # webapp/prerun.py. It is used only while this query and this model are the ones it
+    # answers; otherwise, and always for new inputs, Marabou solves it now.
+    outcome = (core.load_prerun(chosen["spec"].parent / core.PRERUN, code, onnx_path)
+               if source == "existing" else None)
+
     # Phase 2: Marabou. Failures here are about the network or the solver, not the spec,
     # so the headline stays generic and the detail sits under a toggle.
     try:
-        outcome = core.solve_module(module_path, onnx_path)
+        if outcome is None:
+            outcome = core.solve_module(module_path, onnx_path)
         groups = core.build_report(outcome, generator)
     except Exception as exc:
         # The page gets the exception; the terminal gets the traceback, which is the only

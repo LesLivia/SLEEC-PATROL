@@ -68,8 +68,22 @@
              background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px;
              padding: 0.5rem 0.6rem; min-width: 16rem; }
     select:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+    input[type=number] { font-family: inherit; font-size: 0.95rem; color: var(--text);
+             background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px;
+             padding: 0.5rem 0.6rem; width: 9rem; }
+    input[type=number]:focus-visible { outline: 3px solid var(--focus);
+             outline-offset: 1px; }
+    /* The verification setup's two settings, side by side; on a narrow screen the
+       threshold wraps under the semantics. */
+    .setup-row { display: flex; gap: 1.2rem; flex-wrap: wrap; align-items: flex-start; }
+    .threshold input:disabled { background: var(--bg); color: var(--muted);
+            cursor: default; }
+    /* The whole field reads as unavailable, keyed off the input's own state so there is
+       no second flag to keep in step with it. */
+    .threshold:has(input:disabled) { opacity: 0.55; }
 
-    /* The page is two parts: the rules to check, and the model to check them against. */
+    /* The page is three parts: the rules to check, the model to check them against, and
+       how that model decides its action. */
     .part { margin: 0 0 2rem; }
     .part + .part { border-top: 1px solid var(--line); padding-top: 1.4rem; }
     .part h2 { margin: 0; font-size: 1.05rem; color: var(--primary); }
@@ -313,13 +327,20 @@
                 <h3>Model</h3>
                 <p class="model-line"><b>{{ s.model.name }}</b> is the network this setup
                   verifies its rules against.</p>
+                {# The setup's own setup.json, shown as the New inputs side asks for it:
+                   the threshold only where the strategy uses one. #}
+                <h3>Verification setup</h3>
+                <p class="model-line">The network's action decision strategy is
+                  <b>{{ s.semantics | capitalize }}</b>
+                  {%- if s.semantics == 'independent' %}, with a decision threshold of
+                  <b>{{ s.threshold }}</b>{% endif %}.</p>
               </div>
             {% endfor %}
           </section>
         </div>
 
         <div class="side side-ide">
-        {# Two parts, each saying what it is for and where its instructions are. Those
+        {# Three parts, each saying what it is for and where its instructions are. Those
            instructions open from the words that name them, not from a button of their
            own: the sentence is already about them. #}
         <section class="part">
@@ -369,6 +390,41 @@
             <input type="file" name="network" id="network" accept=".onnx" required>
           </div>
         </section>
+
+        {# How the network's outputs decide its action: a property of the model, so its
+           part follows the model's. #}
+        <section class="part">
+          <h2>Verification setup</h2>
+          <p class="explain">This setup gives the network's action decision strategy: the
+            way its outputs decide which action it takes. <b>Exclusive</b> is for actions
+            that rule one another out, as with a softmax: the action taken is the largest
+            output. <b>Independent</b> is for actions decided each on its own, as with one
+            sigmoid per action: the largest output is the action taken only when it is
+            above the decision threshold. Please see the
+            <a href="#" data-dialog="help-setup">instructions for choosing the
+            verification setup</a> for which one fits a model.</p>
+
+          <div class="setup-row">
+            <div class="field">
+              <label for="output-semantics">Output semantics</label>
+              <select name="output_semantics" id="output-semantics">
+                <option value="exclusive"
+                        {{ '' if semantics == 'independent' else 'selected' }}>Exclusive</option>
+                <option value="independent"
+                        {{ 'selected' if semantics == 'independent' else '' }}>Independent</option>
+              </select>
+            </div>
+            {# Only the second semantics uses it, so the field is closed off under the
+               first. A disabled field is not posted at all, which the route expects: it
+               defaults the threshold, so an absent one is the ordinary case. #}
+            <div class="field threshold">
+              <label for="decision-threshold">Decision threshold</label>
+              <input type="number" step="any" name="decision_threshold"
+                     id="decision-threshold" value="{{ threshold }}"
+                     {{ '' if semantics == 'independent' else 'disabled' }}>
+            </div>
+          </div>
+        </section>
         </div>
 
         <button type="submit" id="go" class="btn">Verify SLEEC compliance</button>
@@ -390,8 +446,9 @@
       <a class="btn is-nav" href="/">&larr; Back</a>
     </nav>
 
-    {# The instructions, as they were, in two: what the model has to be, and how a
-       specification is written. Each part opens from the sentence that refers to it. #}
+    {# The instructions, in three: what the model has to be, how its outputs decide its
+       action, and how a specification is written. Each part opens from the sentence that
+       refers to it. #}
     <dialog id="help-network">
       <div class="dlg-head">
         <h2>Preparing the model</h2>
@@ -400,11 +457,43 @@
       </div>
       <div class="dlg-body">
         <h3>The network</h3>
+        <p>The model is a feed-forward network, such as a multi-layer perceptron of fully
+           connected layers with ReLU activations. For a concept bottleneck model (CBM),
+           only its head is provided: the part from the concepts to the logits, with the
+           concepts declared as the measures.</p>
         <p>The model must be exported to the ONNX format, with its inputs and outputs in
            the same order as the measures and the output events declared in the
-           specification. For a model trained in PyTorch,
+           specification: one input vector, given at export as an example input of shape
+           (1, number of measures), and one score per output event, with nothing after
+           the scores such as an ArgMax. For a model trained in PyTorch,
            <a href="{{ onnx_guide }}" target="_blank" rel="noopener">consult this page for
            more info</a>.</p>
+      </div>
+    </dialog>
+
+    <dialog id="help-setup">
+      <div class="dlg-head">
+        <h2>Choosing the verification setup</h2>
+        <button type="button" class="btn is-secondary is-small is-outline"
+                data-close>Close</button>
+      </div>
+      <div class="dlg-body">
+        <p>The rules say which action the network may or must take, so the verification
+           follows the network's own action decision strategy, which this setup gives.</p>
+        <h3>Exclusive</h3>
+        <p>For actions that rule one another out, as in a network ending in a softmax:
+           the action taken is the one with the largest output. The decision threshold is
+           not used.</p>
+        <h3>Independent</h3>
+        <p>For actions decided each on its own, as in a network with one sigmoid per
+           action: an action counts as activated when its output is above the decision
+           threshold, and the action taken is the largest output if it is activated, and
+           none otherwise.</p>
+        <h3>Decision threshold</h3>
+        <p>The value an output has to exceed for its action to count as activated, on the
+           scale of the network's outputs. For outputs that are logits, as in a head
+           exported without its sigmoid, a threshold of 0 corresponds to a probability of
+           0.5, since sigmoid(z) &ge; 0.5 exactly when z &ge; 0.</p>
       </div>
     </dialog>
 
@@ -539,6 +628,19 @@
         radio.addEventListener("change", syncSource);
       });
       syncSource();
+
+      // Only independent semantics uses the threshold, so the field is closed off under
+      // exclusive. The page is rendered with it already in the right state, so this only
+      // matters when the choice changes. Closed off, it shows 0, the value the server
+      // uses when the field is not sent, rather than a number that is not in effect.
+      var semantics = document.getElementById("output-semantics");
+      var threshold = document.getElementById("decision-threshold");
+      function syncSemantics() {
+        threshold.disabled = semantics.value !== "independent";
+        if (threshold.disabled) { threshold.value = "0"; }
+      }
+      semantics.addEventListener("change", syncSemantics);
+      syncSemantics();
 
       // One setup's rules at a time, the one the list names.
       var setup = document.getElementById("setup");

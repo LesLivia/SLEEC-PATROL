@@ -12,7 +12,7 @@ counter-example table is the thing that must always be right, and a misleading d
 worse than none.
 
 To add an environment, write a module exposing KEY = (measures, outputs),
-render(rows) -> svg and chosen_action(rows) -> str, then register it below.
+render(rows, constants) -> svg and chosen_action(rows) -> str, then register it below.
 """
 
 from webapp.scenes import highway
@@ -30,12 +30,17 @@ def pick_renderer(measures, outputs):
     return RENDERERS.get(key)
 
 
-def render(renderer, rows):
-    """Draw one counter-example. A drawing failure must never break the report."""
+def render(renderer, rows, constants=None):
+    """Draw one counter-example. A drawing failure must never break the report.
+
+    'constants' are the specification's own, so a renderer can read the environment's
+    shape off the ranges that were verified - how many lanes the road has, say - rather
+    than hold a figure of its own that the next specification contradicts.
+    """
     if renderer is None or not rows:
         return None
     try:
-        return renderer.render(rows)
+        return renderer.render(rows, constants or {})
     except Exception:  # noqa: BLE001 - the table already carries the same numbers
         return None
 

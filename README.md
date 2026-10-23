@@ -48,6 +48,25 @@ The web app in `webapp/` is the tool's frontend. It takes a SLEEC specification 
 
 **Example setups.** Each folder in `webapp/examples/` that holds exactly one `.sleec` file and one `.onnx` file is offered as a ready-made setup. Adding such a folder adds a setup.
 
+## Running with Docker
+
+The web app is also packaged as a Docker image with everything it needs preinstalled, so it runs without the Conda environment.
+
+1.  **Build the image** from the repository root (the Docker files are in `docker/`):
+    ```bash
+    docker build -f docker/Dockerfile -t sleec-patrol .
+    ```
+
+2.  **Start it**:
+    ```bash
+    docker run --rm -p 8000:8000 sleec-patrol
+    ```
+    On Apple-silicon Macs, add `--platform linux/amd64`: Marabou is published for x86-64 only, so the image runs under emulation there.
+
+3.  **Open** http://localhost:8000 in a browser. Stop the server with Ctrl+C.
+
+The image holds the web app, the parser and the SLEEC grammar, so build it again after changing them.
+
 ## Training the Highway Policy
 
 The highway behaviour planner is a PPO policy trained in highway-env. The environment is chosen by `ENV_ID` at the top of each script (`highway-fast-v0` by default). Run the commands from the repository root.
