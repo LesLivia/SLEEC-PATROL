@@ -1,0 +1,7 @@
+{
+  "r8": "When a vehicle is 5–10 m ahead in the lane and the car is closing in on it (more than 5 m/s faster), slow down; but if no other vehicle is seen, change lanes instead: to either side from the middle lane, to the right from the leftmost lane, to the left from the rightmost lane.",
+  "r8b": "When a vehicle is 5–10 m ahead in the lane and the car is closing in on it (more than 5 m/s faster), never accelerate.",
+  "r28": "When a vehicle is right next to the car in the lane to its left, do not change lanes to the left.",
+  "r29": "When a vehicle is right next to the car in the lane to its right, do not change lanes to the right.",
+  "r30": "When the car is in the leftmost lane, do not change lanes to the left."
+}

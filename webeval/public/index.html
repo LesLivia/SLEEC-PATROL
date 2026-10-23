@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SLEEC-PATROL: Diagnosis evaluation</title>
+  <link rel="stylesheet" href="/report.css" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+
+  <!-- One header for every page: where the participant is, the way back, and the two
+       references they may want while answering. app.js fills and shows what applies. -->
+  <header>
+    <div class="bar topbar">
+      <button id="nav-back" type="button" class="btn is-small is-outline is-secondary"
+              onclick="goBack(event)" hidden>&larr; Back</button>
+      <div class="where">
+        <p id="top-step" class="step" hidden></p>
+        <h1 id="top-title">SLEEC-PATROL: Diagnosis evaluation</h1>
+      </div>
+      <div id="top-actions" class="top-actions" hidden>
+        <button id="btn-background" type="button" class="btn is-small is-outline is-secondary"
+                onclick="openBackground()">Background</button>
+        <button type="button" class="btn is-small is-outline is-secondary"
+                onclick="openInstructions()">Instructions</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===================================================================
+         ENTRY PAGE - expertise only (anonymous)
+         =================================================================== -->
+    <section id="page-entry" class="page narrow" hidden>
+      <div class="card">
+        <h2>Welcome</h2>
+        <p>Tell us about your background before you begin.</p>
+        <label class="field-label" for="entry-expertise">Your expertise
+          <span class="req">*</span></label>
+        <input type="text" id="entry-expertise" autocomplete="off"
+               placeholder="Describe your background and area of expertise" />
+        <p class="hint">The study is anonymous: only this description and your answers
+          are stored.</p>
+        <p id="entry-error" class="error" hidden></p>
+        <button id="entry-submit" type="button" class="btn wide-btn"
+                onclick="startSession()">Start</button>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         INSTRUCTIONS PAGE - shown after entry, before the first environment.
+         Its content is also what the Instructions button shows, cloned from here.
+         =================================================================== -->
+    <section id="page-instructions" class="page" hidden>
+      <div id="instructions-content-source" class="card instructions">
+        <h3>What this study is about</h3>
+        <p>SLEEC-PATROL checks a neural network against SLEEC rules. A SLEEC rule states
+          what a system must do in a given situation: <i>when</i> an event happens
+          <i>and</i> a condition holds, <i>then</i> the system must give a response. Here
+          the system is a neural network that drives a car: the condition is about what the
+          network sees, and the response is an action it must, or must not, choose.</p>
+        <p>For each rule, the verifier Marabou searches every input the network can receive
+          within the ranges the specification declares. If it finds one for which the
+          network does not do what the rule demands, the rule is <b>violated</b>, and that
+          input is its <i>counter-example</i>. SLEEC-PATROL then shows a
+          <b>diagnosis</b>: what the rule demanded, what the network did instead, and the
+          values behind both. This study asks whether that diagnosis helps you understand
+          the violation.</p>
+
+        <h3>What you will see</h3>
+        <p>Two environments, one after the other:</p>
+        <ul>
+          <li><b>Highway</b> (<span data-rule-count="highway-fast-v0"></span>): a
+            network that drives a car on a three-lane highway, choosing to change lane,
+            keep going, speed up or slow down.</li>
+          <li><b>SDD-OIA</b> (<span data-rule-count="sddoia"></span>): the deciding part
+            of a driving model that first recognises concepts in a picture (a red light, a
+            pedestrian, an obstacle...) and then turns their probabilities into stop,
+            forward, left or right.</li>
+        </ul>
+        <p>Each environment starts with a page describing it. Then every violated rule has
+          a page of its own, showing the rule and its diagnosis as SLEEC-PATROL shows
+          them. To make each rule easier to understand, its page also gives it in plain
+          words.</p>
+
+        <h3>What we ask you</h3>
+        <p>On each rule page, read the rule, in plain words and as written, open its
+          diagnosis, and answer:</p>
+        <ol>
+          <li><b>Does the diagnosis help you to understand the violation?</b> Yes or
+            no.</li>
+          <li><b>If no, what could be clearer?</b> Required when you answer no.</li>
+        </ol>
+        <p>Your answers for an environment are submitted when you finish its last rule.
+          You can go back to change an answer; submitting an environment again replaces
+          its earlier answers.</p>
+
+        <h3>Reading a rule</h3>
+        <p>Each rule page first gives the rule in plain words, as a reading aid; the rule as
+          written in SLEEC, below it, is what was verified.</p>
+        <p>A rule is shown as it is written in SLEEC. Words in <b class="c-measure">blue</b>
+          are measures, what the network reads; words in <b class="c-output">purple</b> are
+          output events, the responses the rule demands; words in
+          <b class="c-constant">brown</b> are constants. For example, SDD-OIA's rule r13
+          reads <i>when a red light is seen, then stop</i>:</p>
+        <div class="spec"><div class="rule-text"><span class="sec violated"><b class="kw">when</b> cmdRequired <b class="kw">and</b> (<b class="measure">{redLight}</b> &gt; <b class="constant">seen</b>)
+        <b class="kw">then</b> <b class="output">outputStop</b></span></div></div>
+        <p>A rule may carry exceptions, written with <code>unless</code>. Before it is
+          verified, such a rule is split into parts that are checked one by one: the main
+          case, and one part for every exception that states a response of its own. A rule
+          written as</p>
+        <pre class="form">r when A then B unless C then D</pre>
+        <p>is checked as</p>
+        <pre class="form">r_main      when A and (not C)   then B
+r_unless1   when A and C         then D</pre>
+        <p>Each part of the rule is tinted by the verdict of its own check, and a rule is
+          violated as soon as one of its parts is. The verdicts are:</p>
+        <ul class="legend">
+          <li><span class="tag violated">VIOLATED</span> the network can break this part
+            of the rule, and the counter-example that breaks it is shown.</li>
+          <li><span class="tag compliant">COMPLIANT</span> nothing in the declared ranges
+            breaks this part of the rule.</li>
+          <li><span class="tag unverified">UNVERIFIED</span> the verification did not
+            finish (e.g. a timeout), so this part is neither proved nor broken.</li>
+        </ul>
+
+        <h3>Reading a diagnosis</h3>
+        <p>Every violated part carries a <b>Diagnosis</b> button. The diagnosis shows the
+          following; the numbers match the example below.</p>
+        <ol>
+          <li>the rule again, with the part it is about coloured;</li>
+          <li>for Highway, a picture of the situation the verifier found: the ego in dark
+            blue, the cars the rule names in yellow, the other cars the network sees in
+            white;</li>
+          <li>the output the rule expected, and the output the network gave instead;</li>
+          <li>the relevant values: the measures this part of the rule names (blue), the
+            response it demanded (purple) and, in red, the action the network took
+            instead;</li>
+          <li>under <b>show the full counter-example</b>, every value the network was
+            given and every score it answered with;</li>
+          <li>under <b>SLEEC rule measure constraints</b>, the values of the constants the
+            rule names.</li>
+        </ol>
+        <figure class="example">
+          <img src="/images/diagnosis_example.png"
+               alt="An example diagnosis: Highway rule r8, its main part, with numbered marks"
+               title="Click to enlarge" onclick="openImageLightbox(this.src, this.alt)" />
+          <figcaption>An example diagnosis: Highway rule r8, its main part. Click to
+            enlarge.</figcaption>
+        </figure>
+      </div>
+
+      <nav class="pager">
+        <button type="button" class="btn is-nav next" onclick="beginEvaluation(event)">Begin
+          &rarr;</button>
+      </nav>
+    </section>
+
+    <!-- ===================================================================
+         ENVIRONMENT INTRO PAGE - background, note, pictures
+         =================================================================== -->
+    <section id="page-intro" class="page" hidden>
+      <div class="card">
+        <h2>Background</h2>
+        <div id="intro-background" class="text"></div>
+        <p id="intro-note" class="explain" hidden></p>
+      </div>
+      <div class="card">
+        <h2>What it looks like</h2>
+        <p id="intro-pictures-intro" hidden></p>
+        <div id="intro-pictures" class="pictures"></div>
+      </div>
+      <nav class="pager">
+        <button type="button" class="btn is-nav next" onclick="goNextFromIntro(event)">Continue
+          &rarr;</button>
+      </nav>
+    </section>
+
+    <!-- ===================================================================
+         RULE PAGE - the evaluation form beside the rule and its diagnosis
+         =================================================================== -->
+    <section id="page-rule" class="page" hidden>
+      <div class="rule-layout">
+        <aside class="card eval-form">
+          <h2>Your evaluation</h2>
+          <fieldset>
+            <legend class="field-label">Does the diagnosis help you to understand the
+              violation? <span class="req">*</span></legend>
+            <label class="choice"><input type="radio" name="eval-helps" value="yes"
+                   onchange="onHelpsChange()" /> Yes</label>
+            <label class="choice"><input type="radio" name="eval-helps" value="no"
+                   onchange="onHelpsChange()" /> No</label>
+          </fieldset>
+          <label class="field-label" for="eval-clearer">If no, what could be clearer?
+            <span id="eval-clearer-required" class="req">*</span></label>
+          <textarea id="eval-clearer" rows="6"
+                    placeholder="Required if you answer no."></textarea>
+          <p id="eval-error" class="error" hidden></p>
+          <button id="btn-next" type="button" class="btn wide-btn"
+                  onclick="goNextFromRule(event)">Next</button>
+        </aside>
+
+        <div class="rule-main">
+          <div id="rule-words-card" class="card words" hidden>
+            <h2>The rule in plain words</h2>
+            <p id="rule-words"></p>
+          </div>
+          <p class="explain">Below, the rule as SLEEC-PATROL reports it. Open
+            <b>Diagnosis</b> on a red part of the rule to see why it is violated.</p>
+          <div id="rule-panel"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         DONE PAGE
+         =================================================================== -->
+    <section id="page-done" class="page narrow" hidden>
+      <div class="card done">
+        <h2>Evaluation submitted</h2>
+        <p>Thank you. Your answers have been saved.</p>
+        <p id="done-session-id" class="mono"></p>
+        <button type="button" class="btn" onclick="startOver()">Start over</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- The Instructions button's sheet: its body is cloned from the instructions page, so
+       the text lives in one place. -->
+  <dialog id="instructions-modal" class="dlg-wide">
+    <div class="dlg-head">
+      <h2>Instructions</h2>
+      <button type="button" class="btn is-secondary is-small is-outline"
+              data-close>Close</button>
+    </div>
+    <div id="modal-instructions-body" class="dlg-body instructions"></div>
+  </dialog>
+
+  <!-- The Background button's sheet: the current environment's background and note. -->
+  <dialog id="background-modal">
+    <div class="dlg-head">
+      <h2 id="background-modal-title">Background</h2>
+      <button type="button" class="btn is-secondary is-small is-outline"
+              data-close>Close</button>
+    </div>
+    <div class="dlg-body">
+      <div id="background-modal-body" class="text"></div>
+      <p id="background-modal-note" class="explain" hidden></p>
+    </div>
+  </dialog>
+
+  <!-- A picture at full size; a click anywhere or Esc closes it. -->
+  <dialog id="image-lightbox" class="lightbox" onclick="this.close()">
+    <img id="image-lightbox-img" src="" alt="" />
+  </dialog>
+
+  <script src="/app.js"></script>
+</body>
+</html>

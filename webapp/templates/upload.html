@@ -525,7 +525,7 @@
               <code>measure &lt;name&gt;: boolean</code> — a quantity the rules read
               (e.g. <code>measure v1X: numeric</code>).</li>
           <li><code>constant &lt;NAME&gt; = &lt;integer&gt;</code> — a named threshold
-              (e.g. <code>constant closeAhead = 30</code>). Values are whole numbers.</li>
+              (e.g. <code>constant dangerClose = 10</code>). Values are whole numbers.</li>
         </ul>
         <p>Two conventions tie the declarations to the network file: the <b>measures are
            its inputs, in declaration order</b>, and the <b>output events are its outputs,
@@ -552,7 +552,11 @@
               directly.</li>
           <li><b>Every binary operation carries its own parentheses</b> — never
               <code>a and b and c</code> (e.g.
-              <code>(({v1X} &gt; justAhead) and ({v1X} &lt; closeAhead))</code>).</li>
+              <code>(({v1X} &gt; justAhead) and ({v1X} &lt; dangerClose))</code>).</li>
+          <li>A comparison may combine numeric measures and constants with
+              <code>+</code>, <code>-</code> and <code>*</code>, each operation in its own
+              parentheses (e.g. <code>(({v1X} - {v2X}) &gt; 3)</code>); multiplying two
+              measures is not linear and is refused.</li>
           <li>Negation is <code>(not &lt;condition&gt;)</code>
               (e.g. <code>(not {v2Presence})</code>).</li>
           <li><code>unless … then …</code> is a defeater: the exception that replaces the

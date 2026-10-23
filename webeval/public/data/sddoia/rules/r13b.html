@@ -1,0 +1,315 @@
+
+
+
+
+
+
+
+
+
+
+
+
+<details class="group violated" open
+         data-name="r13b" data-verdict="violated">
+  <summary>
+    <span class="group-head">
+      <span class="rule-name">r13b</span>
+      <span class="tag sm violated">VIOLATED</span>
+      <span class="count">
+        
+          1 check
+        
+      </span>
+    </span>
+  </summary>
+
+  
+  
+    
+  <div class="rule-block">
+    <div class="spec">
+      
+      <div class="rule-text has-diag"><span class="sec violated has-btn"
+            ><b class="kw">when</b> cmdRequired <b class="kw">and</b> (<b class="measure">{stopSign}</b> &gt; <b class="constant">seen</b>)
+        <b class="kw">then</b> <b class="output">outputStop</b><button type="button" class="btn is-small sec-diag"
+              data-dialog="details-r13b"
+              title="View the diagnosis of r13b"
+              aria-label="View the diagnosis of r13b"><svg
+              viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"
+              /><circle cx="12" cy="12" r="3"/></svg>Diagnosis</button></span></div>
+      
+    </div>
+  </div>
+
+  
+
+  
+</details>
+
+
+  <dialog class="dlg-wide" id="details-r13b">
+    <div class="dlg-head">
+      <h2>Diagnosis &mdash; r13b
+        <span class="tag sm violated">VIOLATED</span></h2>
+      <button type="button" class="btn is-secondary is-small is-outline"
+              data-close>Close</button>
+    </div>
+    <div class="dlg-body">
+      
+      
+        <h3>Rule considered</h3>
+        
+  <div class="rule-block">
+    <div class="spec">
+      
+      <div class="rule-text"><span class="sec violated"
+            ><b class="kw">when</b> cmdRequired <b class="kw">and</b> (<b class="measure">{stopSign}</b> &gt; <b class="constant">seen</b>)
+        <b class="kw">then</b> <b class="output">outputStop</b></span></div>
+      
+        <div class="consts" hidden>
+          
+            <span><b class="constant">seen</b> = 0.5</span>
+          
+        </div>
+        <div class="rule-foot">
+          <button type="button" class="btn is-secondary is-small is-outline"
+                  data-consts>SLEEC rule measure constraints</button>
+        </div>
+      
+    </div>
+  </div>
+
+      
+
+      
+      <div class="sub violated">
+        
+        
+        
+        
+          
+          <p class="net-out">Expected output:
+            <span class="action expected">outputStop</span></p>
+        
+        
+          <p class="net-out">Network output:
+            <span class="action violated">outputForward</span></p>
+        
+
+        
+          
+  
+  
+    <div class="io-split">
+      
+  
+    <div class="io">
+      <h4>Relevant SLEEC rule measure values</h4>
+      <table>
+        <tr><th>name</th><th>value</th></tr>
+        
+          <tr class="role-used">
+            <td><b class="measure">stopSign</b></td>
+            <td>0.500001</td>
+          </tr>
+        
+      </table>
+    </div>
+  
+
+      
+  
+    <div class="io">
+      <h4>Expected responses</h4>
+      <table>
+        <tr><th>name</th><th>value</th></tr>
+        
+          <tr class="role-wanted">
+            <td><b class="output">outputStop</b></td>
+            <td>-1.363575508</td>
+          </tr>
+        
+          <tr class="role-got">
+            <td><b class="output">outputForward</b></td>
+            <td>1.325714699</td>
+          </tr>
+        
+          <tr>
+            <td><b class="output">outputLeft</b></td>
+            <td>0.8693323108</td>
+          </tr>
+        
+          <tr>
+            <td><b class="output">outputRight</b></td>
+            <td>0.7133669319</td>
+          </tr>
+        
+      </table>
+    </div>
+  
+
+    </div>
+  
+
+          <p class="note">Marabou found this assignment inside the sub-rule's input
+          region: there, the network does not do what the rule demands. The marks
+          point at what the verdict turns on: the measures this part of the rule
+          names itself, the response it demanded, and &mdash; in red &mdash; the
+          action the network took instead.</p>
+
+          <details class="full">
+            <summary class="btn is-secondary is-small is-outline">show the full counter-example</summary>
+            
+  
+  
+    <div class="io-split">
+      
+  
+    <div class="io">
+      <h4>SLEEC rule measure values</h4>
+      <table>
+        <tr><th>name</th><th>value</th></tr>
+        
+          <tr>
+            <td>greenLight</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>follow</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>clear</td>
+            <td>1</td>
+          </tr>
+        
+          <tr>
+            <td>redLight</td>
+            <td>0</td>
+          </tr>
+        
+          <tr class="related">
+            <td>stopSign</td>
+            <td>0.500001</td>
+          </tr>
+        
+          <tr>
+            <td>car</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>person</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>rider</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>otherObstacle</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>noLeftLane</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>leftObstacle</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>leftSolidLine</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>rightLane</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>rightFollow</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>noRightLane</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>rightObstacle</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>rightSolidLine</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>leftLane</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>leftFollow</td>
+            <td>0</td>
+          </tr>
+        
+      </table>
+    </div>
+  
+
+      
+  
+    <div class="io">
+      <h4>Expected responses</h4>
+      <table>
+        <tr><th>name</th><th>value</th></tr>
+        
+          <tr class="related">
+            <td>outputStop</td>
+            <td>-1.363575508</td>
+          </tr>
+        
+          <tr class="related">
+            <td>outputForward</td>
+            <td>1.325714699</td>
+          </tr>
+        
+          <tr class="related">
+            <td>outputLeft</td>
+            <td>0.8693323108</td>
+          </tr>
+        
+          <tr class="related">
+            <td>outputRight</td>
+            <td>0.7133669319</td>
+          </tr>
+        
+      </table>
+    </div>
+  
+
+    </div>
+  
+
+            <p class="note">Highlighted rows are the ones the rule constrains; the
+            others were only held inside their declared ranges.</p>
+          </details>
+        
+      </div>
+    </div>
+  </dialog>

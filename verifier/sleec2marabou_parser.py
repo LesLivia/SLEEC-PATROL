@@ -40,7 +40,7 @@ DEFAULT_CONFIG = {
     "strict_input_comparisons": "epsilon",
     "strict_marabou_verif": "epsilon",
     "splitting_strategy": "largest-interval",
-    "snc_workers": 8,
+    "snc_workers": 32,
 }
 
 # Operator seen under a 'not'.
@@ -72,6 +72,11 @@ def _not(expr):
 
 def _or(lhs, rhs):
     return _SleecNode('BoolBinaryOp', lhs=lhs, op='or', rhs=rhs)
+
+
+def _names(subject):
+    """The measures a literal's subject reads: one name, or each of a linear form's."""
+    return [subject] if isinstance(subject, str) else [name for _, name in subject]
 
 
 def _number(value):
@@ -508,13 +513,45 @@ class MarabouGenerator:
             return ('const', _number(val))
         return ('const', self._resolve_value(val.name))  # ScaleParam label
 
+    def _linear(self, expr):
+        """A numeric expression -> its linear form ({measure: coefficient}, constant).
+
+        A measure is {name: 1} and a number or constant is the constant; '+' and '-' add
+        the two sides' forms, and '*' scales one side by the other, which must read no
+        measure: a product of two would not be linear, and Marabou's input constraints
+        are linear. Measures keep the order they first appear in.
+        """
+        if expr.__class__.__name__ != 'NumBinOp':
+            kind, value = self._term(expr)
+            return ({value: 1}, 0) if kind == 'measure' else ({}, value)
+        (lc, lk), (rc, rk) = self._linear(expr.lhs), self._linear(expr.rhs)
+        if expr.op == '*':
+            if lc and rc:
+                raise ValueError(
+                    f"{{{next(iter(lc))}}} * {{{next(iter(rc))}}}: a product of two "
+                    f"measures is not linear, and Marabou's input constraints are linear")
+            (coeffs, k), factor = ((lc, lk), rk) if not rc else ((rc, rk), lk)
+            return {name: coef * factor for name, coef in coeffs.items()}, k * factor
+        sign = 1 if expr.op == '+' else -1
+        coeffs = dict(lc)
+        for name, coef in rc.items():
+            coeffs[name] = coeffs.get(name, 0) + sign * coef
+        return coeffs, lk + sign * rk
+
     def _literal(self, node, negate):
-        """A comparison, or a bare boolean measure, -> (name, op, value)."""
+        """A comparison, or a bare boolean measure, -> (subject, op, value).
+
+        The subject is a measure's name or, where a numeric comparison reads anything
+        else than one measure as written, its linear form: a tuple of (coefficient,
+        name), read as its sum.
+        """
         if node.__class__.__name__ == 'BoolTerminal':  # {m} means m == 1
             if node.ID is None:
                 raise ValueError(f"'{node.value}' is not supported in conditions; remove it")
             return (node.ID.name, '=', 0 if negate else 1)
-        lhs, rhs = self._term(node.lhs), self._term(node.rhs)
+        if node.__class__.__name__ == 'NumericalOp':
+            return self._numeric_literal(node, NEGATED_OP[node.op] if negate else node.op)
+        lhs, rhs = self._term(node.lhs), self._term(node.rhs)   # a ScalarBinaryOp
         if lhs[0] != 'measure':
             raise ValueError("left side of a comparison must be a {measure}")
         if rhs[0] == 'measure':
@@ -523,12 +560,50 @@ class MarabouGenerator:
             )
         name, val = lhs[1], rhs[1]
         op = NEGATED_OP[node.op] if negate else node.op
-        # Marabou has only closed bounds, so '>' would be emitted as '>=' and admit
-        # v itself. On an integer-valued measure v is a value the measure really
-        # takes; the step of 1 makes the strict comparison exact instead.
+        return self._exact_step(name, op, val)
+
+    def _exact_step(self, name, op, val):
+        """One measure compared with a value, with the exact step where it has one.
+
+        Marabou has only closed bounds, so '>' would be emitted as '>=' and admit v
+        itself. On an integer-valued measure v is a value the measure really takes; the
+        step of 1 makes the strict comparison exact instead.
+        """
         if op in ('>', '<') and self._is_ordinal(name):
             return (name, '>=', val + 1) if op == '>' else (name, '<=', val - 1)
         return (name, op, val)
+
+    def _numeric_literal(self, node, op):
+        """A comparison of numeric expressions -> (subject, op, value).
+
+        Both sides are linear forms: the measures are gathered on the left and the
+        numbers on the right. One measure with coefficient 1 is the comparison every
+        specification has used so far, and gives the literal it always gave - textX
+        reads a boolean or a scale compared this way as a numeric comparison too, so it
+        keeps its exact step. Anything else - several measures, another coefficient, a
+        measure on the right - is a linear form, written as one equation. Moving the
+        numbers across is the only arithmetic on the value, and it is exact, so an
+        integer threshold stays the integer that was written.
+        """
+        (lc, lk), (rc, rk) = self._linear(node.lhs), self._linear(node.rhs)
+        coeffs = dict(lc)
+        for name, coef in rc.items():
+            coeffs[name] = coeffs.get(name, 0) - coef
+        coeffs = {name: coef for name, coef in coeffs.items() if coef != 0}
+        val = rk - lk
+        if not coeffs:
+            raise ValueError("a comparison with no measure in it is always true or always "
+                             "false; remove it, or compare a {measure}")
+        if list(coeffs.values()) == [1]:
+            return self._exact_step(next(iter(coeffs)), op, val)
+        subject = tuple((coef, name) for name, coef in coeffs.items())
+        if op == '<>':
+            raise ValueError(
+                f"'{self._expression(subject)} <> {val}': '<>' on a real-valued expression "
+                f"has no exact encoding - Marabou has only closed inequalities and cannot "
+                f"exclude a single value. Write '< {val} or > {val}' if that is what you "
+                f"mean.")
+        return (subject, op, val)
 
     def _is_ordinal(self, name):
         """True when the measure's values really are the integers 0, 1, 2, ...
@@ -639,6 +714,32 @@ class MarabouGenerator:
             f"numeric measure '{name}' needs both {name}LB and {name}UB constants"
         )
 
+    def _range(self, subject):
+        """(lower, upper) a literal's subject can take: a measure's own range, or, for a
+        linear form, the extremes its terms reach over theirs."""
+        if isinstance(subject, str):
+            return self._measure_range(subject)
+        lo = hi = 0
+        for coef, name in subject:
+            lb, ub = self._measure_range(name)
+            lo += coef * (lb if coef > 0 else ub)
+            hi += coef * (ub if coef > 0 else lb)
+        return lo, hi
+
+    @staticmethod
+    def _expression(subject):
+        """A literal's subject as a reader writes it: 'v1X', or 'v1X - v2X'."""
+        if isinstance(subject, str):
+            return subject
+        text = ""
+        for coef, name in subject:
+            term = name if abs(coef) == 1 else f"{abs(coef)}*{name}"
+            if not text:
+                text = f"-{term}" if coef < 0 else term
+            else:
+                text += f" - {term}" if coef < 0 else f" + {term}"
+        return text
+
     def _strict_step(self, val):
         """How far inside the threshold a strict bound has to sit.
 
@@ -672,19 +773,21 @@ class MarabouGenerator:
             return 0
         return self._strict_step(val)
 
-    def _check_threshold(self, name, val):
-        lb, ub = self._measure_range(name)
+    def _check_threshold(self, subject, val):
+        lb, ub = self._range(subject)
         if not (lb <= val <= ub):
-            raise ValueError(f"threshold {val} for '{name}' is outside its range [{lb}, {ub}]")
+            raise ValueError(f"threshold {val} for '{self._expression(subject)}' is outside "
+                             f"its range [{lb}, {ub}]")
 
-    def _check_shifted(self, name, op, val, written):
+    def _check_shifted(self, subject, op, val, written):
         """A strict bound moved inside the range still has to land in it."""
-        lb, ub = self._measure_range(name)
+        lb, ub = self._range(subject)
         if not (lb <= val <= ub):
             side = 'above' if op == '>=' else 'below'
             raise ValueError(
-                f"'{written}' cannot be satisfied: {name} ranges over [{lb}, {ub}], so "
-                f"no value lies strictly {side} that threshold inside its range.")
+                f"'{written}' cannot be satisfied: {self._expression(subject)} ranges over "
+                f"[{lb}, {ub}], so no value lies strictly {side} that threshold inside "
+                f"its range.")
 
     def _emit_full_ranges(self):
         """Every input must be bounded, so start each query from the declared ranges."""
@@ -708,6 +811,10 @@ class MarabouGenerator:
         name, op, val = lit
         if op not in ('=', '<', '<=', '>', '>='):
             raise ValueError(f"unsupported operator '{op}'")
+        if not isinstance(name, str):
+            # Several measures share no bound: the comparison is one equation over all
+            # of them, conjoined with the rest of the query.
+            return self._equation(lit) + ["    net.addEquation(e)"]
         idx = self.measures[name]
         self._check_threshold(name, val)        # the threshold as the rule states it
         written = f"{name} {op} {val}"
@@ -730,6 +837,27 @@ class MarabouGenerator:
         return ([f"    {calls[0]}  # {note}"]
                 + [f"    {call}" for call in calls[1:]])
 
+    def _equation(self, lit):
+        """A comparison -> the lines that build it as the Marabou equation 'e'.
+
+        An equation takes any number of addends, so one measure and a linear form of
+        several are written the same way: the threshold checked against what the subject
+        can reach, a strict comparison closed as strict_input_comparisons says, and the
+        comparison as written kept in the comment.
+        """
+        subject, op, val = lit
+        self._check_threshold(subject, val)
+        written = f"{self._expression(subject)} {op} {val}"
+        op, val = self._strict_as_closed(op, val)
+        self._check_shifted(subject, op, val, written)
+        note = written if f"{val}" in written else f"{written} -> {op} {val}"
+        rel = 'EQ' if op == '=' else ('LE' if op in ('<', '<=') else 'GE')
+        terms = ((1, subject),) if isinstance(subject, str) else subject
+        return ([f"    e = MarabouUtils.Equation(MarabouCore.Equation.{rel})  # {note}"]
+                + [f"    e.addAddend({coef}, net.inputVars[0][0][{self.measures[name]}])"
+                   for coef, name in terms]
+                + [f"    e.setScalar({val})"])
+
     def _emit_or(self, disjuncts, tag):
         """One 'or' -> one Marabou disjunction.
 
@@ -740,20 +868,8 @@ class MarabouGenerator:
         lines = [f"    disjuncts{tag} = []"]
         for n, conjunction in enumerate(disjuncts):
             lines.append(f"    d{tag}_{n} = []")
-            for name, op, val in conjunction:
-                self._check_threshold(name, val)
-                written = f"{name} {op} {val}"
-                op, val = self._strict_as_closed(op, val)
-                self._check_shifted(name, op, val, written)
-                note = written if f"{val}" in written else f"{written} -> {op} {val}"
-                rel = 'EQ' if op == '=' else ('LE' if op in ('<', '<=') else 'GE')
-                lines += [
-                    f"    e = MarabouUtils.Equation(MarabouCore.Equation.{rel})"
-                    f"  # {note}",
-                    f"    e.addAddend(1, net.inputVars[0][0][{self.measures[name]}])",
-                    f"    e.setScalar({val})",
-                    f"    d{tag}_{n}.append(e)",
-                ]
+            for lit in conjunction:
+                lines += self._equation(lit) + [f"    d{tag}_{n}.append(e)"]
             lines.append(f"    disjuncts{tag}.append(d{tag}_{n})")
         lines.append(f"    net.addDisjunctionConstraint(disjuncts{tag})")
         return lines
@@ -783,9 +899,10 @@ class MarabouGenerator:
         for kind, payload in self._and_parts(condition):
             lines += self._emit_part(kind, payload, bounds, next(tags))
             if kind == 'lit':
-                used.add(payload[0])
+                used.update(_names(payload[0]))
             else:
-                used.update(name for conjunction in payload for name, _, _ in conjunction)
+                used.update(name for conjunction in payload
+                            for subject, _, _ in conjunction for name in _names(subject))
         relation_parts = self._and_parts(relations)
         if relation_parts:
             lines.append("    # relation block")

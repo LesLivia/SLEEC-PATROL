@@ -10,11 +10,11 @@ while a failure inside Marabou gets a generic message with the detail tucked awa
 
 import hashlib
 import html
-import importlib.util
 import json
+import pickle
 import re
+import subprocess
 import sys
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -61,17 +61,45 @@ def generate_module(spec_text, workdir, grammar_text=None,
     return generator, code, module_path
 
 
-def solve_module(module_path, onnx_path):
-    """Phase 2: run the generated module. Needs maraboupy and the ONNX file.
+SOLVE_PROCESS = Path(__file__).with_name("solve_run.py")
 
-    Returns check_property()'s dict: {"results", "trace", "rules"}.
+MARABOU_ABORTED = (
+    "Marabou stopped with an internal error (InfeasibleQueryException in its parallel "
+    "mode), so no rule was verified. One of the rules' queries triggers a fault inside "
+    "Marabou: try again, or verify fewer rules at a time.")
+
+# The longest one verification may take, all of its rules together. Every bundled setup
+# finishes well inside it: highway, the slowest, in about 10 minutes with 32 workers.
+SOLVE_TIMEOUT = 3600
+
+MARABOU_TIMEOUT = (
+    f"Marabou did not finish within {SOLVE_TIMEOUT // 60} minutes, so the run was stopped "
+    "and no rule was verified. Verify fewer rules at a time.")
+
+
+def solve_module(module_path, onnx_path):
+    """Phase 2: run the generated module in a process of its own. Needs maraboupy and
+    the ONNX file.
+
+    Marabou's parallel mode can abort the process it runs in; run here, that would end
+    the site. In its own process only that process ends, and the user is told. A run
+    longer than SOLVE_TIMEOUT is stopped the same way.
+
+    Returns check_property()'s dict: {"results", "trace", "rules", "inputs"}.
     """
-    spec = importlib.util.spec_from_file_location(
-        f"generated_{uuid.uuid4().hex[:6]}", str(module_path)
-    )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module.check_property(str(onnx_path))
+    answer = Path(module_path).with_name("answer.pickle")
+    try:
+        run = subprocess.run([sys.executable, str(SOLVE_PROCESS), str(module_path),
+                              str(onnx_path), str(answer)], stderr=subprocess.PIPE,
+                             text=True, timeout=SOLVE_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(MARABOU_TIMEOUT)
+    sys.stderr.write(run.stderr)
+    if run.returncode < 0:          # killed by a signal: Marabou's abort
+        raise RuntimeError(MARABOU_ABORTED)
+    if run.returncode > 0:          # a Python error, shown as before
+        raise RuntimeError((run.stderr.strip().splitlines() or ["no message"])[-1])
+    return pickle.loads(answer.read_bytes())
 
 
 # Phase 2 solved beforehand: a bundled setup may keep solve_module()'s answer beside its

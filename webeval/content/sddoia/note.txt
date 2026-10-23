@@ -1,0 +1,1 @@
+Only the second step is verified: from concepts to actions. So in every diagnosis, the values are the 19 concept probabilities, between 0 and 1, and the four action scores; there is no picture. In the rules, a concept counts as seen when its probability is above 0.5 (the constant seen).

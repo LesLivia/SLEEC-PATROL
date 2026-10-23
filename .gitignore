@@ -17,4 +17,7 @@ autonomous_driving/CBM/rss/*.png
 # rsbench's SDD-OIA scene generator (local copy, not part of the repo)
 autonomous_driving/CBM/rssgen/
 
+# wrangler's local cache and dev state (account cache, local R2 for `wrangler pages dev`)
+.wrangler/
+
 .DS_Store

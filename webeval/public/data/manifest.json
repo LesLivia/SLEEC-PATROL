@@ -1,0 +1,75 @@
+{
+  "built": "2026-10-23T12:04:29+00:00",
+  "environments": [
+    {
+      "id": "highway-fast-v0",
+      "title": "Highway",
+      "solved": "2026-10-23T11:18:08+00:00",
+      "rules": [
+        "r8",
+        "r8b",
+        "r29"
+      ],
+      "descriptions": {
+        "r8": "When a vehicle is 5–10 m ahead in the lane and the car is closing in on it (more than 5 m/s faster), slow down; but if no other vehicle is seen, change lanes instead: to either side from the middle lane, to the right from the leftmost lane, to the left from the rightmost lane.",
+        "r8b": "When a vehicle is 5–10 m ahead in the lane and the car is closing in on it (more than 5 m/s faster), never accelerate.",
+        "r29": "When a vehicle is right next to the car in the lane to its right, do not change lanes to the right."
+      },
+      "note": false,
+      "pictures": {
+        "intro": "",
+        "items": [
+          {
+            "src": "/data/highway-fast-v0/scene.svg",
+            "caption": "An ordinary moment on the road, drawn the way a diagnosis draws a situation: the ego in dark blue in the middle lane, and the four cars it sees in yellow, the colour a diagnosis gives the cars its rule names."
+          }
+        ]
+      }
+    },
+    {
+      "id": "sddoia",
+      "title": "SDD-OIA",
+      "solved": "2026-10-23T11:58:22+00:00",
+      "rules": [
+        "r8",
+        "r13",
+        "r13b",
+        "r15",
+        "r3",
+        "r28",
+        "r29"
+      ],
+      "descriptions": {
+        "r8": "When an obstacle (a car, a person, a rider or another obstacle) appears ahead, stop.",
+        "r13": "When the traffic light ahead is red or yellow, stop.",
+        "r13b": "When there is a stop sign ahead, stop.",
+        "r15": "When the traffic light ahead is green, drive on; if there is an obstacle ahead, or possibly a pedestrian (30% confidence or more), stop.",
+        "r3": "When a pedestrian may be ahead but it is uncertain (30–85% confidence), stop (cautious braking).",
+        "r28": "When the left is blocked (no lane, an obstacle in the left lane, or a solid line), do not turn or change lanes to the left.",
+        "r29": "When the right is blocked (no lane, an obstacle in the right lane, or a solid line), do not turn or change lanes to the right."
+      },
+      "note": true,
+      "pictures": {
+        "intro": "Four pictures from the training set. Under each are the concepts its label marks as present.",
+        "items": [
+          {
+            "src": "/data/sddoia/images/MINI_BOIA_13040.png",
+            "caption": "Red light. Concepts present: clear, redLight, leftObstacle, rightLane, rightObstacle, leftLane."
+          },
+          {
+            "src": "/data/sddoia/images/MINI_BOIA_3280.png",
+            "caption": "Pedestrian crossing at a green light. Concepts present: greenLight, follow, person, leftObstacle, rightLane, rightFollow."
+          },
+          {
+            "src": "/data/sddoia/images/MINI_BOIA_27040.png",
+            "caption": "Car ahead at a green light. Concepts present: greenLight, car, leftLane."
+          },
+          {
+            "src": "/data/sddoia/images/MINI_BOIA_14400.png",
+            "caption": "Obstacle ahead. Concepts present: otherObstacle, noLeftLane, noRightLane."
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -13,10 +13,10 @@ How many lanes that road has is read off the specification rather than fixed her
 highway-v0 runs four and highway-fast-v0 three, and the two declare the same measures in
 the same order, so nothing in the interface tells them apart. See _lanes().
 
-Marabou is free to return an assignment the simulator could never produce - a fractional
-presence, a car between two lanes, two cars in the same place. Those are drawn as they
-are and listed underneath, because they say the query is under-constrained rather than
-that the network misbehaves.
+Every car is drawn where Marabou put it, and nothing is added to say whether the simulator
+could produce it: keeping such assignments out is the specification's work, in its
+relation block. Under each other car is only its speed, since the picture shows where it
+is; a legend names the three colours.
 """
 
 import math
@@ -46,10 +46,10 @@ VMARGIN = 16         # room above and below the road for a car that left it
 PAD_T, RULER = 48, 30
 MAX_LANES = 8        # beyond this the figure is not a road, so nothing is drawn
 
-# The page's palette. HIGHLIGHT marks the cars the rule constrains, the same role the
-# tinted rows play in the counter-example table; DANGER is kept for the warnings alone.
+# The page's palette. HIGHLIGHT marks the cars the rule names, the same role the tinted
+# rows play in the counter-example table.
 PRIMARY, HIGHLIGHT, SECONDARY = "#1E3A8A", "#F4C430", "#C9965B"
-BG, TEXT, MUTED, DANGER = "#FBF3E4", "#3B2A1A", "#64523F", "#D42A2F"
+BG, TEXT, MUTED = "#FBF3E4", "#3B2A1A", "#64523F"
 ROAD, EDGE, CAR = "#E0CFAF", "#B07C3C", "#F7F9FD"   # tan carriageway, cards' white cars
 
 
@@ -114,52 +114,23 @@ def render(rows, constants):
     ego_vx, ego_vy = val["egoVx"], val["egoVy"]
 
     # Every car in the observation is drawn. A row that is zero all through is the
-    # zero-fill highway-env uses for "no such car", so there is nothing to place: that is
-    # ordinary, and it is said plainly rather than flagged.
-    cars, alerts, absent = [], [], []
+    # zero-fill highway-env uses for "no such car", so there is nothing to place.
+    cars = []
     for name in CARS:
-        presence = val[name + "Presence"]
-        dx, dy = val[name + "X"], val[name + "Y"]
-        dvx, dvy = val[name + "Vx"], val[name + "Vy"]
         # Only an exact 1 puts a car on the road. highway-env writes 1 for a car and
-        # zeroes the whole row otherwise, so anything else is a state the observation
-        # cannot hold - drawing it would invent a car the data does not claim exists.
-        # The network still reads the four numbers either way, so they are named instead.
-        if not _is_one(presence):
-            reads = (f"the network still reads x {dx:+.1f}, y {dy:+.1f}, "
-                     f"vx {dvx:+.1f}, vy {dvy:+.1f}")
-            if abs(presence) <= 1e-3:
-                absent.append(name)
-                if max(abs(dx), abs(dy), abs(dvx), abs(dvy)) > 1e-3:
-                    alerts.append(f"{name}: presence 0, so no car is drawn, but {reads}")
-            else:
-                alerts.append(f"{name}: presence {presence:.3g} is neither 0 nor 1, so "
-                              f"there is no car to draw - but {reads}")
+        # zeroes the whole row otherwise, so drawing anything else would invent a car the
+        # data does not claim exists; the table still shows the row's numbers.
+        if not _is_one(val[name + "Presence"]):
             continue
+        dx, dy = val[name + "X"], val[name + "Y"]
         cars.append(dict(name=name, dx=dx, dy=dy,
-                         vx=ego_vx + dvx, vy=ego_vy + dvy, y=ego_y + dy,
+                         vx=ego_vx + val[name + "Vx"], vy=ego_vy + val[name + "Vy"],
+                         y=ego_y + dy,
                          # any of the car's five fields in the rule makes it one of the
                          # cars the rule talks about - a speed bound counts as much as a
                          # position one
                          related=any(name + f in related
                                      for f in ("Presence", "X", "Y", "Vx", "Vy"))))
-        lane, off = _lane_of(ego_y + dy)
-        if not -LANE_W / 2 <= ego_y + dy <= (lanes - 1) * LANE_W + LANE_W / 2:
-            alerts.append(f"{name}: outside the {lanes} lanes of the road")
-        elif off > 0.5:
-            alerts.append(f"{name}: {off:.1f} m off the centre of lane {lane}")
-        if abs(dx) < CAR_L and abs(dy) < CAR_W:
-            alerts.append(f"{name}: in the same place as the ego")
-        if ego_vx + dvx < 0:
-            alerts.append(f"{name}: driving backwards at {abs(ego_vx + dvx):.1f} m/s")
-
-    # The ego is bound by the same specification, so it gets the same scrutiny.
-    if not _is_one(val["egoPresence"]):
-        alerts.append(f"ego: presence {val['egoPresence']:.3g} is neither 0 nor 1")
-    if not -LANE_W / 2 <= ego_y <= (lanes - 1) * LANE_W + LANE_W / 2:
-        alerts.append(f"ego: outside the {lanes} lanes of the road")
-    if ego_vx < 0:
-        alerts.append(f"ego: driving backwards at {abs(ego_vx):.1f} m/s")
 
     # ---- horizontal scale: fit every car, then fill the width if there is room left ----
     dxs = [0.0] + [c["dx"] for c in cars]
@@ -169,16 +140,9 @@ def render(rows, constants):
     left, right = left - slack / 2, right + slack / 2
 
     # Below 1.6 px per metre the drawing stops being readable, so a car further out than
-    # the width can hold is pinned to the edge - and said so, since the picture then no
-    # longer shows the real distance.
-    for car in cars:
-        if not left <= car["dx"] <= right:
-            alerts.append(f'{car["name"]}: {car["dx"]:+,.0f} m away, beyond the drawn '
-                          f"area and pinned to the edge")
-
-    shown = alerts[:6]
-    lines = len(shown) + (1 if absent else 0)
-    height = PAD_T + VMARGIN + road_px + VMARGIN + RULER + 14 * lines
+    # the width can hold is pinned to the edge by box(). At 1.6 the width holds about 500 m,
+    # more than the bundled spec's x range (-10 to 200 m), so there it does not happen.
+    height = PAD_T + VMARGIN + road_px + VMARGIN + RULER
 
     def px(dx):
         return 12 + (dx - left) * scale
@@ -239,11 +203,11 @@ def render(rows, constants):
                    f'fill="{MUTED}" text-anchor="middle">{_esc(under)}</text>')
 
     for car in cars:
+        # Only the speed: where the car is, the picture already shows.
         speed = f'{car["vx"]:.1f} m/s'
         if abs(car["vy"]) > 0.05:
             speed += f', vy {car["vy"]:+.1f}'
-        # A real middot, not an entity: this string goes through _esc().
-        box(car["dx"], car["y"], car["name"], f'{car["dx"]:+.1f} m · {speed}',
+        box(car["dx"], car["y"], car["name"], speed,
             HIGHLIGHT if car["related"] else CAR, TEXT if car["related"] else EDGE,
             2.2 if car["related"] else 1.2, car["related"], dashed=False)
 
@@ -260,21 +224,17 @@ def render(rows, constants):
     out.append(f'<text x="12" y="19" font-size="11" fill="{TEXT}" font-weight="700">'
                f'ego at x {ego_x:.1f} m, lane {lane} of {lanes}, {ego_speed}'
                f'{"" if off <= 0.5 else f" ({off:.1f} m off centre)"}</text>')
-    out.append(f'<text x="12" y="35" font-size="9.5" fill="{MUTED}">the cars in yellow '
-               f'are the ones this rule constrains; the others were only held '
-               f'inside their declared ranges</text>')
-
-    # Warnings in red: each one is a counter-example the simulator could not have
-    # produced, which points at the query rather than at the network.
-    for i, note in enumerate(shown):
-        out.append(f'<text x="12" y="{height - 14 * (lines - i) + 4:.1f}" '
-                   f'font-size="9.5" fill="{DANGER}">&#9888; {_esc(note)}</text>')
-    if len(alerts) > len(shown):
-        out[-1] = out[-1].replace(
-            "</text>", f" &#183; {len(alerts) - len(shown)} more</text>")
-    if absent:
-        out.append(f'<text x="12" y="{height - 10:.1f}" font-size="9.5" fill="{MUTED}">'
-                   f'not in the scene: {", ".join(absent)} (presence 0)</text>')
+    # ---- legend: the three colours, drawn as the cars are. The monospace font's
+    # characters are 0.6 em wide, which places each entry after the one before.
+    x = 12
+    for fill, stroke, label in ((PRIMARY, TEXT, "ego"),
+                                (HIGHLIGHT, TEXT, "cars the rule names"),
+                                (CAR, EDGE, "other cars the network sees")):
+        out.append(f'<rect x="{x}" y="28" width="14" height="8" rx="1.5" fill="{fill}" '
+                   f'stroke="{stroke}" stroke-width="1"/>')
+        out.append(f'<text x="{x + 19}" y="35" font-size="9.5" fill="{MUTED}">'
+                   f'{label}</text>')
+        x += 19 + round(len(label) * 0.6 * 9.5) + 18
 
     out.append("</svg>")
     return "\n".join(out)
