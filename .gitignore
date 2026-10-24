@@ -1,1 +1,25 @@
 /verifier/generated_verify_model.py
+
+__pycache__/
+*.pyc
+
+autonomous_driving/highway/logs/
+
+# CBM / rsbench: downloaded dataset and training outputs
+autonomous_driving/CBM/rss/data/bdd2048/
+autonomous_driving/CBM/rss/data/BDD-OIA-lastframe/
+autonomous_driving/CBM/rss/data/ckpts/
+# extracted feature sets (utils/extract_features.py), e.g. data/dinov3_l_576/
+autonomous_driving/CBM/rss/data/*/
+autonomous_driving/CBM/rss/*.pth
+autonomous_driving/CBM/rss/*.png
+
+# rsbench's SDD-OIA scene generator (local copy, not part of the repo)
+autonomous_driving/CBM/rssgen/
+
+# wrangler's local cache and dev state (account cache, local R2 for `wrangler pages dev`)
+.wrangler/
+# local secrets for `wrangler pages dev` (the viewer's login): never pushed
+.dev.vars
+
+.DS_Store

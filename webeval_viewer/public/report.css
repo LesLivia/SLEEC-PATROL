@@ -1,0 +1,420 @@
+/* The webapp's report stylesheet: a copy of the <style> block of
+   webapp/templates/results.html, unchanged. The study site is implemented
+   separately from the webapp, so a change there has to be copied here by hand.
+   The site's own pages are styled in styles.css, loaded after this. */
+:root {
+  --primary: #1E3A8A;        /* header, buttons, links */
+  --primary-hover: #2B4BA8;
+  --highlight: #F4C430;      /* attention: the edge of an unsolved check */
+  /* The ring drawn around whatever holds keyboard focus. Bright enough to read as a
+     marker, dark enough to clear 3:1 on every surface it lands on - 4.30 on a panel,
+     3.73 on the rule list's box - which the attention amber it replaced could not do. */
+  --focus: #1D7AC4;
+  --secondary: #C9965B;      /* borders and tags */
+  --bg: #FBF3E4;
+  --surface: #F7F9FD;        /* panels: a white tinted toward the brand navy */
+  --line: #D9E0F0;          /* hairlines, from the navy */
+  --text: #3B2A1A;
+  --muted: #64523F;
+  --input: #0E6BA8;          /* the measures a rule reads */
+  --accent: #6B3FA0;         /* the output events a rule demands */
+  /* The constants it compares against. Darker than the brown it was, which puts it
+     14.3 from the unverified amber instead of 11.5 - and no darker, because from here
+     it runs into the body text it is marked inside (16.1 away, and falling). */
+  --const: #74491B;
+
+  --info: #0E6BA8;           /* what a panel holds, and where it is explained */
+  --info-bg: #EDF1FA;
+
+  --danger: #D42A2F;         /* a real violation, and nothing else */
+  --danger-text: #8A1A1E;
+
+  --good: #5F7A43;           /* compliance stays green: it is the one "all clear" */
+  --good-line: #8FA876;
+
+  /* Unverified: neither proved nor broken. The brightest, most saturated yellow that
+     still reads as a word here - 4.51 against the cream behind a sub-rule, where it
+     is tightest - at the attention amber's own hue. Brighter and it stops being
+     readable on a light page; greener and it closes on the compliant green two
+     verdicts standing in one tally must not share. */
+  --warn-text: #8A6C00;
+
+  --page: 64rem;             /* the report's own width, shared with its wide dialog */
+  /* The column a violated section keeps on its right for its own button. The button
+     is an eye and the word 'Diagnosis': the eye says it is there to be looked at, so
+     'View' in front of it said nothing the icon had not. */
+  --diag: 7.7rem;
+}
+* { box-sizing: border-box; }
+body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0;
+       background: var(--bg); color: var(--text); line-height: 1.55; }
+header { background: var(--primary); padding: 1.6rem 0; }
+/* the same box as main, padding and all, so the two line up */
+header .bar { max-width: var(--page); margin: 0 auto; padding: 0 1rem; }
+header h1 { margin: 0; font-size: 1.35rem; color: var(--bg); }
+header p { margin: 0.3rem 0 0; color: #D8E0F4; font-size: 0.86rem;
+           font-family: ui-monospace, "Cascadia Code", monospace; }
+/* what the page is, in a sentence: prose, so not the monospace of a file name */
+/* No measure of its own: capped, it broke a one-line sentence across two once the
+   report grew wider. It wraps with the header, as a header's line should. */
+header p.lede { font-family: inherit; }
+main { max-width: var(--page); margin: 2rem auto 4rem; padding: 0 1rem; }
+
+/* A button names its own colour in --btn and nothing else. Disabled is that same
+   colour lightened, so a button that is working still looks like itself instead of
+   turning into a different button. A new button only sets --btn; --btn-hover and
+   --btn-busy are there for when a colour needs its own, e.g. one too light to keep a
+   cream label once it is shaded. */
+.btn { --btn: var(--primary);
+       --btn-hover: var(--primary-hover);
+       --btn-busy: color-mix(in srgb, var(--btn) 74%, white);
+       display: inline-block; padding: 0.7rem 1.6rem; font-size: 0.98rem;
+       font-weight: 600; font-family: inherit; line-height: 1.25;
+       text-decoration: none; color: var(--bg); background: var(--btn); border: none;
+       border-radius: 8px; cursor: pointer; }
+.btn:hover { background: var(--btn-hover); }
+.btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.btn:disabled { background: #586DA8;        /* where color-mix is unsupported */
+       background: var(--btn-busy); cursor: default; pointer-events: none; }
+.btn.is-secondary { --btn: var(--secondary); --btn-hover: #D8AC7B; color: var(--text); }
+/* Red is mid-bright: shaded a little, no label reads on it, so it is shaded a lot and
+   the label goes dark. */
+.btn.is-danger { --btn: var(--danger); --btn-hover: #B4232A;
+       --btn-busy: color-mix(in srgb, var(--btn) 55%, white); }
+.btn.is-danger:disabled { color: var(--text); }
+/* Moving between the pages is not an action on the page, so it takes a neutral of
+   its own rather than either action colour. A step that cannot be taken goes flatly
+   gray: unavailable, rather than the same button lightened because it is working. */
+/* Its own label, not the page's background colour: on this blue the cream
+   reads as a hole rather than as a word. */
+.btn.is-nav { --btn: #005458; --btn-hover: #0A6B70; color: #FFFFFF; }
+.btn.is-nav:disabled { background: #CFCED4; color: #5F5D68; }
+.btn.is-small { padding: 0.34rem 0.9rem; font-size: 0.84rem; }
+.btn.is-large { padding: 0.95rem 2.6rem; font-size: 1.12rem; }
+/* Two tiers, both clickable. Filled is the page main action - the one that runs the
+   verification. Outlined is a supporting action that still does something: show the
+   walkthrough, open the full counter-example. Same colours, different weight. */
+.btn.is-outline, .btn.is-outline:disabled { background: #FFFFFF;
+       color: var(--text); border: 1.5px solid #A17849;
+       border-color: color-mix(in srgb, var(--btn) 80%, black); }
+.btn.is-outline:hover { background: #F6EEE4;
+       background: color-mix(in srgb, var(--btn) 14%, white); color: var(--text); }
+
+/* what was verified, and how it came out */
+.summary { background: var(--surface); border: 1px solid var(--line);
+           border-radius: 12px; padding: 1.1rem 1.3rem 1.2rem; margin: 0 0 1.6rem;
+           box-shadow: 0 1px 2px rgba(59, 42, 26, 0.05); }
+.summary-head { margin-bottom: 0.9rem; }
+.summary-head h2 { margin: 0; font-size: 1.02rem; color: var(--primary); }
+.config { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+          gap: 0.5rem 1.4rem; margin: 0 0 1rem; }
+.config div { border-top: 1px solid var(--line); padding-top: 0.4rem; }
+.config dt { color: var(--muted); font-size: 0.78rem; }
+.config dd { margin: 0.1rem 0 0; font-size: 0.95rem; font-weight: 600;
+             overflow-wrap: anywhere; }
+.config dd.name { font-family: ui-monospace, "Cascadia Code", monospace;
+                  font-size: 0.86rem; }
+
+/* One label form, used for the counts here, for a rule's own verdict and for the
+   legend in the reading guide. A verdict is stated, not pressed, so it wears the
+   marker the panels and the rule sections already wear - a bar in its own colour down
+   the left - at the size of a word. No fill, no box, no edge around it: nothing a
+   button on this page has. */
+.tag { display: inline-block; background: none; border: none; padding: 0;
+       font-size: 0.92rem; font-weight: 700; letter-spacing: 0.06em;
+       line-height: 1.3; white-space: nowrap; }
+/* The bar is drawn to the height of the word, in em, rather than left as a border on
+   a box whose height comes from the line box: a border would overshoot the letters,
+   by more the smaller the word. In em the bar keeps the word's proportion wherever the
+   label is set, so each place can take the size that suits it. */
+.tag::before { content: ""; display: inline-block; width: 3px; height: 0.85em;
+               margin-right: 0.45em; vertical-align: -0.08em;
+               background: currentColor; }
+.tag .n { font-weight: 700; }
+/* The darker of the palette's two greens: the lighter one reads at 4.58 on the panel,
+   and a word has to clear 4.5 wherever it is read. */
+.tag.compliant { color: #4F6A36; }
+.tag.violated { color: var(--danger-text); }
+.tag.unverified { color: var(--warn-text); }
+.tag.ignored { color: var(--muted); }
+.tally { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 0; padding: 0;
+         list-style: none; }
+
+/* What a panel holds, and where the words in it are explained: information, in the
+   page's blue, carrying the link that opens the guide. The same shape page 2 uses. */
+.explain { margin: 0 0 1rem; padding: 0.7rem 0.9rem;
+           border-left: 3px solid var(--info); border-radius: 6px;
+           background: var(--info-bg); color: var(--text); font-size: 0.88rem;
+           line-height: 1.55; }
+.explain a { color: var(--info); font-weight: 700; text-decoration: underline;
+             text-underline-offset: 2px; }
+.explain a:hover { color: #0B5486; }
+.explain a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px;
+                           border-radius: 3px; }
+
+/* One panel for the rules: what they are, how to narrow them, and the list itself. */
+.diagnosis { background: var(--surface); border: 1px solid var(--line);
+             border-radius: 12px; padding: 0.95rem 1.2rem 1.1rem; margin: 0 0 1.2rem;
+             box-shadow: 0 1px 2px rgba(59, 42, 26, 0.05); }
+.diagnosis > h2 { margin: 0 0 0.5rem; font-size: 1.02rem; color: var(--primary); }
+.filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.7rem 1.1rem;
+           margin: 0 0 0.9rem; }
+.f-field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.78rem;
+           color: var(--muted); }
+.filters input, .filters select { font-family: inherit; font-size: 0.92rem;
+           color: var(--text); background: #FFFFFF; border: 1px solid var(--line);
+           border-radius: 8px; padding: 0.45rem 0.6rem; min-width: 12rem; }
+.filters input:focus-visible, .filters select:focus-visible {
+           outline: 3px solid var(--focus); outline-offset: 1px; }
+/* the count keeps to the far end of the row, on the controls' own baseline */
+.f-count { margin: 0 0 0.45rem auto; font-size: 0.8rem; color: var(--muted); }
+/* The rules scroll within the report, so what follows them keeps its place however
+   many there are. The filters stay outside, above: narrowing the list has to be
+   reachable whatever the list is doing. */
+/* A height of its own, not the list's: the panel keeps its size whether one rule
+   is shown or forty, so nothing below it moves as the filters narrow. */
+.rules { height: 62vh; overflow-y: auto; margin: 0;
+         padding: 0.1rem 0.6rem 0.4rem 0.5rem;
+         background: #E4E9F5; border: 1px solid var(--line); border-radius: 10px; }
+.rules > details.group:first-of-type { margin-top: 0.2rem; }
+/* Between the pages. A step that cannot be taken is left out rather than shown dead:
+   a button that is there but never works reads as something gone wrong. So a page
+   carries only the steps it has, and a lone forward step keeps to the right, where a
+   forward step belongs. */
+.pager { display: flex; justify-content: space-between; gap: 1rem;
+         margin: 2rem 0 0; }
+.pager .next { margin-left: auto; }
+
+/* said once, where the rules would have been */
+.f-empty { background: var(--surface); border: 1px solid var(--line);
+           border-radius: 10px; padding: 0.9rem 1.1rem; margin: 0 0 1rem;
+           color: var(--muted); font-size: 0.9rem; }
+
+/* outer panel: one rule as written */
+.group { background: var(--surface); border: 1px solid var(--line);
+         border-left: 6px solid var(--line); border-radius: 10px; margin: 0.8rem 0;
+         padding: 0.95rem 1.2rem; box-shadow: 0 1px 2px rgba(59, 42, 26, 0.05); }
+.group.compliant { border-left-color: var(--good-line); }
+.group.violated { border-left-color: var(--danger); }
+.group.unverified  { border-left-color: var(--highlight); }
+.group.ignored  { border-left-color: var(--secondary); background: #F1F4FB; }
+.group > summary { cursor: pointer; font-size: 1rem; }
+.group > summary::marker { color: var(--muted); }
+.group > summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+/* The panel's own action sits at the end of its summary line, where it stays
+   reachable with the rule folded away. inline-flex keeps the disclosure marker that
+   'display: flex' on the summary itself would take away. */
+.group-head { display: inline-flex; align-items: center; gap: 0.3rem;
+              flex-wrap: wrap; row-gap: 0.4rem;
+              width: calc(100% - 1.4rem); vertical-align: middle; }
+.rule-name { font-weight: 700; font-family: ui-monospace, "Cascadia Code", monospace;
+             color: var(--primary); }
+.count { color: var(--muted); font-size: 0.82rem; margin-left: 0.4rem; }
+/* A rule sits on its own white surface, so it stands out from the panel around it,
+   with its constants folded under the text and the toggle at the foot - nothing it
+   could ever cover. */
+.rule-block { margin: 0.9rem 0 1rem; }
+.spec { background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px;
+        padding: 0.8rem 0.9rem; margin: 0; font-size: 0.78rem; }
+.rule-text { white-space: pre-wrap; overflow-x: auto;
+             font-family: ui-monospace, "Cascadia Code", monospace; line-height: 1.5; }
+.rule-foot { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
+/* an author 'display' beats the browser's [hidden], so say it again here */
+[hidden] { display: none !important; }
+.consts { display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem; margin: 0.7rem 0 0;
+          padding-top: 0.6rem; border-top: 1px solid var(--line); font-size: 0.74rem;
+          font-family: ui-monospace, "Cascadia Code", monospace; }
+.consts span { white-space: nowrap; }
+.consts .constant { color: var(--const); font-weight: 700; }
+
+/* in a rule: what it reads, what it demands, what it compares against */
+/* the language's own words, in the rule's own colour: structure, not meaning */
+.spec .kw { font-weight: 700; }
+.spec .measure { font-weight: 700; color: var(--input); }
+.spec .output { font-weight: 700; color: var(--accent); }
+.spec .constant { font-weight: 700; color: var(--const); }
+
+/* Each section of a rule carries the verdict of the check that covered it: the main
+   case, and one per defeater. A section is a block, not an inline span - the text
+   wraps, and a tint behind wrapped lines would break into ragged pieces. The tints
+   stay pale so the blue, purple and amber marks inside keep their contrast. */
+.sec { display: block; position: relative; padding: 0.1rem 0.5rem;
+       border-radius: 4px; border-left: 3px solid transparent; }
+/* A rule with a diagnosis to open keeps a column on the right, the width of the
+   button, and its text never runs into it: the room is each section's own padding,
+   and the button is placed into that padding rather than laid out beside the text.
+   Laying the two out together would mean a grid, and under pre-wrap the whitespace
+   between grid items becomes an item of its own - phantom cells inside the rule.
+   Every section of the rule keeps the column, button or not, so the text reads down
+   one edge. The eye in front of the word says it is there to be looked at, and what
+   it opens is named for a reader who is listening rather than looking. It sets its
+   own white-space, because pre-wrap would otherwise reach inside it too. */
+.rule-text.has-diag .sec { padding-right: var(--diag); }
+.sec.has-btn { min-height: 1.95rem; }
+.sec-diag { position: absolute; top: 0.18rem; right: 0.3rem;
+            width: calc(var(--diag) - 0.6rem);
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 0.35rem; white-space: nowrap; }
+.sec-diag svg { flex: none; }
+.sec + .sec { margin-top: 0.3rem; }
+.sec.compliant { background: #E8EEDD; border-left-color: var(--good); }
+.sec.violated { background: #FCEBEB; border-left-color: var(--danger); }
+/* The bar announces the section, so it takes the verdict's own word colour, as the
+   other two do: the bright amber reads 1.64 here against the 4.8 and 5.0 beside it,
+   which left an unverified section looking unmarked. */
+.sec.unverified { background: #FDF3D5; border-left-color: var(--warn-text); }
+
+/* inner panel: one normalized sub-rule */
+.sub { background: var(--bg); border: 1px solid var(--line);
+       border-left: 4px solid var(--line); border-radius: 8px; margin: 0.45rem 0;
+       padding: 0.6rem 0.85rem; font-size: 0.92rem; }
+/* Only a violation has a panel of its own: nothing else produces a counter-example. */
+.sub.violated { border-left-color: var(--danger); }
+
+/* the same label on a rule's own line: a step down, bar and all, set off from the name */
+.tag.sm { font-size: 0.82rem; margin-left: 0.55rem; }
+
+table { border-collapse: collapse; margin: 0.8rem 0 0.2rem; width: 100%;
+        font-size: 0.82rem; font-family: ui-monospace, "Cascadia Code", monospace; }
+th { text-align: left; color: var(--muted); font-weight: 600; font-size: 0.76rem;
+     letter-spacing: 0.03em; border-bottom: 1px solid var(--line);
+     padding: 0.3rem 0.8rem 0.3rem 0; }
+td { border-bottom: 1px solid #E8EDF8; padding: 0.26rem 0.8rem 0.26rem 0; }
+tr:hover td { background: var(--surface); }
+.note { color: var(--muted); font-size: 0.8rem; margin: 0.6rem 0 0; }
+
+/* A counter-example is read as two lists: what the network was given, and what it
+   answered. Each is its own panel, side by side where there is room. auto-fit means a
+   rule that constrains no input leaves one panel, which then takes the full width. */
+.io-split { display: grid; gap: 0.8rem; align-items: start;
+            grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+            margin: 0.8rem 0 0.2rem; }
+.io { background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px;
+      padding: 0.55rem 0.8rem 0.3rem; }
+.io h4 { margin: 0; font-size: 0.78rem; letter-spacing: 0.03em; font-weight: 600;
+         color: var(--muted); }
+.io table { margin: 0.3rem 0 0; }
+/* In the rule's own lists the names wear the colours they have in the rule display,
+   so a value can be traced back to where the rule names it. */
+.io .measure { font-weight: 700; color: var(--input); }
+.io .output { font-weight: 700; color: var(--accent); }
+
+/* the scene, drawn from the counter-example itself */
+.scene { margin: 0.8rem 0 0.2rem; border: 1px solid var(--line); border-radius: 8px;
+         overflow: hidden; background: var(--bg); }
+/* What the model did in that state, under the figure it belongs to. The action is not
+   a verdict, so it is not labelled like one: it is the word itself, in the colour of
+   the verdict it produced. */
+.net-out { margin: 0.7rem 0 0.2rem; font-size: 1rem; font-weight: 700;
+           color: var(--primary); display: flex; align-items: center; gap: 0.6rem; }
+.net-out .action { font-size: 1.04rem; letter-spacing: 0.03em; }
+/* what the rule demanded: an output event, in the colour the rules mark one with */
+.net-out .action.expected { color: var(--accent); }
+.net-out + .net-out { margin-top: 0.25rem; }
+.net-out .action.compliant { color: #4F6A36; }
+.net-out .action.violated { color: var(--danger-text); }
+.net-out .action.unverified { color: var(--warn-text); }
+.scene svg { display: block; }
+.no-scene { color: var(--muted); font-size: 0.82rem; margin: -0.9rem 0 1.5rem; }
+
+/* the full counter-example, behind a button-looking toggle */
+/* Opening the full counter-example is a supporting action, so it takes the outlined
+   tier of the button system rather than a style of its own. */
+details.full { margin-top: 0.9rem; }
+details.full > summary { list-style: none; }
+details.full > summary::-webkit-details-marker { display: none; }
+/* The rule's own fields, in the palette's attention colour as in the figure. The tint
+   has to carry against a cream panel, so it is deeper than a pale wash, and the rows
+   it competes with are dimmed: the highlight reads by contrast, not by brightness. */
+tr.related td { background: #F5DFA4; font-weight: 700; }
+tr.related td:first-child { box-shadow: inset 4px 0 0 #B5880A; padding-left: 0.55rem; }
+tr.related:hover td { background: #F0D590; }
+details.full tr:not(.related) td { color: #7A6A56; }
+
+/* In a part's own lists, the three rows the verdict turns on, each in the colour
+   this page already gives the kind of thing it is: a measure in the blue a measure
+   is named in, the response demanded in the purple an output event wears - the same
+   purple the 'Expected output' line above the table is set in - and what the network
+   did instead in the red this page keeps for a violation and nothing else. None of
+   the three is the amber the full counter-example marks a constrained row with: a
+   mark here says which part a row plays, which is a narrower thing. The tints read
+   at least 13.7 from each other and 31 from that amber, so none passes for another. */
+tr.role-used td { background: #CBDDF2; font-weight: 700; }
+tr.role-used td:first-child { box-shadow: inset 4px 0 0 var(--input);
+         padding-left: 0.55rem; }
+tr.role-used:hover td { background: #BFD6EE; }
+tr.role-wanted td { background: #E4D6F0; font-weight: 700; }
+tr.role-wanted td:first-child { box-shadow: inset 4px 0 0 var(--accent);
+         padding-left: 0.55rem; }
+tr.role-wanted:hover td { background: #DECCEB; }
+tr.role-got td { background: #FCEBEB; font-weight: 700; }
+tr.role-got td:first-child { box-shadow: inset 4px 0 0 var(--danger);
+         padding-left: 0.55rem; }
+tr.role-got:hover td { background: #F8DADA; }
+
+/* the reading guide, in a native dialog so no library is needed */
+dialog { max-width: 44rem; width: calc(100% - 2rem); border: 1px solid var(--line);
+         border-radius: 12px; padding: 0; background: var(--surface);
+         color: var(--text); }
+/* A rule's own verification: the width of the report it belongs to, the height of the
+   page, over a margin of backdrop that keeps the report visible behind it. A flex
+   column makes the body the scroller, which keeps Close in reach however long the
+   verification runs on.
+   Only when open: the browser hides a closed dialog with 'display: none', and an
+   author 'display' outranks it - which would print every sheet into the page. */
+dialog.dlg-wide[open] { width: calc(100% - 3rem); max-width: var(--page);
+                  height: calc(100vh - 3rem);        /* where dvh is unsupported */
+                  height: calc(100dvh - 3rem);
+                  display: flex; flex-direction: column; }
+.dlg-wide .dlg-body { max-height: none; flex: 1; }
+/* With a sheet open, the report behind it does not scroll under the backdrop. */
+body:has(dialog[open]) { overflow: hidden; }
+dialog::backdrop { background: rgba(59, 42, 26, 0.45); }
+/* The head sits on the same surface as the panel behind it, so its button is the
+   outlined one seen elsewhere rather than a white shape on navy. */
+.dlg-head { display: flex; align-items: center; justify-content: space-between;
+            gap: 1rem; padding: 1rem 1.4rem; background: var(--surface);
+            border-bottom: 1px solid var(--line); }
+.dlg-head h2 { margin: 0; font-size: 1.05rem; color: var(--primary); }
+.dlg-body { padding: 1.2rem 1.4rem 1.6rem; max-height: 70vh; overflow-y: auto;
+            line-height: 1.6; }
+.dlg-body h3 { margin: 1.4rem 0 0.4rem; font-size: 0.95rem; color: var(--primary); }
+.dlg-body h3:first-child { margin-top: 0; }
+.dlg-body p { margin: 0.4rem 0; font-size: 0.9rem; }
+.dlg-body ul { margin: 0.4rem 0; padding-left: 1.2rem; font-size: 0.9rem; }
+.dlg-body li { margin: 0.3rem 0; }
+code { font-family: ui-monospace, "Cascadia Code", monospace; background: var(--bg);
+       border: 1px solid var(--line); border-radius: 4px; padding: 0.05rem 0.3rem;
+       font-size: 0.85em; }
+pre.form { background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px;
+           padding: 0.8rem 0.9rem; font-size: 0.78rem; line-height: 1.55;
+           overflow-x: auto; font-family: ui-monospace, "Cascadia Code", monospace; }
+/* the specification, shown for reading only */
+pre.spec { background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px;
+           padding: 0.9rem 1rem; font-size: 0.78rem; line-height: 1.5;
+           white-space: pre; overflow: auto; max-height: 55vh; margin: 0.8rem 0 0;
+           font-family: ui-monospace, "Cascadia Code", monospace; }
+/* the View button rides on the label, so it takes the label's size */
+.config dt .btn { margin-left: 0.45rem; padding: 0.05rem 0.5rem; font-size: 0.72rem;
+                  line-height: 1.4; vertical-align: 0.05em; }
+.legend { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+.legend li { display: flex; gap: 0.6rem; align-items: baseline; margin: 0.35rem 0;
+             font-size: 0.9rem; }
+
+/* The generated query, offered from the corner of the page. A modal sheet renders in
+   the browser's top layer, above any z-index, so this stays under one. */
+.dl { position: fixed; right: 1.1rem; bottom: 1.1rem; z-index: 5;
+      display: inline-flex; align-items: center; gap: 0.45rem;
+      box-shadow: 0 2px 6px rgba(59, 42, 26, 0.18); }
+.dl svg { flex: none; }
+/* the sentence, on hover and on keyboard focus, above the thing it explains */
+.dl::after { content: attr(data-tip); position: absolute; right: 0;
+             bottom: calc(100% + 0.5rem); width: max-content; max-width: 17rem;
+             background: var(--primary); color: var(--bg); font-size: 0.78rem;
+             font-weight: 500; line-height: 1.45; padding: 0.5rem 0.7rem;
+             border-radius: 8px; opacity: 0; visibility: hidden;
+             transition: opacity 0.12s ease; }
+.dl:hover::after, .dl:focus-visible::after { opacity: 1; visibility: visible; }
+/* the same sentence for a reader that cannot hover: in the page, out of the way */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden;
+           clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }

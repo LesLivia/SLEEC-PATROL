@@ -1,0 +1,13 @@
+Highway is a driving task from highway-env (highway-fast-v0). A car, the ego, drives along a straight three-lane road among 20 other cars. Once a second, a neural network decides what the ego does next. The network is a policy trained with reinforcement learning (PPO), and it chooses one of five actions:
+
+    outputLaneLeft    change to the lane on the left
+    outputIdle        keep the current lane and speed
+    outputLaneRight   change to the lane on the right
+    outputFaster      speed up
+    outputSlower      slow down
+
+The network gives each action a score, and the action with the highest score is the one taken.
+
+What the network sees is a table of 25 numbers. One row is the ego itself: its position along the road and across it (egoX, egoY) and its speeds (egoVx, egoVy). The other four rows are the four nearest other cars in any lane, nearest first (v1 to v4): whether the car is seen at all (v1Presence), and its position and speed relative to the ego (v1X, v1Y, v1Vx, v1Vy). Positions are in metres and speeds in m/s. The lanes are 4 m wide, with their centres at y = 0, 4 and 8.
+
+The rules say what the network must or must not do in a given situation, for example slow down when a car close ahead in its own lane is much slower. For each rule, the verifier (Marabou) searched every combination of these 25 values within their declared ranges. Every rule shown in this study is violated: the verifier found a situation in which the network does not do what the rule demands. Its diagnosis draws that situation as a picture of the road and lists its values.

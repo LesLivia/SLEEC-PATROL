@@ -76,7 +76,7 @@ for mutations, req in mutated_requirements:
     # ONNX_MODEL_FILENAME = "verifier/resources/models/dressassist_carebot/carebot_decision_model_v2.onnx"
     outcome = check_property(ONNX_MODEL_FILENAME)
 
-    if all(outcome[res][0] for res in outcome):
+    if all(verified for verified, _, _ in outcome["results"].values()):
         verified_mutants.append(req)
 
 print("The NN verifies:")

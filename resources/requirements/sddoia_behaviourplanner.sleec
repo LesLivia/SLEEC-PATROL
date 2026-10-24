@@ -1,0 +1,154 @@
+def_start
+    event cmdRequired
+
+    // SDD-OIA concept bottleneck model, action layer only:
+    // 19 concepts -> Linear(19, 4), exported as sddoia_cbm_head.onnx
+    // by rss/utils/export_head_sdd_oia.py.
+    // Inputs: the concept probabilities the network passes to the head,
+    // in [0, 1], in PRESDDOIA_CONCEPTS_ORDER (index 0-18). They are
+    // numeric, not boolean: a boolean would allow only 0 or 1.
+
+    // --- Ahead: forward (index 0-2) ---
+    // green light (also the left and right green lights, always equal)
+    measure greenLight: numeric
+    constant greenLightLB = 0
+    constant greenLightUB = 1
+
+    // a car ahead to follow
+    measure follow: numeric
+    constant followLB = 0
+    constant followUB = 1
+
+    // road is clear
+    measure clear: numeric
+    constant clearLB = 0
+    constant clearUB = 1
+
+    // --- Ahead: stop (index 3-8) ---
+    // red or yellow light
+    measure redLight: numeric
+    constant redLightLB = 0
+    constant redLightUB = 1
+
+    measure stopSign: numeric
+    constant stopSignLB = 0
+    constant stopSignUB = 1
+
+    // obstacles in the ego lane: car, person, rider, other
+    measure car: numeric
+    constant carLB = 0
+    constant carUB = 1
+
+    measure person: numeric
+    constant personLB = 0
+    constant personUB = 1
+
+    measure rider: numeric
+    constant riderLB = 0
+    constant riderUB = 1
+
+    measure otherObstacle: numeric
+    constant otherObstacleLB = 0
+    constant otherObstacleUB = 1
+
+    // --- Left: cannot turn left (index 9-11) ---
+    measure noLeftLane: numeric
+    constant noLeftLaneLB = 0
+    constant noLeftLaneUB = 1
+
+    measure leftObstacle: numeric
+    constant leftObstacleLB = 0
+    constant leftObstacleUB = 1
+
+    measure leftSolidLine: numeric
+    constant leftSolidLineLB = 0
+    constant leftSolidLineUB = 1
+
+    // --- Right (index 12-16) ---
+    // on the right-turn lane
+    measure rightLane: numeric
+    constant rightLaneLB = 0
+    constant rightLaneUB = 1
+
+    // front car turning right
+    measure rightFollow: numeric
+    constant rightFollowLB = 0
+    constant rightFollowUB = 1
+
+    measure noRightLane: numeric
+    constant noRightLaneLB = 0
+    constant noRightLaneUB = 1
+
+    measure rightObstacle: numeric
+    constant rightObstacleLB = 0
+    constant rightObstacleUB = 1
+
+    measure rightSolidLine: numeric
+    constant rightSolidLineLB = 0
+    constant rightSolidLineUB = 1
+
+    // --- Left: can turn left (index 17-18) ---
+    // on the left-turn lane
+    measure leftLane: numeric
+    constant leftLaneLB = 0
+    constant leftLaneUB = 1
+
+    // front car turning left
+    measure leftFollow: numeric
+    constant leftFollowLB = 0
+    constant leftFollowUB = 1
+
+    // "the network sees X": P(X) > 0.5
+    constant seen = 0.5
+
+    // pedestrian confidence bands (SLEEC-PATROL r3, r4): unsure from 0.3, sure above 0.85
+    constant pedestrianUnsure = 0.3
+    constant pedestrianSure = 0.85
+
+    // Outputs in the SDD-OIA label order; output > 0 <=> P(allowed) > 0.5.
+    // Verify with output_semantics = "independent".
+    event outputStop
+    event outputForward
+    event outputLeft
+    event outputRight
+
+def_end
+
+rule_start
+    // AutoCar R8: obstacle ahead -> stop. Its 'unless' clauses are left
+    // out: no risk input and no hazard-lights output.
+    r8 when cmdRequired and
+        (((({car} > seen) or ({person} > seen)) or ({rider} > seen)) or ({otherObstacle} > seen))
+        then outputStop
+
+    // AutoCar R13: red light -> stop.
+    r13 when cmdRequired and ({redLight} > seen)
+        then outputStop
+
+    // Stop sign -> stop: the sign version of R13 (traffic law, and
+    // SDD-OIA's own label rule).
+    r13b when cmdRequired and ({stopSign} > seen)
+        then outputStop
+
+    // AutoCar R15: green light -> drive on, unless an obstacle -> stop.
+    // A pedestrian counts from P >= pedestrianUnsure: it is more dangerous.
+    r15 when cmdRequired and ({greenLight} > seen)
+        then outputForward
+        unless (((({car} > seen) or ({person} >= pedestrianUnsure)) or ({rider} > seen)) or ({otherObstacle} > seen))
+        then outputStop
+
+    // SLEEC-PATROL r3: unsure pedestrian -> cautious braking (stop)
+    r3 when cmdRequired and (({person} >= pedestrianUnsure) and ({person} <= pedestrianSure))
+        then outputStop
+
+    // Lane-change safety (as highway r28 / r29): when the left (right) is
+    // blocked by no lane, an obstacle or a solid line, no turn or lane
+    // change to that side.
+    r28 when cmdRequired and
+        ((({noLeftLane} > seen) or ({leftObstacle} > seen)) or ({leftSolidLine} > seen))
+        then not outputLeft
+
+    r29 when cmdRequired and
+        ((({noRightLane} > seen) or ({rightObstacle} > seen)) or ({rightSolidLine} > seen))
+        then not outputRight
+rule_end

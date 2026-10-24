@@ -1,0 +1,193 @@
+{# One rule of the evaluation site: its panel and the diagnosis dialog of each violated part.
+
+   A copy of the pieces of webapp/templates/results.html that show one rule - the macros
+   rule_panel, io_table and io_split, the rule's panel (details.group) and its diagnosis
+   dialogs - unchanged. The study site is implemented separately from the webapp, so a
+   change to the webapp's report has to be copied here by hand.
+
+   Rendered by scripts/build_data.py, once per rule, with 'group': one entry of
+   webapp.core.build_report(). #}
+
+{# A rule, with the constants it names folded underneath. The toggle sits on its own
+   line above the text, so it never covers any of it. Used for the rule as written and
+   for every normalized rule under it, so both read the same way. #}
+{% macro rule_panel(sections, constants, buttons=false) %}
+  <div class="rule-block">
+    <div class="spec">
+      {# Only a violated part has anything to view: the other two verdicts produce no
+         counter-example, so there is no diagnosis behind them and no button for one.
+         The column is kept on every section of a rule that has any button, so the text
+         reads down one edge instead of one width per section. #}
+      {%- set diag = (sections | selectattr('owner')
+                      | selectattr('status', 'equalto', 'VIOLATED') | list)
+                     if buttons else [] -%}
+      {# The text is pre-wrap, so nothing may be laid out between two sections: a single
+         newline here would print as an empty line inside the rule. The same goes for a
+         section's own button - hence the trimming around it, and nothing between it and
+         the text it belongs to. #}
+      <div class="rule-text{{ ' has-diag' if diag else '' }}">
+        {%- for section in sections -%}
+          {%- set opens = buttons and section.owner
+                          and section.status == 'VIOLATED' -%}
+          <span class="sec {{ section.status | lower if section.status else 'plain' }}
+            {{- ' has-btn' if opens else '' }}"
+            >{{ section.html | safe }}{%- if opens -%}
+            <button type="button" class="btn is-small sec-diag"
+              data-dialog="details-{{ section.owner }}"
+              title="View the diagnosis of {{ section.owner }}"
+              aria-label="View the diagnosis of {{ section.owner }}"><svg
+              viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"
+              /><circle cx="12" cy="12" r="3"/></svg>Diagnosis</button>
+            {%- endif -%}</span>
+        {%- endfor -%}
+      </div>
+      {% if constants %}
+        <div class="consts" hidden>
+          {% for c in constants %}
+            <span><b class="constant">{{ c.name }}</b> = {{ c.value }}</span>
+          {% endfor %}
+        </div>
+        <div class="rule-foot">
+          <button type="button" class="btn is-secondary is-small is-outline"
+                  data-consts>SLEEC rule measure constraints</button>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endmacro %}
+
+{# One list of the counter-example: a heading, then name and value. 'mark' names the
+   class the names wear - the rule display's own - and is left empty where they are
+   plain. #}
+{% macro io_table(heading, rows, mark, flag, roles=false) %}
+  {% if rows %}
+    <div class="io">
+      <h4>{{ heading }}</h4>
+      <table>
+        <tr><th>name</th><th>value</th></tr>
+        {% for row in rows %}
+          <tr{% if flag and row.related %} class="related"
+             {%- elif roles and row.role %} class="role-{{ row.role }}"{% endif %}>
+            <td>{% if mark %}<b class="{{ mark }}">{{ row.name }}</b>
+                {%- else %}{{ row.name }}{% endif %}</td>
+            <td>{{ row.value }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{# The counter-example, split into what the network reads and what it answers. Used for
+   the rule's own fields and for the whole assignment, so both read the same way: there,
+   the rule's rows are the highlighted ones instead of the coloured ones. #}
+{# 'measures' names the left list. It is given where the rows are the rule's own fields
+   and the heading can say so; the full assignment keeps the plain name, since there the
+   rows the rule constrains are the highlighted ones and the rest are not relevant at
+   all - which is the point of showing them. #}
+{% macro io_split(rows, mark=false, flag=false, roles=false,
+                  measures="SLEEC rule measure values") %}
+  {# 'list', not 'first': an empty sequence has no first item, which is only falsy
+     while the environment forgives an undefined one. #}
+  {% if rows | selectattr("output", "none") | list %}
+    {# Without names there is no telling an input from an output; the values are all
+       there is to show. #}
+    <div class="io-split">{{ io_table("Values", rows, "", flag, roles) }}</div>
+  {% else %}
+    <div class="io-split">
+      {{ io_table(measures, rows | rejectattr("output") | list,
+                  "measure" if mark else "", flag, roles) }}
+      {{ io_table("Expected responses", rows | selectattr("output") | list,
+                  "output" if mark else "", flag, roles) }}
+    </div>
+  {% endif %}
+{% endmacro %}
+
+<details class="group {{ group.verdict | lower }}" open
+         data-name="{{ group.name }}" data-verdict="{{ group.verdict | lower }}">
+  <summary>
+    <span class="group-head">
+      <span class="rule-name">{{ group.name }}</span>
+      <span class="tag sm {{ group.verdict | lower }}">{{ group.verdict }}</span>
+      <span class="count">
+        {% if group.parts %}
+          {{ group.parts | length }} check{{ '' if group.parts | length == 1 else 's' }}
+        {% else %}
+          not checked
+        {% endif %}
+      </span>
+    </span>
+  </summary>
+
+  {# The rule as written, each of its sections coloured by the verdict of the check
+     that covered it and carrying that check's own button: the verification is
+     opened a part at a time, from the part it is about. The constants the rule
+     names belong with the verification, not here. #}
+  {% if group.text %}
+    {{ rule_panel(group.sections, [], buttons=true) }}
+  {% endif %}
+
+  {% if not group.parts %}
+    <p class="note">Triggered by a network output, so there is nothing to solve: the
+    argmax head takes exactly one action, which is what such a rule states.</p>
+  {% endif %}
+</details>
+
+{% for part in group.parts if part.status == "VIOLATED" %}
+  <dialog class="dlg-wide" id="details-{{ part.name }}">
+    <div class="dlg-head">
+      <h2>Diagnosis &mdash; {{ part.name }}
+        <span class="tag sm {{ part.status | lower }}">{{ part.status }}</span></h2>
+      <button type="button" class="btn is-secondary is-small is-outline"
+              data-close>Close</button>
+    </div>
+    <div class="dlg-body">
+      {# The rule as written, with this alternative's own part of it coloured and
+         the rest left plain: which part of the rule this diagnosis is about. #}
+      {% if part.text %}
+        <h3>Rule considered</h3>
+        {{ rule_panel(part.sections, part.constants) }}
+      {% endif %}
+
+      {# What broke the rule, framed in the verdict's own colour: the scene, the
+         action the model took and the values behind both. Only a violation has any
+         of this, which is why only a violated part has a sheet at all. #}
+      <div class="sub violated">
+        {% if part.scene %}<div class="scene">{{ part.scene | safe }}</div>{% endif %}
+        {# What the rule asked for, then what the model did: the same kind of name
+           on both lines, so the two can be read against each other. #}
+        {# A rule may chain the actions it accepts with 'else', and then there is
+           no one expected output: a violation is the network taking none of them. #}
+        {% if part.expected %}
+          {% set several = part.allowed is defined and part.allowed | length > 1 %}
+          <p class="net-out">{{ "Allowed outputs:" if several
+                                else "Expected output:" }}
+            <span class="action expected">{{ part.expected }}</span></p>
+        {% endif %}
+        {% if part.action %}
+          <p class="net-out">Network output:
+            <span class="action violated">{{ part.action }}</span></p>
+        {% endif %}
+
+        {% if part.all_rows %}
+          {{ io_split(part.related_rows, mark=true, roles=true,
+                      measures="Relevant SLEEC rule measure values") }}
+          <p class="note">Marabou found this assignment inside the sub-rule's input
+          region: there, the network does not do what the rule demands. The marks
+          point at what the verdict turns on: the measures this part of the rule
+          names itself, the response it demanded, and &mdash; in red &mdash; the
+          action the network took instead.</p>
+
+          <details class="full">
+            <summary class="btn is-secondary is-small is-outline">show the full counter-example</summary>
+            {{ io_split(part.all_rows, flag=true) }}
+            <p class="note">Highlighted rows are the ones the rule constrains; the
+            others were only held inside their declared ranges.</p>
+          </details>
+        {% endif %}
+      </div>
+    </div>
+  </dialog>
+{% endfor %}

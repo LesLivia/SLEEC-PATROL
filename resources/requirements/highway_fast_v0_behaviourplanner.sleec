@@ -1,0 +1,434 @@
+def_start
+    event cmdRequired
+
+    // ============================================================
+    // COMPONENT: PPO actor for highway-fast-v0
+    //
+    // Environment (HighwayEnvFast.default_config):
+    //   lanes_count = 3        -> lane centres at y = 0, 4, 8 (width 4 m)
+    //   vehicles_count = 20    -> 20 IDM vehicles + 1 ego
+    //   duration = 30 s, policy_frequency = 1 Hz -> 30 decisions per episode
+    //
+    // Observation (KinematicObservation, {"type": "Kinematics", "normalize": False}):
+    //   vehicles_count = 5, features = [presence, x, y, vx, vy]
+    //   -> 5 rows x 5 features = 25 inputs, row-major flattened.
+    //   normalize = False   -> real units: metres, m/s.
+    //   absolute  = False   -> rows 1..4 are ego-relative...
+    //   ... but the EGO ROW IS ABSOLUTE: observe() builds it from
+    //       observer_vehicle.to_dict() with no origin, and only the other
+    //       rows get to_dict(origin=ego). So egoX/egoY/egoVx/egoVy carry
+    //       absolute position and velocity, not zeros.
+    //   see_behind = False  -> a vehicle is only observed if
+    //       lane_distance_to > -2 * LENGTH, i.e. relative x > -10 m.
+    //   PERCEPTION_DISTANCE = 5 * Vehicle.MAX_SPEED = 200 m.
+    //   order = "sorted"    -> rows 1..4 are sorted by |longitudinal gap|,
+    //       so row 1 is the NEAREST vehicle ahead in ANY lane, not the
+    //       leader in ego's lane. Lane membership has to be read off y.
+    //   Absent rows are ZERO-FILLED: presence = 0 and x = y = vx = vy = 0.
+    //
+    // Measure declaration order below fixes the Marabou input index (0-24).
+    // The {name}LB / {name}UB constants are the verification box for each
+    // input: the generator bounds every input of every query with them. A
+    // boolean measure needs none, since its range is {0, 1} by default.
+    //
+    // BOUNDS PROVENANCE: the values an observation can take at a decision
+    // (the observations the policy acts on), rounded outward to integers.
+    // Each measure's comment names where its bound comes from:
+    //   exact    -- the ego's true minimum / maximum. The ego's motion depends
+    //               only on its own actions; traffic can only end the episode
+    //               by a crash.
+    //   code     -- a limit written in highway-env's source.
+    //   measured -- the largest value seen in recorded runs, plus a margin.
+    // Checked on 26,573 recorded observations (the trained PPO, random, and
+    // constant / lane-changing behaviours): no value outside its bound.
+    // ============================================================
+
+    // --- Vehicle 0: Ego (index 0-4) ---
+    // the ego row is always present: its flag is fixed at 1 by the
+    // 'measure invariant' in the relation block
+    measure egoPresence: boolean
+
+    // exact: 148.76 .. 1023.39. This row is absolute and, with
+    // normalize = False, nothing clips it.
+    // Spawn: the ego is created before any other vehicle, so road.vehicles is
+    // empty and create_random puts it at x0 = 3*offset + offset*U(0.9, 1.1),
+    // with offset = ego_spacing * (12 + speed) * exp(-5/40 * lanes)
+    //             = 1.5 * (12 + 25) * exp(-0.375) = 38.14  ->  x0 in [148.76, 156.39].
+    // Travel: x only grows. The furthest point is FASTER from the first
+    // decision on: at the 30th (last) decision, 29 s later, egoX = 1023.39.
+    measure egoX: numeric
+    constant egoXLB = 148
+    constant egoXUB = 1024
+
+    // exact: 3 lanes -> centres 0 / 4 / 8. The ego overshoots the outer
+    // centres by at most 0.00003 m, so [0, 8] would cut off real states.
+    measure egoY: numeric
+    constant egoYLB = -1
+    constant egoYUB = 9
+
+    // exact: 19.96 .. 30. MDPVehicle tracks the target speeds {20, 25, 30}
+    // from 25 without overshoot; vx dips below 20 only during a lane change.
+    measure egoVx: numeric
+    constant egoVxLB = 19
+    constant egoVxUB = 30
+
+    // exact: -1.22 .. 1.22 (non-zero only during a lane change)
+    measure egoVy: numeric
+    constant egoVyLB = -2
+    constant egoVyUB = 2
+
+    // --- Vehicle 1 (index 5-9) ---
+    // presence flag: 1 = observed, 0 = absent (row zero-filled)
+    measure v1Presence: boolean
+
+    // relative: > 0 ahead of ego. code: (-10, 200), since see_behind = False
+    // drops anything with lane_distance_to <= -10 and PERCEPTION_DISTANCE = 200
+    // bounds the far side.
+    measure v1X: numeric
+    constant v1XLB = -10
+    constant v1XUB = 200
+
+    // code: every car stays between the lane centres 0 and 8, so |dy| <= 8,
+    // plus the ego's overshoot (see egoY)
+    measure v1Y: numeric
+    constant v1YLB = -9
+    constant v1YUB = 9
+
+    // relative: v1Vx < 0 means v1 is slower than ego (ego is closing in).
+    // upper, code: < 4.04. Other cars never exceed their target speed (their
+    // initial speed, at most 24) and the ego's vx is at least 19.96.
+    // lower: a stopped car while the ego drives at 30, i.e. R8's obstacle.
+    measure v1Vx: numeric
+    constant v1VxLB = -30
+    constant v1VxUB = 5
+
+    // measured: |v1Vy| <= 8.41 seen. The only bound with no guarantee from
+    // the code, which would give about +-19 (heading <= 45 deg at <= 24 m/s).
+    measure v1Vy: numeric
+    constant v1VyLB = -10
+    constant v1VyUB = 10
+
+    // --- Vehicle 2 (index 10-14) --- (bounds as vehicle 1)
+    measure v2Presence: boolean
+
+    measure v2X: numeric
+    constant v2XLB = -10
+    constant v2XUB = 200
+
+    measure v2Y: numeric
+    constant v2YLB = -9
+    constant v2YUB = 9
+
+    measure v2Vx: numeric
+    constant v2VxLB = -30
+    constant v2VxUB = 5
+
+    measure v2Vy: numeric
+    constant v2VyLB = -10
+    constant v2VyUB = 10
+
+    // --- Vehicle 3 (index 15-19) --- (bounds as vehicle 1)
+    measure v3Presence: boolean
+
+    measure v3X: numeric
+    constant v3XLB = -10
+    constant v3XUB = 200
+
+    measure v3Y: numeric
+    constant v3YLB = -9
+    constant v3YUB = 9
+
+    measure v3Vx: numeric
+    constant v3VxLB = -30
+    constant v3VxUB = 5
+
+    measure v3Vy: numeric
+    constant v3VyLB = -10
+    constant v3VyUB = 10
+
+    // --- Vehicle 4 (index 20-24) --- (bounds as vehicle 1)
+    measure v4Presence: boolean
+
+    measure v4X: numeric
+    constant v4XLB = -10
+    constant v4XUB = 200
+
+    measure v4Y: numeric
+    constant v4YLB = -9
+    constant v4YUB = 9
+
+    measure v4Vx: numeric
+    constant v4VxLB = -30
+    constant v4VxUB = 5
+
+    measure v4Vy: numeric
+    constant v4VyLB = -10
+    constant v4VyUB = 10
+
+    // ============================================================
+    // SEMANTIC THRESHOLDS, in metres and m/s. A rule names the constant and
+    // the generator reads its value. Values are integers: the grammar's
+    // Value rule is INT only.
+    // ============================================================
+
+    // "in ego's lane": |dy| < 2, i.e. inside the 4 m lane
+    constant inLaneLo = -2
+    constant inLaneHi = 2
+
+    // "ahead of ego": at least one car length (Vehicle.LENGTH = 5 m) ahead,
+    // so the car does not touch the ego; r8's obstacle is also within braking
+    // range (closeAhead), r8b's within dangerClose, below.
+    constant justAhead = 5
+    constant closeAhead = 30
+
+    // "too close to stop in time": < 10 m. At 30 m/s that is a third of a
+    // second, and SLOWER only steps the target speed down by 5 m/s.
+    constant dangerClose = 10
+
+    // "ego is closing in": relative vx < -5 m/s (v1Vx = v1 speed - ego speed)
+    constant closing = -5
+
+    // "the ego's lane": 3 lanes -> centres 0 / 4 / 8. The ego is always within
+    // 1 m of a centre (relation block), so egoY < 1 is the leftmost lane,
+    // 1 < egoY < 7 the middle lane and egoY > 7 the rightmost lane.
+    constant leftmostLane = 1
+    constant rightmostLane = 7
+
+    // "in the lane to the left / right": another vehicle's relative y. Lanes
+    // are 4 m wide, so the left lane spans -6 .. -2 (centre -4) and the right
+    // lane 2 .. 6 (centre 4). Left is negative: LANE_LEFT lowers y.
+    constant leftLaneFar = -6
+    constant leftLaneNear = -2
+    constant rightLaneNear = 2
+    constant rightLaneFar = 6
+
+    // "alongside the ego": the vehicle's centre within one car length
+    // (Vehicle.LENGTH = 5 m) behind or ahead, so the two cars overlap along
+    // the road.
+    constant alongsideBehind = -5
+    constant alongsideAhead = 5
+
+    // ============================================================
+    // NN OUTPUTS: PPO action logits (argmax = selected action).
+    // Declaration order must match highway-env DiscreteMetaAction:
+    //   0 = LANE_LEFT  1 = IDLE  2 = LANE_RIGHT  3 = FASTER  4 = SLOWER
+    // FASTER / SLOWER step the target speed within {20, 25, 30} m/s;
+    // there is no stop action, and no steering action.
+    // ============================================================
+    event outputLaneLeft
+    event outputIdle
+    event outputLaneRight
+    event outputFaster
+    event outputSlower
+
+def_end
+
+rule_start
+    // ============================================================
+    // AutoCar R8 -- "When an obstacle appears ahead, stop until it clears;
+    //                if stopping is unsafe, change lanes."
+    //
+    //   obstacle ahead   -> v1 present, inside ego's lane band, 5..30 m
+    //                       ahead (closeAhead), and ego closing in on it. All five rows
+    //                       are vehicles; a stationary obstacle and a much
+    //                       slower car are the same observation. Only row 1
+    //                       is checked: it is the nearest vehicle, but in any
+    //                       lane, so an obstacle in row 2..4 is not covered.
+    //   stop             -> outputSlower. There is no stop action: SLOWER
+    //                       steps the target speed down within {20, 25, 30}.
+    //   until it clears  -> no temporal operator needed. A state-based rule
+    //                       constrains EVERY state in which the obstacle is
+    //                       present, and stops applying once it is not.
+    //   stopping unsafe  -> the obstacle is too close to stop in time, closer
+    //                       than dangerClose (riskLevel has no input feature)...
+    //   change lanes     -> ...and no other vehicle is perceived, so every
+    //                       neighbouring lane is free. The lane changes that
+    //                       exist depend on the ego's lane: both in the middle
+    //                       lane, only right in the leftmost lane, only left in
+    //                       the rightmost lane (highway-env clips a change
+    //                       towards a missing lane, so the car stays in lane).
+    //
+    // The generator splits the rule into four queries with disjoint inputs:
+    //   r8_main     obstacle and not (unsafe and no other vehicle)        -> outputSlower
+    //   r8_unless1  obstacle and unsafe and no other vehicle, middle lane -> outputLaneLeft else outputLaneRight
+    //   r8_unless2  ... leftmost lane                                     -> outputLaneRight
+    //   r8_unless3  ... rightmost lane                                    -> outputLaneLeft
+    // ============================================================
+    r8 when cmdRequired and
+        ({v1Presence} and
+         ((({v1Y} > inLaneLo) and ({v1Y} < inLaneHi)) and
+          ((({v1X} > justAhead) and ({v1X} < closeAhead)) and ({v1Vx} < closing))))
+        then outputSlower
+        // middle lane: both lane changes exist
+        unless (({v1X} < dangerClose) and
+                ((({egoY} > leftmostLane) and ({egoY} < rightmostLane)) and
+                 ((not {v2Presence}) and ((not {v3Presence}) and (not {v4Presence})))))
+        then outputLaneLeft else outputLaneRight
+        // leftmost lane: only a change to the right exists
+        unless (({v1X} < dangerClose) and
+                (({egoY} < leftmostLane) and
+                 ((not {v2Presence}) and ((not {v3Presence}) and (not {v4Presence})))))
+        then outputLaneRight
+        // rightmost lane: only a change to the left exists
+        unless (({v1X} < dangerClose) and
+                (({egoY} > rightmostLane) and
+                 ((not {v2Presence}) and ((not {v3Presence}) and (not {v4Presence})))))
+        then outputLaneLeft
+
+    // ============================================================
+    // Derived from AutoCar R8 ("stop until it clears"): with an obstacle
+    // close ahead (5..10 m, dangerClose), the ego must never accelerate.
+    // r8's condition, but closer: 5..10 m (dangerClose) instead of r8's
+    // 5..30 m (closeAhead); a verdict of its own.
+    // ============================================================
+    r8b when cmdRequired and
+        ({v1Presence} and
+         ((({v1Y} > inLaneLo) and ({v1Y} < inLaneHi)) and
+          ((({v1X} > justAhead) and ({v1X} < dangerClose)) and ({v1Vx} < closing))))
+        then not outputFaster
+
+    // ============================================================
+    // Lane-change safety (not an AutoCar rule; numbered after AutoCar's last
+    // rule, R27) -- "At every decision, if any
+    // of the four nearest vehicles is right next to the ego in the lane to
+    // its left (right), the ego must not change lanes to the left (right)."
+    //
+    //   next to the ego, left lane -> present, relative y in the left lane
+    //                                 band, centre within one car length
+    //                                 ahead or behind.
+    //   any of the four            -> rows are sorted by the gap along the
+    //                                 road in any lane, so the vehicle on the
+    //                                 left can be in any row: one 'or' per row.
+    // ============================================================
+    r28 when cmdRequired and
+        (((({v1Presence} and ((({v1Y} > leftLaneFar) and ({v1Y} < leftLaneNear)) and
+                              (({v1X} > alongsideBehind) and ({v1X} < alongsideAhead))))
+           or ({v2Presence} and ((({v2Y} > leftLaneFar) and ({v2Y} < leftLaneNear)) and
+                                 (({v2X} > alongsideBehind) and ({v2X} < alongsideAhead)))))
+           or ({v3Presence} and ((({v3Y} > leftLaneFar) and ({v3Y} < leftLaneNear)) and
+                                 (({v3X} > alongsideBehind) and ({v3X} < alongsideAhead)))))
+           or ({v4Presence} and ((({v4Y} > leftLaneFar) and ({v4Y} < leftLaneNear)) and
+                                 (({v4X} > alongsideBehind) and ({v4X} < alongsideAhead)))))
+        then not outputLaneLeft
+
+    r29 when cmdRequired and
+        (((({v1Presence} and ((({v1Y} > rightLaneNear) and ({v1Y} < rightLaneFar)) and
+                              (({v1X} > alongsideBehind) and ({v1X} < alongsideAhead))))
+           or ({v2Presence} and ((({v2Y} > rightLaneNear) and ({v2Y} < rightLaneFar)) and
+                                 (({v2X} > alongsideBehind) and ({v2X} < alongsideAhead)))))
+           or ({v3Presence} and ((({v3Y} > rightLaneNear) and ({v3Y} < rightLaneFar)) and
+                                 (({v3X} > alongsideBehind) and ({v3X} < alongsideAhead)))))
+           or ({v4Presence} and ((({v4Y} > rightLaneNear) and ({v4Y} < rightLaneFar)) and
+                                 (({v4X} > alongsideBehind) and ({v4X} < alongsideAhead)))))
+        then not outputLaneRight
+
+    // ============================================================
+    // Leftmost lane (not an AutoCar rule) -- "At every decision, if the ego
+    // is in the leftmost lane, it must not change lanes to the left."
+    //
+    //   leftmost lane -> egoY < leftmostLane: the ego is within 1 m of a lane
+    //                    centre (relation block), so only the lane at y = 0.
+    //   change left   -> there is no lane further left; highway-env would keep
+    //                    the car in its lane, so the action does not exist here.
+    // ============================================================
+    r30 when cmdRequired and
+        ({egoY} < leftmostLane)
+        then not outputLaneLeft
+rule_end
+
+relation_start
+    // ============================================================
+    // DATASET CONSTRAINTS: facts that hold for every observation the policy
+    // acts on (KinematicObservation.observe, at a decision):
+    //   - the ego row is always present (built from the ego vehicle itself);
+    //   - an absent vehicle's row is zero-filled: presence = 0 and
+    //     x = y = vx = vy = 0;
+    //   - absent rows come after the seen vehicles;
+    //   - no vehicle body touches the ego's;
+    //   - the ego is near a lane centre.
+    // ============================================================
+    measure invariant {egoPresence}
+    measure imply (not {v1Presence}) (((({v1X} = 0) and ({v1Y} = 0)) and ({v1Vx} = 0)) and ({v1Vy} = 0))
+    measure imply (not {v2Presence}) (((({v2X} = 0) and ({v2Y} = 0)) and ({v2Vx} = 0)) and ({v2Vy} = 0))
+    measure imply (not {v3Presence}) (((({v3X} = 0) and ({v3Y} = 0)) and ({v3Vx} = 0)) and ({v3Vy} = 0))
+    measure imply (not {v4Presence}) (((({v4X} = 0) and ({v4Y} = 0)) and ({v4Vx} = 0)) and ({v4Vy} = 0))
+
+    // code: observe() appends the seen vehicles, nearest first, then pads
+    // with zero rows at the end, so an absent row is followed only by absent
+    // rows. Holds for order = "sorted" (the default); "shuffled" would mix
+    // the padding rows in.
+    measure imply (not {v1Presence}) (not {v2Presence})
+    measure imply (not {v2Presence}) (not {v3Presence})
+    measure imply (not {v3Presence}) (not {v4Presence})
+
+    // code: a vehicle centred less than 3 m along and 1 m across from the ego
+    // overlaps its 5 m x 2 m body whatever the headings. That is a crash, and
+    // a crash ends the episode, so the policy never acts on such a state.
+    // (A 5 m x 2 m box would be too large: a turned vehicle can sit inside it
+    // without touching, e.g. 4 m ahead, 1.5 m aside, turned 45 deg.)
+    measure mutualExclusive {v1Presence} (((({v1X} > -3) and ({v1X} < 3)) and ({v1Y} > -1)) and ({v1Y} < 1))
+    measure mutualExclusive {v2Presence} (((({v2X} > -3) and ({v2X} < 3)) and ({v2Y} > -1)) and ({v2Y} < 1))
+    measure mutualExclusive {v3Presence} (((({v3X} > -3) and ({v3X} < 3)) and ({v3Y} > -1)) and ({v3Y} < 1))
+    measure mutualExclusive {v4Presence} (((({v4X} > -3) and ({v4X} < 3)) and ({v4Y} > -1)) and ({v4Y} < 1))
+
+    // exact: a lane change is almost finished within the 1 s between
+    // decisions, so at every decision the ego is within 0.42 m of a lane
+    // centre (0 / 4 / 8); the line allows 1 m.
+    measure invariant ((({egoY} < 1) or (({egoY} > 3) and ({egoY} < 5))) or ({egoY} > 7))
+
+    // code (highway-env 1.12.1): another vehicle changes lane only to an existing side
+    // lane and steers to that lane's centre, so its absolute y stays between the outer
+    // lane centres, 0 and 8 (recorded -3e-16 to 8.0000004). Its row is relative
+    // (y - egoY), so that y is egoY + vY; 0.5 m of margin keeps float noise and any
+    // steering overshoot in. Between two lanes is allowed: that is a lane change.
+    measure imply {v1Presence} ((({egoY} + {v1Y}) >= -0.5) and (({egoY} + {v1Y}) <= 8.5))
+    measure imply {v2Presence} ((({egoY} + {v2Y}) >= -0.5) and (({egoY} + {v2Y}) <= 8.5))
+    measure imply {v3Presence} ((({egoY} + {v3Y}) >= -0.5) and (({egoY} + {v3Y}) <= 8.5))
+    measure imply {v4Presence} ((({egoY} + {v4Y}) >= -0.5) and (({egoY} + {v4Y}) <= 8.5))
+
+    // ASSUMPTION, from a test rather than the code (highway-env 1.12.1, 1,000 episodes
+    // driven by the PPO and 1,000 by random actions, 40,434 decisions): no two seen
+    // vehicles overlap - their centres are at least a car length (5 m) apart along the
+    // road or a car width (2 m) across. highway-fast-v0 does not check collisions between
+    // non-ego vehicles, and two of them touched 3 times on the road; two seen vehicles
+    // came within a car body of each other once, under random actions (4.31 m apart in
+    // one lane), and never under the PPO. Too rare to keep: a verdict here holds for
+    // observations in which no two seen vehicles touch. (The boxes are straight, so a
+    // turned vehicle close beside another is left out too, although it does not touch.)
+    measure mutualExclusive ({v1Presence} and {v2Presence}) ((((({v1X} - {v2X}) > -5) and (({v1X} - {v2X}) < 5)) and (({v1Y} - {v2Y}) > -2)) and (({v1Y} - {v2Y}) < 2))
+    measure mutualExclusive ({v1Presence} and {v3Presence}) ((((({v1X} - {v3X}) > -5) and (({v1X} - {v3X}) < 5)) and (({v1Y} - {v3Y}) > -2)) and (({v1Y} - {v3Y}) < 2))
+    measure mutualExclusive ({v1Presence} and {v4Presence}) ((((({v1X} - {v4X}) > -5) and (({v1X} - {v4X}) < 5)) and (({v1Y} - {v4Y}) > -2)) and (({v1Y} - {v4Y}) < 2))
+    measure mutualExclusive ({v2Presence} and {v3Presence}) ((((({v2X} - {v3X}) > -5) and (({v2X} - {v3X}) < 5)) and (({v2Y} - {v3Y}) > -2)) and (({v2Y} - {v3Y}) < 2))
+    measure mutualExclusive ({v2Presence} and {v4Presence}) ((((({v2X} - {v4X}) > -5) and (({v2X} - {v4X}) < 5)) and (({v2Y} - {v4Y}) > -2)) and (({v2Y} - {v4Y}) < 2))
+    measure mutualExclusive ({v3Presence} and {v4Presence}) ((((({v3X} - {v4X}) > -5) and (({v3X} - {v4X}) < 5)) and (({v3Y} - {v4Y}) > -2)) and (({v3Y} - {v4Y}) < 2))
+
+    // code (highway-env 1.12.1): every vehicle aims for 20 m/s or more and brakes only
+    // to follow the vehicle ahead; it would brake through zero only behind a vehicle
+    // stopped less than 10 m ahead, and in highway-fast-v0 none ever stops (no
+    // obstacles, no collisions between other vehicles, an ego crash ends the episode).
+    // Test (40,455 decisions): slowest vehicle 9.6 m/s. Its row is relative
+    // (vx - egoVx), so its own speed is egoVx + vVx.
+    measure imply {v1Presence} (({egoVx} + {v1Vx}) >= 0)
+    measure imply {v2Presence} (({egoVx} + {v2Vx}) >= 0)
+    measure imply {v3Presence} (({egoVx} + {v3Vx}) >= 0)
+    measure imply {v4Presence} (({egoVx} + {v4Vx}) >= 0)
+
+    // code (highway-env 1.12.1): the road's speed limit is 30 (highway_env.py:63), so another
+    // vehicle starts at 21 to 24 m/s (kinematics.py:82-86) and keeps that speed as its target
+    // (controller.py:47; it never runs the FASTER / SLOWER of ControlledVehicle.act,
+    // behavior.py:136-137). Its IDM model never accelerates past the target
+    // (behavior.py:177-189), and its x speed is at most its speed, so egoVx + vVx <= 24.
+    measure imply {v1Presence} (({egoVx} + {v1Vx}) <= 24)
+    measure imply {v2Presence} (({egoVx} + {v2Vx}) <= 24)
+    measure imply {v3Presence} (({egoVx} + {v3Vx}) <= 24)
+    measure imply {v4Presence} (({egoVx} + {v4Vx}) <= 24)
+
+    // code (highway-env 1.12.1): the rows are sorted by distance along the road, nearest
+    // first (road.py:446-447, key abs(lane_distance_to), with order = "sorted"), and on this
+    // straight road that distance is the relative x. So a vehicle in a row is at least as far,
+    // ahead or behind, as the one in the row before: |v1X| <= |v2X|, written as its two cases
+    // (v2 ahead: -v2X <= v1X <= v2X; v2 behind: v2X <= v1X <= -v2X).
+    measure imply {v2Presence} (((({v1X} - {v2X}) <= 0) and (({v1X} + {v2X}) >= 0)) or ((({v1X} - {v2X}) >= 0) and (({v1X} + {v2X}) <= 0)))
+    measure imply {v3Presence} (((({v2X} - {v3X}) <= 0) and (({v2X} + {v3X}) >= 0)) or ((({v2X} - {v3X}) >= 0) and (({v2X} + {v3X}) <= 0)))
+    measure imply {v4Presence} (((({v3X} - {v4X}) <= 0) and (({v3X} + {v4X}) >= 0)) or ((({v3X} - {v4X}) >= 0) and (({v3X} + {v4X}) <= 0)))
+relation_end

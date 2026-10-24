@@ -1,0 +1,9 @@
+{
+  "intro": "Four pictures from the training set. Under each are the concepts its label marks as present.",
+  "items": [
+    {"image": "MINI_BOIA_13040", "title": "Red light"},
+    {"image": "MINI_BOIA_3280", "title": "Pedestrian crossing at a green light"},
+    {"image": "MINI_BOIA_27040", "title": "Car ahead at a green light"},
+    {"image": "MINI_BOIA_14400", "title": "Obstacle ahead"}
+  ]
+}

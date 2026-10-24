@@ -1,0 +1,467 @@
+
+
+
+
+
+
+
+
+
+
+
+
+<details class="group violated" open
+         data-name="r29" data-verdict="violated">
+  <summary>
+    <span class="group-head">
+      <span class="rule-name">r29</span>
+      <span class="tag sm violated">VIOLATED</span>
+      <span class="count">
+        
+          1 check
+        
+      </span>
+    </span>
+  </summary>
+
+  
+  
+    
+  <div class="rule-block">
+    <div class="spec">
+      
+      <div class="rule-text has-diag"><span class="sec violated has-btn"
+            ><b class="kw">when</b> cmdRequired <b class="kw">and</b>
+        ((((<b class="measure">{v1Presence}</b> <b class="kw">and</b> (((<b class="measure">{v1Y}</b> &gt; <b class="constant">rightLaneNear</b>) <b class="kw">and</b> (<b class="measure">{v1Y}</b> &lt; <b class="constant">rightLaneFar</b>)) <b class="kw">and</b>
+                              ((<b class="measure">{v1X}</b> &gt; <b class="constant">alongsideBehind</b>) <b class="kw">and</b> (<b class="measure">{v1X}</b> &lt; <b class="constant">alongsideAhead</b>))))
+           <b class="kw">or</b> (<b class="measure">{v2Presence}</b> <b class="kw">and</b> (((<b class="measure">{v2Y}</b> &gt; <b class="constant">rightLaneNear</b>) <b class="kw">and</b> (<b class="measure">{v2Y}</b> &lt; <b class="constant">rightLaneFar</b>)) <b class="kw">and</b>
+                                 ((<b class="measure">{v2X}</b> &gt; <b class="constant">alongsideBehind</b>) <b class="kw">and</b> (<b class="measure">{v2X}</b> &lt; <b class="constant">alongsideAhead</b>)))))
+           <b class="kw">or</b> (<b class="measure">{v3Presence}</b> <b class="kw">and</b> (((<b class="measure">{v3Y}</b> &gt; <b class="constant">rightLaneNear</b>) <b class="kw">and</b> (<b class="measure">{v3Y}</b> &lt; <b class="constant">rightLaneFar</b>)) <b class="kw">and</b>
+                                 ((<b class="measure">{v3X}</b> &gt; <b class="constant">alongsideBehind</b>) <b class="kw">and</b> (<b class="measure">{v3X}</b> &lt; <b class="constant">alongsideAhead</b>)))))
+           <b class="kw">or</b> (<b class="measure">{v4Presence}</b> <b class="kw">and</b> (((<b class="measure">{v4Y}</b> &gt; <b class="constant">rightLaneNear</b>) <b class="kw">and</b> (<b class="measure">{v4Y}</b> &lt; <b class="constant">rightLaneFar</b>)) <b class="kw">and</b>
+                                 ((<b class="measure">{v4X}</b> &gt; <b class="constant">alongsideBehind</b>) <b class="kw">and</b> (<b class="measure">{v4X}</b> &lt; <b class="constant">alongsideAhead</b>)))))
+        <b class="kw">then</b> <b class="kw">not</b> <b class="output">outputLaneRight</b><button type="button" class="btn is-small sec-diag"
+              data-dialog="details-r29"
+              title="View the diagnosis of r29"
+              aria-label="View the diagnosis of r29"><svg
+              viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"
+              /><circle cx="12" cy="12" r="3"/></svg>Diagnosis</button></span></div>
+      
+    </div>
+  </div>
+
+  
+
+  
+</details>
+
+
+  <dialog class="dlg-wide" id="details-r29">
+    <div class="dlg-head">
+      <h2>Diagnosis &mdash; r29
+        <span class="tag sm violated">VIOLATED</span></h2>
+      <button type="button" class="btn is-secondary is-small is-outline"
+              data-close>Close</button>
+    </div>
+    <div class="dlg-body">
+      
+      
+        <h3>Rule considered</h3>
+        
+  <div class="rule-block">
+    <div class="spec">
+      
+      <div class="rule-text"><span class="sec violated"
+            ><b class="kw">when</b> cmdRequired <b class="kw">and</b>
+        ((((<b class="measure">{v1Presence}</b> <b class="kw">and</b> (((<b class="measure">{v1Y}</b> &gt; <b class="constant">rightLaneNear</b>) <b class="kw">and</b> (<b class="measure">{v1Y}</b> &lt; <b class="constant">rightLaneFar</b>)) <b class="kw">and</b>
+                              ((<b class="measure">{v1X}</b> &gt; <b class="constant">alongsideBehind</b>) <b class="kw">and</b> (<b class="measure">{v1X}</b> &lt; <b class="constant">alongsideAhead</b>))))
+           <b class="kw">or</b> (<b class="measure">{v2Presence}</b> <b class="kw">and</b> (((<b class="measure">{v2Y}</b> &gt; <b class="constant">rightLaneNear</b>) <b class="kw">and</b> (<b class="measure">{v2Y}</b> &lt; <b class="constant">rightLaneFar</b>)) <b class="kw">and</b>
+                                 ((<b class="measure">{v2X}</b> &gt; <b class="constant">alongsideBehind</b>) <b class="kw">and</b> (<b class="measure">{v2X}</b> &lt; <b class="constant">alongsideAhead</b>)))))
+           <b class="kw">or</b> (<b class="measure">{v3Presence}</b> <b class="kw">and</b> (((<b class="measure">{v3Y}</b> &gt; <b class="constant">rightLaneNear</b>) <b class="kw">and</b> (<b class="measure">{v3Y}</b> &lt; <b class="constant">rightLaneFar</b>)) <b class="kw">and</b>
+                                 ((<b class="measure">{v3X}</b> &gt; <b class="constant">alongsideBehind</b>) <b class="kw">and</b> (<b class="measure">{v3X}</b> &lt; <b class="constant">alongsideAhead</b>)))))
+           <b class="kw">or</b> (<b class="measure">{v4Presence}</b> <b class="kw">and</b> (((<b class="measure">{v4Y}</b> &gt; <b class="constant">rightLaneNear</b>) <b class="kw">and</b> (<b class="measure">{v4Y}</b> &lt; <b class="constant">rightLaneFar</b>)) <b class="kw">and</b>
+                                 ((<b class="measure">{v4X}</b> &gt; <b class="constant">alongsideBehind</b>) <b class="kw">and</b> (<b class="measure">{v4X}</b> &lt; <b class="constant">alongsideAhead</b>)))))
+        <b class="kw">then</b> <b class="kw">not</b> <b class="output">outputLaneRight</b></span></div>
+      
+        <div class="consts" hidden>
+          
+            <span><b class="constant">rightLaneNear</b> = 2</span>
+          
+            <span><b class="constant">rightLaneFar</b> = 6</span>
+          
+            <span><b class="constant">alongsideBehind</b> = -5</span>
+          
+            <span><b class="constant">alongsideAhead</b> = 5</span>
+          
+        </div>
+        <div class="rule-foot">
+          <button type="button" class="btn is-secondary is-small is-outline"
+                  data-consts>SLEEC rule measure constraints</button>
+        </div>
+      
+    </div>
+  </div>
+
+      
+
+      
+      <div class="sub violated">
+        <div class="scene"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 206" width="100%" role="img" font-family="ui-monospace, monospace">
+<rect width="820" height="206" fill="#FBF3E4"/>
+<rect x="0" y="64" width="820" height="96" fill="#E0CFAF"/>
+<line x1="0" y1="64" x2="820" y2="64" stroke="#B07C3C" stroke-width="2.5"/>
+<line x1="0" y1="96" x2="820" y2="96" stroke="#FBF3E4" stroke-width="1.5" stroke-dasharray="14 12"/>
+<line x1="0" y1="128" x2="820" y2="128" stroke="#FBF3E4" stroke-width="1.5" stroke-dasharray="14 12"/>
+<line x1="0" y1="160" x2="820" y2="160" stroke="#B07C3C" stroke-width="2.5"/>
+<text x="5" y="83.5" font-size="9" fill="#64523F">L0</text>
+<text x="5" y="115.5" font-size="9" fill="#64523F">L1</text>
+<text x="5" y="147.5" font-size="9" fill="#64523F">L2</text>
+<line x1="171.5" y1="176" x2="171.5" y2="181" stroke="#B07C3C" stroke-width="1"/>
+<text x="171.5" y="192" font-size="9" fill="#64523F" text-anchor="middle">-20</text>
+<line x1="351.5" y1="176" x2="351.5" y2="181" stroke="#B07C3C" stroke-width="1"/>
+<text x="351.5" y="192" font-size="9" fill="#64523F" text-anchor="middle">+0</text>
+<line x1="531.5" y1="176" x2="531.5" y2="181" stroke="#B07C3C" stroke-width="1"/>
+<text x="531.5" y="192" font-size="9" fill="#64523F" text-anchor="middle">+20</text>
+<line x1="711.5" y1="176" x2="711.5" y2="181" stroke="#B07C3C" stroke-width="1"/>
+<text x="711.5" y="192" font-size="9" fill="#64523F" text-anchor="middle">+40</text>
+<text x="810" y="203" font-size="9" fill="#64523F" text-anchor="end">metres ahead of the ego &#183; 9.0 px per metre across, 8.0 down (lateral scale exaggerated)</text>
+<rect x="357.1" y="84.0" width="45.0" height="16.0" rx="2" fill="#F4C430" stroke="#3B2A1A" stroke-width="2.2"/>
+<text x="379.6" y="79.0" font-size="10.5" fill="#3B2A1A" text-anchor="middle" font-weight="700">v1</text>
+<text x="379.6" y="112.0" font-size="9" fill="#64523F" text-anchor="middle">22.3 m/s, vy -12.0</text>
+<rect x="446.0" y="140.0" width="45.0" height="16.0" rx="2" fill="#F4C430" stroke="#3B2A1A" stroke-width="2.2"/>
+<text x="468.5" y="135.0" font-size="10.5" fill="#3B2A1A" text-anchor="middle" font-weight="700">v2</text>
+<text x="468.5" y="168.0" font-size="9" fill="#64523F" text-anchor="middle">19.7 m/s, vy +8.0</text>
+<rect x="329.0" y="68.0" width="45.0" height="16.0" rx="2" fill="#1E3A8A" stroke="#3B2A1A" stroke-width="1.6"/>
+<text x="351.5" y="63.0" font-size="10.5" fill="#3B2A1A" text-anchor="middle" font-weight="700">ego</text>
+<text x="351.5" y="96.0" font-size="9" fill="#64523F" text-anchor="middle">19.0 m/s, vy -2.0</text>
+<text x="12" y="19" font-size="11" fill="#3B2A1A" font-weight="700">ego at x 148.0 m, lane 0 of 3, 19.0 m/s, vy -2.0</text>
+<rect x="12" y="28" width="14" height="8" rx="1.5" fill="#1E3A8A" stroke="#3B2A1A" stroke-width="1"/>
+<text x="31" y="35" font-size="9.5" fill="#64523F">ego</text>
+<rect x="66" y="28" width="14" height="8" rx="1.5" fill="#F4C430" stroke="#3B2A1A" stroke-width="1"/>
+<text x="85" y="35" font-size="9.5" fill="#64523F">cars the rule names</text>
+<rect x="211" y="28" width="14" height="8" rx="1.5" fill="#F7F9FD" stroke="#B07C3C" stroke-width="1"/>
+<text x="230" y="35" font-size="9.5" fill="#64523F">other cars the network sees</text>
+</svg></div>
+        
+        
+        
+          
+          <p class="net-out">Expected output:
+            <span class="action expected">not outputLaneRight</span></p>
+        
+        
+          <p class="net-out">Network output:
+            <span class="action violated">outputLaneRight</span></p>
+        
+
+        
+          
+  
+  
+    <div class="io-split">
+      
+  
+    <div class="io">
+      <h4>Relevant SLEEC rule measure values</h4>
+      <table>
+        <tr><th>name</th><th>value</th></tr>
+        
+          <tr class="role-used">
+            <td><b class="measure">v1Presence</b></td>
+            <td>True</td>
+          </tr>
+        
+          <tr class="role-used">
+            <td><b class="measure">v1X</b></td>
+            <td>3.125</td>
+          </tr>
+        
+          <tr class="role-used">
+            <td><b class="measure">v1Y</b></td>
+            <td>2.000001</td>
+          </tr>
+        
+          <tr class="role-used">
+            <td><b class="measure">v2Presence</b></td>
+            <td>True</td>
+          </tr>
+        
+          <tr class="role-used">
+            <td><b class="measure">v2X</b></td>
+            <td>13.00534883</td>
+          </tr>
+        
+          <tr class="role-used">
+            <td><b class="measure">v2Y</b></td>
+            <td>9</td>
+          </tr>
+        
+          <tr class="role-used">
+            <td><b class="measure">v3Presence</b></td>
+            <td>False</td>
+          </tr>
+        
+          <tr class="role-used">
+            <td><b class="measure">v3X</b></td>
+            <td>0</td>
+          </tr>
+        
+          <tr class="role-used">
+            <td><b class="measure">v3Y</b></td>
+            <td>0</td>
+          </tr>
+        
+          <tr class="role-used">
+            <td><b class="measure">v4Presence</b></td>
+            <td>False</td>
+          </tr>
+        
+          <tr class="role-used">
+            <td><b class="measure">v4X</b></td>
+            <td>0</td>
+          </tr>
+        
+          <tr class="role-used">
+            <td><b class="measure">v4Y</b></td>
+            <td>0</td>
+          </tr>
+        
+      </table>
+    </div>
+  
+
+      
+  
+    <div class="io">
+      <h4>Expected responses</h4>
+      <table>
+        <tr><th>name</th><th>value</th></tr>
+        
+          <tr>
+            <td><b class="output">outputLaneLeft</b></td>
+            <td>-1.213601033</td>
+          </tr>
+        
+          <tr>
+            <td><b class="output">outputIdle</b></td>
+            <td>0.1090125736</td>
+          </tr>
+        
+          <tr class="role-got">
+            <td><b class="output">outputLaneRight</b></td>
+            <td>0.6159580101</td>
+          </tr>
+        
+          <tr>
+            <td><b class="output">outputFaster</b></td>
+            <td>-0.344877454</td>
+          </tr>
+        
+          <tr>
+            <td><b class="output">outputSlower</b></td>
+            <td>0.5893508619</td>
+          </tr>
+        
+      </table>
+    </div>
+  
+
+    </div>
+  
+
+          <p class="note">Marabou found this assignment inside the sub-rule's input
+          region: there, the network does not do what the rule demands. The marks
+          point at what the verdict turns on: the measures this part of the rule
+          names itself, the response it demanded, and &mdash; in red &mdash; the
+          action the network took instead.</p>
+
+          <details class="full">
+            <summary class="btn is-secondary is-small is-outline">show the full counter-example</summary>
+            
+  
+  
+    <div class="io-split">
+      
+  
+    <div class="io">
+      <h4>SLEEC rule measure values</h4>
+      <table>
+        <tr><th>name</th><th>value</th></tr>
+        
+          <tr>
+            <td>egoPresence</td>
+            <td>True</td>
+          </tr>
+        
+          <tr>
+            <td>egoX</td>
+            <td>148</td>
+          </tr>
+        
+          <tr>
+            <td>egoY</td>
+            <td>-0.5</td>
+          </tr>
+        
+          <tr>
+            <td>egoVx</td>
+            <td>19</td>
+          </tr>
+        
+          <tr>
+            <td>egoVy</td>
+            <td>-2</td>
+          </tr>
+        
+          <tr class="related">
+            <td>v1Presence</td>
+            <td>True</td>
+          </tr>
+        
+          <tr class="related">
+            <td>v1X</td>
+            <td>3.125</td>
+          </tr>
+        
+          <tr class="related">
+            <td>v1Y</td>
+            <td>2.000001</td>
+          </tr>
+        
+          <tr>
+            <td>v1Vx</td>
+            <td>3.29834518</td>
+          </tr>
+        
+          <tr>
+            <td>v1Vy</td>
+            <td>-10</td>
+          </tr>
+        
+          <tr class="related">
+            <td>v2Presence</td>
+            <td>True</td>
+          </tr>
+        
+          <tr class="related">
+            <td>v2X</td>
+            <td>13.00534883</td>
+          </tr>
+        
+          <tr class="related">
+            <td>v2Y</td>
+            <td>9</td>
+          </tr>
+        
+          <tr>
+            <td>v2Vx</td>
+            <td>0.6520013049</td>
+          </tr>
+        
+          <tr>
+            <td>v2Vy</td>
+            <td>10</td>
+          </tr>
+        
+          <tr class="related">
+            <td>v3Presence</td>
+            <td>False</td>
+          </tr>
+        
+          <tr class="related">
+            <td>v3X</td>
+            <td>0</td>
+          </tr>
+        
+          <tr class="related">
+            <td>v3Y</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>v3Vx</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>v3Vy</td>
+            <td>0</td>
+          </tr>
+        
+          <tr class="related">
+            <td>v4Presence</td>
+            <td>False</td>
+          </tr>
+        
+          <tr class="related">
+            <td>v4X</td>
+            <td>0</td>
+          </tr>
+        
+          <tr class="related">
+            <td>v4Y</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>v4Vx</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>v4Vy</td>
+            <td>0</td>
+          </tr>
+        
+      </table>
+    </div>
+  
+
+      
+  
+    <div class="io">
+      <h4>Expected responses</h4>
+      <table>
+        <tr><th>name</th><th>value</th></tr>
+        
+          <tr class="related">
+            <td>outputLaneLeft</td>
+            <td>-1.213601033</td>
+          </tr>
+        
+          <tr class="related">
+            <td>outputIdle</td>
+            <td>0.1090125736</td>
+          </tr>
+        
+          <tr class="related">
+            <td>outputLaneRight</td>
+            <td>0.6159580101</td>
+          </tr>
+        
+          <tr class="related">
+            <td>outputFaster</td>
+            <td>-0.344877454</td>
+          </tr>
+        
+          <tr class="related">
+            <td>outputSlower</td>
+            <td>0.5893508619</td>
+          </tr>
+        
+      </table>
+    </div>
+  
+
+    </div>
+  
+
+            <p class="note">Highlighted rows are the ones the rule constrains; the
+            others were only held inside their declared ranges.</p>
+          </details>
+        
+      </div>
+    </div>
+  </dialog>

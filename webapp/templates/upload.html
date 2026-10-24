@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SLEEC-PATROL: Inputs</title>
+  <style>
+    :root {
+      --primary: #1E3A8A;        /* header, buttons, links */
+      --primary-hover: #2B4BA8;
+      --highlight: #F4C430;      /* attention: the note at the foot of the page */
+      /* The ring drawn around whatever holds keyboard focus. Bright enough to read as a
+         marker, dark enough to clear 3:1 on every surface it lands on - 4.11 on this
+         page, 4.53 on a white field - which the attention amber it replaced could not do. */
+      --focus: #1D7AC4;
+      --secondary: #C9965B;      /* borders, tags, the error accent */
+      --bg: #FBF3E4;
+      --surface: #F7F9FD;        /* cards: a white tinted toward the brand navy */
+      --line: #D9E0F0;           /* hairlines, from the navy */
+      --text: #3B2A1A;
+      --muted: #64523F;
+      --danger: #D42A2F;         /* what the page already used red for: errors */
+      --danger-bg: #FCEBEB;
+      --danger-text: #8A1A1E;
+      --info: #0E6BA8;           /* information: what to do here, and what was loaded */
+      --info-bg: #EDF1FA;        /* the same, as a surface to read a sentence on */
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0;
+           background: var(--bg); color: var(--text); line-height: 1.55; }
+    header { background: var(--primary); padding: 1.6rem 0; }
+    /* the same box as main, padding and all, so the two line up */
+    header div { max-width: 48rem; margin: 0 auto; padding: 0 1rem; }
+    header h1 { margin: 0; font-size: 1.35rem; letter-spacing: 0.01em; color: var(--bg); }
+    header p { margin: 0.25rem 0 0; color: #D8E0F4; font-size: 0.9rem; }
+    main { max-width: 48rem; margin: 2rem auto 4rem; padding: 0 1rem; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+            padding: 1.6rem 1.8rem; box-shadow: 0 1px 2px rgba(59, 42, 26, 0.06); }
+    /* Where the inputs come from: two named choices, one side shown at a time. */
+    .sources { display: flex; gap: 0.7rem; flex-wrap: wrap; margin: 0 0 1.6rem; }
+    .sources label { display: block; flex: 1 1 15rem; margin: 0; cursor: pointer;
+                     background: #FFFFFF; border: 1.5px solid var(--line);
+                     border-radius: 10px; padding: 0.7rem 0.9rem; }
+    .sources label b { display: block; font-size: 0.93rem; }
+    .sources label span { color: var(--muted); font-weight: 400; font-size: 0.82rem; }
+    .source-radio { position: absolute; opacity: 0; width: 0; height: 0; }
+    #source-ide:checked ~ .sources label[for="source-ide"],
+    #source-existing:checked ~ .sources label[for="source-existing"] {
+                     border-color: var(--primary); background: var(--info-bg); }
+    #source-ide:focus-visible ~ .sources label[for="source-ide"],
+    #source-existing:focus-visible ~ .sources label[for="source-existing"] {
+                     outline: 3px solid var(--focus); outline-offset: 2px; }
+    #source-existing:disabled ~ .sources label[for="source-existing"] {
+                     cursor: default; opacity: 0.6; }
+    #source-ide:checked ~ .side-existing,
+    #source-existing:checked ~ .side-ide { display: none; }
+
+    /* a setup's own rules, there to read rather than to edit */
+    .spec-view { background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px;
+                 padding: 0.8rem 0.9rem; margin: 0.5rem 0 0; max-height: 26rem;
+                 overflow: auto; white-space: pre; font-size: 0.8rem; line-height: 1.5;
+                 font-family: ui-monospace, "Cascadia Code", monospace; }
+    .spec-view:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+    .part h3 { margin: 1.3rem 0 0; font-size: 0.9rem; color: var(--primary);
+               font-family: ui-monospace, "Cascadia Code", monospace; }
+    .model-line { margin: 0.4rem 0 0; font-size: 0.9rem; }
+    select { font-family: inherit; font-size: 0.95rem; color: var(--text);
+             background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px;
+             padding: 0.5rem 0.6rem; min-width: 16rem; }
+    select:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+    input[type=number] { font-family: inherit; font-size: 0.95rem; color: var(--text);
+             background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px;
+             padding: 0.5rem 0.6rem; width: 9rem; }
+    input[type=number]:focus-visible { outline: 3px solid var(--focus);
+             outline-offset: 1px; }
+    /* The verification setup's two settings, side by side; on a narrow screen the
+       threshold wraps under the semantics. */
+    .setup-row { display: flex; gap: 1.2rem; flex-wrap: wrap; align-items: flex-start; }
+    .threshold input:disabled { background: var(--bg); color: var(--muted);
+            cursor: default; }
+    /* The whole field reads as unavailable, keyed off the input's own state so there is
+       no second flag to keep in step with it. */
+    .threshold:has(input:disabled) { opacity: 0.55; }
+
+    /* The page is three parts: the rules to check, the model to check them against, and
+       how that model decides its action. */
+    .part { margin: 0 0 2rem; }
+    .part + .part { border-top: 1px solid var(--line); padding-top: 1.4rem; }
+    .part h2 { margin: 0; font-size: 1.05rem; color: var(--primary); }
+    /* What a part is for, and where its instructions are: information, in the page's
+       blue, carrying the link that opens them. */
+    .explain { margin: 0.5rem 0 1.2rem; padding: 0.7rem 0.9rem;
+               border-left: 3px solid var(--info); border-radius: 6px;
+               background: var(--info-bg); color: var(--text); font-size: 0.88rem;
+               line-height: 1.55; }
+    .explain a { color: var(--info); font-weight: 700; text-decoration: underline;
+                 text-underline-offset: 2px; }
+    .explain a:hover { color: #0B5486; }   /* its own blue, deepened */
+    .explain a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px;
+                               border-radius: 3px; }
+    .explain code { background: #FFFFFF; }
+    label { display: block; margin: 1.4rem 0 0.45rem; font-weight: 600; font-size: 0.95rem; }
+    .field > label:first-child { margin-top: 0; }
+
+    /* an author 'display' beats the browser's [hidden], so say it again here */
+    [hidden] { display: none !important; }
+
+    /* Under the editor: the way to bring an existing specification into it, and a word
+       about where the rules came from once one is loaded. */
+    .spec-foot { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;
+                 margin: 0.45rem 0 0; }
+    /* between the two tiers' sizes: read as an action, without the room one needs when
+       it is the only thing on its line */
+    .spec-foot .btn { padding: 0.45rem 1rem; font-size: 0.9rem; }
+    /* The file input stays in the page, clipped rather than removed, so it keeps its
+       place in the tab order: the label beside it is what is seen and clicked. */
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden;
+               clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+    #spec-file:focus-visible + label { outline: 3px solid var(--focus);
+               outline-offset: 2px; }
+    /* A word that a file arrived, over the corner of the editor it arrived in, for a few
+       seconds. Information, in the page's blue - not a warning and not an error, which is
+       what the red block below is for. It floats, so there is nothing for it to line up
+       with and nothing of the form it can push around. */
+    .loaded { position: absolute; right: 0.7rem; bottom: 0.7rem; margin: 0;
+              max-width: 20rem; padding: 0.4rem 0.7rem; border-radius: 6px;
+              background: var(--info); color: var(--bg); font-size: 0.8rem;
+              font-weight: 600; overflow-wrap: anywhere;
+              box-shadow: 0 2px 6px rgba(59, 42, 26, 0.2);
+              opacity: 0; transition: opacity 0.25s ease; pointer-events: none; }
+    .loaded.on { opacity: 1; }
+
+    /* The editor: a plain textarea with a line-number gutter beside it. Its height is the
+       editor's, not the specification's - the gutter is a flex item whose line numbers
+       would otherwise stretch the whole box as a long file is loaded into it. The box
+       itself can still be dragged taller; what is inside it scrolls. */
+    .editor { position: relative; display: flex; height: 30rem; resize: vertical;
+              border: 1px solid var(--line); border-radius: 8px;
+              overflow: hidden; background: #FFFFFF; }
+    .gutter { flex: none; width: 3rem; height: 100%; padding: 0.7rem 0.5rem;
+              text-align: right;
+              background: var(--bg); border-right: 1px solid var(--line);
+              color: var(--muted); font-family: ui-monospace, "Cascadia Code", monospace;
+              font-size: 0.82rem; line-height: 1.5; overflow: hidden;
+              white-space: pre; user-select: none; }
+    .editor textarea { flex: 1; height: 100%; min-height: 0; resize: none;
+              overflow: auto; border: none;
+              padding: 0.7rem 0.8rem; background: #FFFFFF; color: var(--text);
+              font-family: ui-monospace, "Cascadia Code", monospace; font-size: 0.82rem;
+              line-height: 1.5; tab-size: 4; }
+    .editor textarea:focus { outline: none; }
+    /* The same ring every other control gets, so one focus looks like the next. The
+       border takes the ring's colour too: focus lands on the textarea inside, and the
+       box is what the reader sees it in. */
+    .editor:focus-within { outline: 3px solid var(--focus); outline-offset: 2px;
+              border-color: var(--focus); }
+    input[type=file] { width: 100%; padding: 0.7rem; background: var(--bg);
+                       border: 1px dashed var(--secondary); border-radius: 8px;
+                       font-size: 0.9rem; color: var(--text); }
+    input[type=file]:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+    input[type=file]::file-selector-button { background: var(--secondary); color: var(--text);
+                       border: none; border-radius: 6px; font-weight: 600;
+                       padding: 0.35rem 0.8rem; margin-right: 0.8rem; cursor: pointer;
+                       font-family: inherit; }
+    /* Darker than itself, not a different colour: the same step the tan button beside it
+       takes, and one its dark label still reads on. */
+    input[type=file]::file-selector-button:hover { background: #D8AC7B; }
+    /* A button names its own colour in --btn and nothing else. Disabled is that same
+       colour lightened, so a button that is working still looks like itself instead of
+       turning into a different button. A new button only sets --btn; --btn-hover and
+       --btn-busy are there for when a colour needs its own, e.g. one too light to keep a
+       cream label once it is shaded. */
+    .btn { --btn: var(--primary);
+           --btn-hover: var(--primary-hover);
+           --btn-busy: color-mix(in srgb, var(--btn) 74%, white);
+           display: inline-block; padding: 0.7rem 1.6rem; font-size: 0.98rem;
+           font-weight: 600; font-family: inherit; line-height: 1.25;
+           text-decoration: none; color: var(--bg); background: var(--btn); border: none;
+           border-radius: 8px; cursor: pointer; }
+    .btn:hover { background: var(--btn-hover); }
+    .btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+    .btn:disabled { background: #586DA8;        /* where color-mix is unsupported */
+           background: var(--btn-busy); cursor: default; pointer-events: none; }
+    .btn.is-secondary { --btn: var(--secondary); --btn-hover: #D8AC7B; color: var(--text); }
+    /* Red is mid-bright: shaded a little, no label reads on it, so it is shaded a lot and
+       the label goes dark. */
+    .btn.is-danger { --btn: var(--danger); --btn-hover: #B4232A;
+           --btn-busy: color-mix(in srgb, var(--btn) 55%, white); }
+    .btn.is-danger:disabled { color: var(--text); }
+    /* Moving between the pages is not an action on the page, so it takes a neutral of
+       its own rather than either action colour. A step that cannot be taken goes flatly
+       gray: unavailable, rather than the same button lightened because it is working. */
+    /* Its own label, not the page's background colour: on this blue the cream
+       reads as a hole rather than as a word. */
+    .btn.is-nav { --btn: #005458; --btn-hover: #0A6B70; color: #FFFFFF; }
+    .btn.is-nav:disabled { background: #CFCED4; color: #5F5D68; }
+    .btn.is-small { padding: 0.34rem 0.9rem; font-size: 0.84rem; }
+    .btn.is-large { padding: 0.95rem 2.6rem; font-size: 1.12rem; }
+    /* Two tiers, both clickable. Filled is the page main action - the one that runs the
+       verification. Outlined is a supporting action that still does something: show the
+       walkthrough, open the full counter-example. Same colours, different weight. */
+    .btn.is-outline, .btn.is-outline:disabled { background: #FFFFFF;
+           color: var(--text); border: 1.5px solid #A17849;
+           border-color: color-mix(in srgb, var(--btn) 80%, black); }
+    .btn.is-outline:hover { background: #F6EEE4;
+           background: color-mix(in srgb, var(--btn) 14%, white); color: var(--text); }
+    #go { margin-top: 1.8rem; }
+    /* Between the pages. A step that cannot be taken is left out rather than shown dead:
+       a button that is there but never works reads as something gone wrong. So a page
+       carries only the steps it has, and a lone forward step keeps to the right, where a
+       forward step belongs. */
+    .pager { display: flex; justify-content: space-between; gap: 1rem;
+             margin: 2rem 0 0; }
+    .pager .next { margin-left: auto; }
+    .running { display: none; align-items: center; gap: 0.6rem; margin-top: 1rem;
+             color: var(--muted); font-size: 0.85rem; }
+    .running.on { display: flex; }
+    .spinner { width: 1.05rem; height: 1.05rem; flex: none; border-radius: 50%;
+             border: 2.5px solid var(--line); border-top-color: var(--primary);
+             animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+    .error { background: var(--danger-bg); border-left: 4px solid var(--danger);
+             border-radius: 6px; padding: 0.9rem 1rem; margin-bottom: 1.5rem; }
+    .error strong { display: block; color: var(--danger-text); font-size: 0.95rem; }
+    .error pre, .error summary + pre { margin: 0.6rem 0 0; white-space: pre-wrap;
+             font-family: ui-monospace, "Cascadia Code", monospace; font-size: 0.8rem;
+             background: var(--surface); border: 1px solid #F2D4D4; border-radius: 6px;
+             padding: 0.7rem 0.8rem; color: var(--text); }
+    .error summary { margin-top: 0.5rem; cursor: pointer; font-size: 0.82rem;
+             color: var(--danger-text); }
+    .note { color: var(--muted); font-size: 0.85rem; margin: 1.6rem 0 0; padding-left: 0.9rem;
+            border-left: 3px solid var(--highlight); }
+
+    /* the instructions, in a native dialog so no library is needed */
+    dialog { max-width: 46rem; width: calc(100% - 2rem); border: 1px solid var(--line);
+             border-radius: 12px; padding: 0; background: var(--surface);
+             color: var(--text); }
+    dialog::backdrop { background: rgba(59, 42, 26, 0.45); }
+    /* The head sits on the same surface as the panel behind it, so its button is the
+       outlined one seen elsewhere rather than a white shape on navy. */
+    .dlg-head { display: flex; align-items: center; justify-content: space-between;
+                gap: 1rem; padding: 1rem 1.4rem; background: var(--surface);
+                border-bottom: 1px solid var(--line); }
+    .dlg-head h2 { margin: 0; font-size: 1.05rem; color: var(--primary); }
+    .dlg-body { padding: 1.2rem 1.4rem 1.6rem; max-height: 70vh; overflow-y: auto;
+                line-height: 1.6; }
+    .dlg-body h3 { margin: 1.4rem 0 0.4rem; font-size: 0.95rem; color: var(--primary); }
+    .dlg-body h3:first-child { margin-top: 0; }
+    .dlg-body p { margin: 0.4rem 0; font-size: 0.9rem; }
+    .dlg-body ul { margin: 0.4rem 0; padding-left: 1.2rem; font-size: 0.9rem; }
+    .dlg-body li { margin: 0.25rem 0; }
+    .dlg-body a { color: var(--primary); }
+    code, pre.spec { font-family: ui-monospace, "Cascadia Code", monospace; }
+    code { background: var(--bg); border: 1px solid var(--line); border-radius: 4px;
+           padding: 0.05rem 0.3rem; font-size: 0.85em; }
+    pre.spec { background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px;
+               padding: 0.8rem 0.9rem; font-size: 0.76rem; line-height: 1.5;
+               max-height: 22rem; overflow: auto; white-space: pre; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>SLEEC-PATROL: Inputs</h1>
+      <p>The SLEEC specification and the neural network under test are given here.</p>
+    </div>
+  </header>
+
+  <main>
+    {% if error %}
+      <div class="error">
+        <strong>{{ error.headline }}</strong>
+        {% if error.collapse %}
+          <details><summary>show details</summary><pre>{{ error.detail }}</pre></details>
+        {% else %}
+          <pre>{{ error.detail }}</pre>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <div class="card">
+      <form method="post" action="/verify" enctype="multipart/form-data">
+        {# Where the inputs come from. Both sides show a specification and a model; what
+           differs is whose they are, so that is what the two choices are named for. #}
+        {# The page comes back as it was left, so a run that would not start costs
+           nothing that was typed or chosen. #}
+        <input class="source-radio" type="radio" name="source" id="source-ide"
+               value="ide" {{ '' if source == 'existing' else 'checked' }}>
+        <input class="source-radio" type="radio" name="source" id="source-existing"
+               value="existing" {{ 'checked' if source == 'existing' else '' }}
+               {{ '' if setups else 'disabled' }}>
+
+        <div class="sources">
+          <label for="source-ide"><b>New inputs</b>
+            <span>The specification written or loaded in the editor, and a model
+              uploaded.</span></label>
+          <label for="source-existing"><b>Existing setup</b>
+            <span>{% if setups %}A specification and model that come with the tool, ready
+              to verify.{% else %}None are installed: webapp/examples holds a folder per
+              setup.{% endif %}</span></label>
+        </div>
+
+        {# A setup that ships with the tool: its rules are there to read, not to edit, and
+           its model is named rather than chosen. #}
+        <div class="side side-existing">
+          <section class="part">
+            <h2>Existing setup</h2>
+            <div class="field">
+              <label for="setup">Setup</label>
+              <select name="setup" id="setup">
+                {% for s in setups %}
+                  <option value="{{ s.name }}"
+                          {{ 'selected' if s.name == setup else '' }}>{{ s.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            {% for s in setups %}
+              <div class="setup-view" data-setup="{{ s.name }}"
+                   {{ '' if (s.name == setup or (not setup and loop.first))
+                      else 'hidden' }}>
+                <p class="explain">A predefined setup, kept with the tool and verified
+                  exactly as it is. To verify a different specification or model, please
+                  use <b>New inputs</b> above.</p>
+                <h3>{{ s.spec.name }}</h3>
+                <pre class="spec-view" tabindex="0">{{ s.text }}</pre>
+                <h3>Model</h3>
+                <p class="model-line"><b>{{ s.model.name }}</b> is the network this setup
+                  verifies its rules against.</p>
+                {# The setup's own setup.json, shown as the New inputs side asks for it:
+                   the threshold only where the strategy uses one. #}
+                <h3>Verification setup</h3>
+                <p class="model-line">The network's action decision strategy is
+                  <b>{{ s.semantics | capitalize }}</b>
+                  {%- if s.semantics == 'independent' %}, with a decision threshold of
+                  <b>{{ s.threshold }}</b>{% endif %}.</p>
+              </div>
+            {% endfor %}
+          </section>
+        </div>
+
+        <div class="side side-ide">
+        {# Three parts, each saying what it is for and where its instructions are. Those
+           instructions open from the words that name them, not from a button of their
+           own: the sentence is already about them. #}
+        <section class="part">
+          <h2>SLEEC specification</h2>
+          <p class="explain">The rules to verify are written in the editor below, or
+            loaded from an existing <code>.sleec</code> file. Please see the
+            <a href="#" data-dialog="help-spec">instructions for writing a SLEEC
+            specification</a>, which set out what it declares — its events, measures and
+            constants — and how its rules are stated about them.</p>
+
+          <div class="field">
+            <label class="sr-only" for="spec-text">SLEEC specification</label>
+            <div class="editor">
+              <div class="gutter" id="gutter" aria-hidden="true">1</div>
+              <!-- 'required' is set by the script, not here: a file loaded without
+                   scripting leaves the editor empty and is read on the server, and the
+                   browser would refuse to submit the form. -->
+              <textarea name="spec_text" id="spec-text" spellcheck="false"
+                        placeholder="def_start&#10;    ...&#10;def_end&#10;&#10;rule_start&#10;    ...&#10;rule_end">{{ spec_text }}</textarea>
+              <p class="loaded" id="loaded" role="status" aria-live="polite"></p>
+            </div>
+            <div class="spec-foot">
+              <!-- The dialog opens on the extension it expects. It is a filter, not a
+                   restriction: every dialog still offers all files, and the file is read
+                   as text whatever it is called. -->
+              <input type="file" name="spec" id="spec-file" accept=".sleec"
+                     class="sr-only">
+              <!-- Filled, because loading a file is one of the two ways this page is
+                   used, and in the secondary tan the network's own file button wears:
+                   the two do the same kind of thing. -->
+              <label class="btn is-secondary" for="spec-file">Load a .sleec file</label>
+            </div>
+          </div>
+        </section>
+
+        <section class="part">
+          <h2>Model</h2>
+          <p class="explain">The trained model under test is uploaded here, as an
+            <code>.onnx</code> file. Its inputs must be the measures declared in the
+            specification above, and its outputs the output events, each in the order it
+            is declared. Please see the
+            <a href="#" data-dialog="help-network">instructions for preparing the
+            model</a> for the rest.</p>
+
+          <div class="field">
+            <label class="sr-only" for="network">Neural network</label>
+            <input type="file" name="network" id="network" accept=".onnx" required>
+          </div>
+        </section>
+
+        {# How the network's outputs decide its action: a property of the model, so its
+           part follows the model's. #}
+        <section class="part">
+          <h2>Verification setup</h2>
+          <p class="explain">This setup gives the network's action decision strategy: the
+            way its outputs decide which action it takes. <b>Exclusive</b> is for actions
+            that rule one another out, as with a softmax: the action taken is the largest
+            output. <b>Independent</b> is for actions decided each on its own, as with one
+            sigmoid per action: the largest output is the action taken only when it is
+            above the decision threshold. Please see the
+            <a href="#" data-dialog="help-setup">instructions for choosing the
+            verification setup</a> for which one fits a model.</p>
+
+          <div class="setup-row">
+            <div class="field">
+              <label for="output-semantics">Output semantics</label>
+              <select name="output_semantics" id="output-semantics">
+                <option value="exclusive"
+                        {{ '' if semantics == 'independent' else 'selected' }}>Exclusive</option>
+                <option value="independent"
+                        {{ 'selected' if semantics == 'independent' else '' }}>Independent</option>
+              </select>
+            </div>
+            {# Only the second semantics uses it, so the field is closed off under the
+               first. A disabled field is not posted at all, which the route expects: it
+               defaults the threshold, so an absent one is the ordinary case. #}
+            <div class="field threshold">
+              <label for="decision-threshold">Decision threshold</label>
+              <input type="number" step="any" name="decision_threshold"
+                     id="decision-threshold" value="{{ threshold }}"
+                     {{ '' if semantics == 'independent' else 'disabled' }}>
+            </div>
+          </div>
+        </section>
+        </div>
+
+        <button type="submit" id="go" class="btn">Verify SLEEC compliance</button>
+
+        <div class="running" id="running">
+          <span class="spinner"></span>
+          <span>Solving every rule — this can take several minutes. Per-rule progress is
+          printed in the terminal running uvicorn.</span>
+        </div>
+      </form>
+    </div>
+
+    <p class="note">Every rule is solved on submission, so this page stays put until Marabou
+    has finished. A 512-ReLU network over wide input ranges can take minutes per rule.</p>
+
+    <nav class="pager" aria-label="Pages">
+      {# Forward from here is the verification itself, which the form above starts, so
+         there is no next step of its own to show. #}
+      <a class="btn is-nav" href="/">&larr; Back</a>
+    </nav>
+
+    {# The instructions, in three: what the model has to be, how its outputs decide its
+       action, and how a specification is written. Each part opens from the sentence that
+       refers to it. #}
+    <dialog id="help-network">
+      <div class="dlg-head">
+        <h2>Preparing the model</h2>
+        <button type="button" class="btn is-secondary is-small is-outline"
+                data-close>Close</button>
+      </div>
+      <div class="dlg-body">
+        <h3>The network</h3>
+        <p>The model is a feed-forward network, such as a multi-layer perceptron of fully
+           connected layers with ReLU activations. For a concept bottleneck model (CBM),
+           only its head is provided: the part from the concepts to the logits, with the
+           concepts declared as the measures.</p>
+        <p>The model must be exported to the ONNX format, with its inputs and outputs in
+           the same order as the measures and the output events declared in the
+           specification: one input vector, given at export as an example input of shape
+           (1, number of measures), and one score per output event, with nothing after
+           the scores such as an ArgMax. For a model trained in PyTorch,
+           <a href="{{ onnx_guide }}" target="_blank" rel="noopener">consult this page for
+           more info</a>.</p>
+      </div>
+    </dialog>
+
+    <dialog id="help-setup">
+      <div class="dlg-head">
+        <h2>Choosing the verification setup</h2>
+        <button type="button" class="btn is-secondary is-small is-outline"
+                data-close>Close</button>
+      </div>
+      <div class="dlg-body">
+        <p>The rules say which action the network may or must take, so the verification
+           follows the network's own action decision strategy, which this setup gives.</p>
+        <h3>Exclusive</h3>
+        <p>For actions that rule one another out, as in a network ending in a softmax:
+           the action taken is the one with the largest output. The decision threshold is
+           not used.</p>
+        <h3>Independent</h3>
+        <p>For actions decided each on its own, as in a network with one sigmoid per
+           action: an action counts as activated when its output is above the decision
+           threshold, and the action taken is the largest output if it is activated, and
+           none otherwise.</p>
+        <h3>Decision threshold</h3>
+        <p>The value an output has to exceed for its action to count as activated, on the
+           scale of the network's outputs. For outputs that are logits, as in a head
+           exported without its sigmoid, a threshold of 0 corresponds to a probability of
+           0.5, since sigmoid(z) &ge; 0.5 exactly when z &ge; 0.</p>
+      </div>
+    </dialog>
+
+    <dialog id="help-spec">
+      <div class="dlg-head">
+        <h2>Writing a SLEEC specification</h2>
+        <button type="button" class="btn is-secondary is-small is-outline"
+                data-close>Close</button>
+      </div>
+      <div class="dlg-body">
+        <h3>The specification</h3>
+        <p>A specification is made of blocks, each opened and closed by its own keywords.
+           On any line, everything after <code>//</code> is a comment and is ignored.</p>
+        <ul>
+          <li><code>def_start … def_end</code> — what exists: the events, measures and
+              constants the rules refer to. Required.</li>
+          <li><code>rule_start … rule_end</code> — the rules to verify. Required.</li>
+          <li><code>relation_start … relation_end</code> — facts true of every input the
+              system can observe. Optional, but without them the verifier may answer with
+              a situation that cannot occur.</li>
+        </ul>
+
+        <h3>Declarations</h3>
+        <ul>
+          <li><code>event &lt;Name&gt;</code> — something that happens
+              (e.g. <code>event cmdRequired</code>). One event triggers the rules, and one
+              is declared per network output (e.g. <code>event outputSlower</code>).</li>
+          <li><code>measure &lt;name&gt;: numeric</code> or
+              <code>measure &lt;name&gt;: boolean</code> — a quantity the rules read
+              (e.g. <code>measure v1X: numeric</code>).</li>
+          <li><code>constant &lt;NAME&gt; = &lt;integer&gt;</code> — a named threshold
+              (e.g. <code>constant dangerClose = 10</code>). Values are whole numbers.</li>
+        </ul>
+        <p>Two conventions tie the declarations to the network file: the <b>measures are
+           its inputs, in declaration order</b>, and the <b>output events are its outputs,
+           in declaration order</b>.</p>
+        <p>Each numeric measure also needs the range it can take, written as two constants
+           named after it — <code>&lt;name&gt;LB</code> for the lower bound and
+           <code>&lt;name&gt;UB</code> for the upper (e.g. <code>constant v1XLB = -200</code>
+           and <code>constant v1XUB = 200</code>). That range is the region the verifier
+           searches. A boolean measure needs none: its range is already {0, 1}.</p>
+
+        <h3>Rules</h3>
+        <pre class="spec">&lt;name&gt; when &lt;event&gt; and (&lt;condition&gt;)
+     then &lt;event&gt;
+     unless (&lt;condition&gt;)
+     then &lt;event&gt;</pre>
+        <ul>
+          <li><b>A rule always opens on a trigger event</b> &mdash;
+              <code>when cmdRequired and (&lt;condition&gt;)</code> &mdash; and it has to
+              be there even where the condition itself is entirely about measures. The
+              event stands for the moment the system is asked to decide; the measures
+              describe the situation it decides in. One representative event serves the
+              whole specification, as <code>cmdRequired</code> does in the example.</li>
+          <li>A measure is read in braces, <code>{&lt;name&gt;}</code>; a constant is named
+              directly.</li>
+          <li><b>Every binary operation carries its own parentheses</b> — never
+              <code>a and b and c</code> (e.g.
+              <code>(({v1X} &gt; justAhead) and ({v1X} &lt; dangerClose))</code>).</li>
+          <li>A comparison may combine numeric measures and constants with
+              <code>+</code>, <code>-</code> and <code>*</code>, each operation in its own
+              parentheses (e.g. <code>(({v1X} - {v2X}) &gt; 3)</code>); multiplying two
+              measures is not linear and is refused.</li>
+          <li>Negation is <code>(not &lt;condition&gt;)</code>
+              (e.g. <code>(not {v2Presence})</code>).</li>
+          <li><code>unless … then …</code> is a defeater: the exception that replaces the
+              response while its condition holds. A rule may carry several.</li>
+        </ul>
+
+        <h3>Relations</h3>
+        <p>Relations state the general constraints the verification must respect — what is
+           true of every input the system can be given. They usually come from the dataset
+           the network was trained on, and they stop the verifier from answering with an
+           input that could never occur. Five forms apply to a single evaluation:</p>
+        <ul>
+          <li><code>measure invariant &lt;condition&gt;</code> — the condition always holds
+              (e.g. <code>measure invariant {egoPresence}</code>).</li>
+          <li><code>measure imply &lt;A&gt; &lt;B&gt;</code> — whenever A holds, B holds too
+              (e.g. <code>measure imply (not {v1Presence}) ({v1X} = 0)</code>).</li>
+          <li><code>measure iff &lt;A&gt; &lt;B&gt;</code> — A and B always hold
+              together.</li>
+          <li><code>measure mutualExclusive &lt;A&gt; &lt;B&gt;</code> — they are never both
+              true.</li>
+          <li><code>measure opposite &lt;A&gt; &lt;B&gt;</code> — exactly one of them is
+              true.</li>
+        </ul>
+        {% if example_spec %}
+          <h3>A complete example</h3>
+          <p>The specification shipped with the tool, for a highway driving policy:</p>
+          <pre class="spec">{{ example_spec }}</pre>
+        {% endif %}
+      </div>
+    </dialog>
+
+    <script>
+      // The page stays put until the response arrives, so this state is visible for the
+      // whole run. No server involvement: the POST is what does the work.
+      var form = document.querySelector("form");
+      var go = document.getElementById("go");
+      var running = document.getElementById("running");
+
+      // Only the submit button is disabled. The file inputs must stay enabled: the browser
+      // builds the request payload after this handler runs, and disabled fields are left
+      // out of it, so disabling them here would send no files at all.
+      form.addEventListener("submit", function () {
+        // Whatever failed last time belongs to the previous run: this is a new one.
+        var stale = document.querySelector(".error");
+        if (stale) stale.remove();
+
+        go.disabled = true;
+        go.textContent = "Verifying…";
+        running.classList.add("on");
+      });
+
+      // Coming back through history would otherwise leave the button stuck disabled.
+      window.addEventListener("pageshow", function () {
+        go.disabled = false;
+        go.textContent = "Verify SLEEC compliance";
+        running.classList.remove("on");
+      });
+
+      var specText = document.getElementById("spec-text");
+      var network = document.getElementById("network");
+      var useExisting = document.getElementById("source-existing");
+
+      // The browser refuses to submit a form holding a required field it cannot show, so
+      // the side that is not in use lets its fields go. The server checks the real rule
+      // either way. With this script running, a loaded file lands in the editor, so the
+      // editor is where the specification has to be.
+      function syncSource() {
+        var existing = useExisting.checked;
+        specText.required = !existing;
+        network.required = !existing;
+      }
+      document.querySelectorAll(".source-radio").forEach(function (radio) {
+        radio.addEventListener("change", syncSource);
+      });
+      syncSource();
+
+      // Only independent semantics uses the threshold, so the field is closed off under
+      // exclusive. The page is rendered with it already in the right state, so this only
+      // matters when the choice changes. Closed off, it shows 0, the value the server
+      // uses when the field is not sent, rather than a number that is not in effect.
+      var semantics = document.getElementById("output-semantics");
+      var threshold = document.getElementById("decision-threshold");
+      function syncSemantics() {
+        threshold.disabled = semantics.value !== "independent";
+        if (threshold.disabled) { threshold.value = "0"; }
+      }
+      semantics.addEventListener("change", syncSemantics);
+      syncSemantics();
+
+      // One setup's rules at a time, the one the list names.
+      var setup = document.getElementById("setup");
+      if (setup) {
+        setup.addEventListener("change", function () {
+          document.querySelectorAll(".setup-view").forEach(function (view) {
+            view.hidden = view.getAttribute("data-setup") !== setup.value;
+          });
+        });
+      }
+
+      // Line numbers for the editor, kept level with the text while it scrolls.
+      var gutter = document.getElementById("gutter");
+      function numberLines() {
+        var lines = specText.value.split("\n").length;
+        var out = [];
+        for (var i = 1; i <= lines; i++) { out.push(i); }
+        gutter.textContent = out.join("\n");
+      }
+      specText.addEventListener("input", numberLines);
+      specText.addEventListener("scroll", function () {
+        gutter.scrollTop = specText.scrollTop;
+      });
+      // Tab indents instead of leaving the editor.
+      specText.addEventListener("keydown", function (event) {
+        if (event.key !== "Tab") { return; }
+        event.preventDefault();
+        var start = specText.selectionStart, end = specText.selectionEnd;
+        specText.value = specText.value.slice(0, start) + "    " + specText.value.slice(end);
+        specText.selectionStart = specText.selectionEnd = start + 4;
+        numberLines();
+      });
+      numberLines();
+
+      // A chosen file is read here and put in the editor, so what runs is what the editor
+      // holds and the rules can be read, and changed, before the run. The same input is
+      // still posted with the form: with no scripting the server reads the file instead.
+      var specFile = document.getElementById("spec-file");
+      var loaded = document.getElementById("loaded");
+      var loadedTimer;
+      specFile.addEventListener("change", function () {
+        var file = specFile.files && specFile.files[0];
+        if (!file) { return; }
+        var reader = new FileReader();
+        reader.onload = function () {
+          specText.value = reader.result;
+          numberLines();
+          // Said once, over the editor, then gone: the rules themselves are the record of
+          // what was loaded, and they are right there.
+          loaded.textContent = file.name + " loaded into the editor";
+          loaded.classList.add("on");
+          window.clearTimeout(loadedTimer);
+          loadedTimer = window.setTimeout(function () {
+            loaded.classList.remove("on");
+          }, 3500);
+        };
+        reader.readAsText(file);
+      });
+
+      // A link names the dialog it opens; a button in a dialog's head closes the dialog
+      // it is in. The same wiring the report page uses.
+      document.querySelectorAll("[data-dialog]").forEach(function (opener) {
+        var dialog = document.getElementById(opener.getAttribute("data-dialog"));
+        if (!dialog) { return; }
+        opener.addEventListener("click", function (event) {
+          event.preventDefault();
+          dialog.showModal();
+        });
+      });
+      document.querySelectorAll("dialog [data-close]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          button.closest("dialog").close();
+        });
+      });
+    </script>
+  </main>
+</body>
+</html>

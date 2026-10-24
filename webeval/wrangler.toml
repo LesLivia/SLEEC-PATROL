@@ -1,0 +1,14 @@
+# Cloudflare Pages configuration for the evaluation site. Read by `wrangler pages dev`
+# and `wrangler pages deploy`, both run from this folder.
+
+# The Pages project name; it becomes the site's address, <name>.pages.dev.
+name = "sleec-patrol-eval"
+pages_build_output_dir = "public"
+compatibility_date = "2026-10-01"
+
+[[r2_buckets]]
+binding = "SUBMISSIONS"
+bucket_name = "sleec-patrol-eval-submissions"
+# Local runs (`wrangler pages dev`) write to this real bucket, not a simulated one. Remove
+# the line to test against a simulated bucket under .wrangler/state. Deploying ignores it.
+remote = true

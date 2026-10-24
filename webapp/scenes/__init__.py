@@ -1,0 +1,59 @@
+"""Scene renderers: a counter-example drawn as a picture, when we know the environment.
+
+The uploaded ONNX file carries no meaning - it is a [1, n] -> [1, m] graph - so the only
+thing that identifies the environment is the interface the specification declares. A
+renderer is therefore keyed by the exact, ordered tuple of measure names and output
+names. Ordered, because the variable indices follow declaration order: two specifications
+with the same names in a different order would give the same index a different meaning,
+and the picture would be confidently wrong.
+
+Unknown interface, missing value, or anything raised while drawing: no picture. The
+counter-example table is the thing that must always be right, and a misleading drawing is
+worse than none.
+
+To add an environment, write a module exposing KEY = (measures, outputs),
+render(rows, constants) -> svg and chosen_action(rows) -> str, then register it below.
+"""
+
+from webapp.scenes import highway
+
+RENDERERS = {highway.KEY: highway}
+
+
+def pick_renderer(measures, outputs):
+    """Exact match on the declared interface, or None.
+
+    'measures' and 'outputs' are the generator's name -> variable index maps.
+    """
+    key = (tuple(name for name, _ in sorted(measures.items(), key=lambda kv: kv[1])),
+           tuple(name for name, _ in sorted(outputs.items(), key=lambda kv: kv[1])))
+    return RENDERERS.get(key)
+
+
+def render(renderer, rows, constants=None):
+    """Draw one counter-example. A drawing failure must never break the report.
+
+    'constants' are the specification's own, so a renderer can read the environment's
+    shape off the ranges that were verified - how many lanes the road has, say - rather
+    than hold a figure of its own that the next specification contradicts.
+    """
+    if renderer is None or not rows:
+        return None
+    try:
+        return renderer.render(rows, constants or {})
+    except Exception:  # noqa: BLE001 - the table already carries the same numbers
+        return None
+
+
+def chosen_action(renderer, rows):
+    """The action the model takes in this counter-example, named by the environment.
+
+    None when the interface is unknown or the outputs cannot be read: the counter-example
+    table still shows every output value.
+    """
+    if renderer is None or not rows:
+        return None
+    try:
+        return renderer.chosen_action(rows)
+    except Exception:  # noqa: BLE001
+        return None

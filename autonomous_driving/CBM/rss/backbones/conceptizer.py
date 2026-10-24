@@ -1,0 +1,68 @@
+import torch
+import torch.nn as nn
+
+
+"""
+class Conceptizer:
+    concept extractor on precomputed image features, shared by BDD-OIA (datasets/boia.py) and
+    SDD-OIA (datasets/presddoia.py)
+    encoder c() is the network by computing concept c(e(x))
+def __init__:
+    define parameters (e.g., # of layers)
+def encode:
+    compute concepts
+"""
+
+
+class Conceptizer(nn.Module):
+    """
+    def __init__:
+        define parameters (e.g., # of layers)
+        MLP-based conceptizer for concept basis learning.
+    Inputs:
+        din (int): input size
+        nconcept (int): # of all concepts
+        hidden (tuple of int): hidden layer sizes; empty for a single linear layer
+    Return:
+        None
+    """
+
+    def __init__(self, din, nconcept, hidden=()):
+        super(Conceptizer, self).__init__()
+
+        # set self hyperparameters
+        self.din = din  # Input dimension
+        self.nconcept = nconcept  # Number of "atoms"/concepts
+
+        """
+        encoding
+        self.enc1: encoder for known concepts, linear or Linear -> ReLU -> Dropout per hidden layer
+        """
+        layers, d = [], self.din
+        for h in hidden:
+            layers += [nn.Linear(d, h), nn.ReLU(), nn.Dropout(0.5)]
+            d = h
+        if layers:
+            self.enc1 = nn.Sequential(*layers, nn.Linear(d, self.nconcept))
+        else:
+            self.enc1 = nn.Linear(self.din, self.nconcept)
+
+    """ 
+    def forward:
+        compute concepts
+    Inputs:
+        x: output of pretrained model (encoder)
+    Return:
+        encoded_1: predicted known concepts
+    """
+
+    def forward(self, x):
+
+        # resize
+        p = x.view(x.size(0), -1)
+
+        T = 2.5
+        logits_c = self.enc1(p) / T
+        encoded_1 = torch.sigmoid(logits_c)
+
+        return encoded_1

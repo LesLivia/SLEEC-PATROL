@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SLEEC-PATROL</title>
+  <style>
+    :root {
+      --primary: #1E3A8A;        /* header, buttons, links */
+      --primary-hover: #2B4BA8;
+      /* The ring drawn around whatever holds keyboard focus. Bright enough to read as a
+         marker, dark enough to clear 3:1 on every surface it lands on - 4.11 on this
+         page, 4.30 on a card - which the attention amber it replaced could not do. */
+      --focus: #1D7AC4;
+      --secondary: #C9965B;      /* borders, tags, the error accent */
+      --bg: #FBF3E4;
+      --surface: #F7F9FD;        /* cards: a white tinted toward the brand navy */
+      --line: #D9E0F0;           /* hairlines, from the navy */
+      --text: #3B2A1A;
+      --muted: #64523F;
+      --danger: #D42A2F;         /* only reached through .btn.is-danger here */
+      --paper: #FFFFFF;          /* the diagram is drawn on white: it keeps its own */
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0;
+           background: var(--bg); color: var(--text); line-height: 1.55; }
+    header { background: var(--primary); padding: 2.2rem 0 2rem; }
+    /* the same box as main, padding and all, so the two line up */
+    header div { max-width: 60rem; margin: 0 auto; padding: 0 1rem; }
+    header h1 { margin: 0; font-size: 2rem; letter-spacing: 0.06em; color: var(--bg); }
+    header p { margin: 0.4rem 0 0; color: #D8E0F4; font-size: 0.95rem; }
+    main { max-width: 60rem; margin: 2rem auto 4rem; padding: 0 1rem; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+            padding: 1.5rem 1.8rem; margin-bottom: 1.5rem;
+            box-shadow: 0 1px 2px rgba(59, 42, 26, 0.06); }
+    .card h2 { margin: 0; font-size: 1.1rem; color: var(--primary); }
+
+    /* The diagram is drawn on white, so it keeps its own surface, and it runs the full
+       width of the card - the same width as the panel below it. The caption sits on the
+       card's own surface underneath. */
+    .figure { background: var(--paper); padding: 0; overflow: hidden; }
+    .figure img { display: block; width: 100%; height: auto; }
+    .figure figcaption { margin: 0; padding: 0.9rem 1.8rem 1rem; background: var(--surface);
+                         border-top: 1px solid var(--line); color: var(--muted);
+                         font-size: 0.85rem; }
+
+    ol { margin: 0.8rem 0 0; padding-left: 1.3rem; }
+    li { margin: 0.35rem 0; }
+    li b { color: var(--primary); }
+    .closing { margin: 1.1rem 0 0; }
+    /* The one link in the page's prose, as a link reads: the brand navy, underlined a
+       little clear of the letters. Buttons are the only other 'a' here, and they say so
+       with their own class. */
+    .closing a { color: var(--primary); font-weight: 600; text-decoration: underline;
+                 text-underline-offset: 2px; }
+    .closing a:hover { color: var(--primary-hover); }
+    .closing a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px;
+                               border-radius: 3px; }
+    .actions { margin-top: 1.6rem; }
+    /* Between the pages. A step that cannot be taken is left out rather than shown dead:
+       a button that is there but never works reads as something gone wrong. So a page
+       carries only the steps it has, and a lone forward step keeps to the right, where a
+       forward step belongs. */
+    .pager { display: flex; justify-content: space-between; gap: 1rem;
+             margin: 2rem 0 0; }
+    .pager .next { margin-left: auto; }
+
+    /* A button names its own colour in --btn and nothing else. Disabled is that same
+       colour lightened, so a button that is working still looks like itself instead of
+       turning into a different button. A new button only sets --btn; --btn-hover and
+       --btn-busy are there for when a colour needs its own, e.g. one too light to keep a
+       cream label once it is shaded. */
+    .btn { --btn: var(--primary);
+           --btn-hover: var(--primary-hover);
+           --btn-busy: color-mix(in srgb, var(--btn) 74%, white);
+           display: inline-block; padding: 0.7rem 1.6rem; font-size: 0.98rem;
+           font-weight: 600; font-family: inherit; line-height: 1.25;
+           text-decoration: none; color: var(--bg); background: var(--btn); border: none;
+           border-radius: 8px; cursor: pointer; }
+    .btn:hover { background: var(--btn-hover); }
+    .btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+    .btn:disabled { background: #586DA8;        /* where color-mix is unsupported */
+           background: var(--btn-busy); cursor: default; pointer-events: none; }
+    .btn.is-secondary { --btn: var(--secondary); --btn-hover: #D8AC7B; color: var(--text); }
+    /* Red is mid-bright: shaded a little, no label reads on it, so it is shaded a lot and
+       the label goes dark. */
+    .btn.is-danger { --btn: var(--danger); --btn-hover: #B4232A;
+           --btn-busy: color-mix(in srgb, var(--btn) 55%, white); }
+    .btn.is-danger:disabled { color: var(--text); }
+    /* Moving between the pages is not an action on the page, so it takes a neutral of
+       its own rather than either action colour. A step that cannot be taken goes flatly
+       gray: unavailable, rather than the same button lightened because it is working. */
+    /* Its own label, not the page's background colour: on this blue the cream
+       reads as a hole rather than as a word. */
+    .btn.is-nav { --btn: #005458; --btn-hover: #0A6B70; color: #FFFFFF; }
+    .btn.is-nav:disabled { background: #CFCED4; color: #5F5D68; }
+    .btn.is-small { padding: 0.34rem 0.9rem; font-size: 0.84rem; }
+    .btn.is-large { padding: 0.95rem 2.6rem; font-size: 1.12rem; }
+    /* Two tiers, both clickable. Filled is the page main action - the one that runs the
+       verification. Outlined is a supporting action that still does something: show the
+       walkthrough, open the full counter-example. Same colours, different weight. */
+    .btn.is-outline, .btn.is-outline:disabled { background: #FFFFFF;
+           color: var(--text); border: 1.5px solid #A17849;
+           border-color: color-mix(in srgb, var(--btn) 80%, black); }
+    .btn.is-outline:hover { background: #F6EEE4;
+           background: color-mix(in srgb, var(--btn) 14%, white); color: var(--text); }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>SLEEC-PATROL</h1>
+      <p>A verifier for social, legal, ethical, empathetic and cultural rules.</p>
+    </div>
+  </header>
+
+  <main>
+    <figure class="card figure">
+      <img src="/figures/architecture.png"
+           alt="A SLEEC specification and the neural network under test enter the Marabou
+                parser, which normalizes the rules, encodes them as constraints and builds
+                the Marabou queries; the Marabou verifier solves them and the result
+                analyzer turns the answers into a compliance diagnosis.">
+      <figcaption>Your SLEEC rules and the neural network under test are verified through
+        this pipeline. Each rule is turned into a precise query, and an automatic verifier
+        answers whether the rule is compliant or violated, with an example when it is
+        broken.</figcaption>
+    </figure>
+
+    <div class="card">
+      <h2>Welcome</h2>
+      <p>SLEEC-PATROL checks whether a trained network obeys the rules you wrote for it.
+         You do not need to write any queries: the specification is the input, and every
+         rule in it is checked.</p>
+      <ol>
+        <li><b>Provide your SLEEC specification</b> — the .sleec file holding the measures,
+            the constants and the rules.</li>
+        <li><b>Provide the neural network</b> — the .onnx file whose inputs are the
+            measures and whose outputs are the output events, in declaration order.</li>
+        <li><b>Read the compliance report</b> — every rule is reported as compliant,
+            violated or unverified, and a violated rule comes with the counter-example
+            that breaks it: the values themselves, and a scene drawn from them where the
+            environment is one the tool can picture.</li>
+      </ol>
+      {# The walkthrough is offered on the words that name it. Until VIDEO_URL is set in
+         webapp/app.py the sentence stands as text, rather than as a link to nowhere. #}
+      <p class="closing">Please see the
+        {%- if video_url %}
+          <a href="{{ video_url }}" target="_blank" rel="noopener">instruction video</a>
+        {%- else %} instruction video
+        {%- endif %} for more help.</p>
+
+      <div class="actions">
+        <a class="btn is-large" href="/upload">Start</a>
+      </div>
+    </div>
+
+    <nav class="pager" aria-label="Pages">
+      {# This is the first page, so there is nowhere back and no step to show for it. #}
+      <a class="btn is-nav next" href="/upload">Next &rarr;</a>
+    </nav>
+
+  </main>
+</body>
+</html>

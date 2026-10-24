@@ -1,0 +1,14 @@
+SDD-OIA is a synthetic driving dataset from the rsbench benchmark. Each picture is a road scene seen from a car. It is labelled with what is in it, such as a red light, a pedestrian or an obstacle ahead, and with the actions that are allowed in it: stop, go forward, turn left and turn right.
+
+The model is a concept bottleneck model, which decides in two steps. First, a vision network looks at the picture and estimates, for each of 19 concepts, the probability that it is present:
+
+    ahead, to go forward   greenLight, follow (a car ahead to follow), clear (the road is clear)
+    ahead, to stop         redLight (a red or yellow light), stopSign, car, person, rider, otherObstacle
+    on the left            noLeftLane, leftObstacle, leftSolidLine,
+                           leftLane (on a left-turn lane), leftFollow (the car ahead turns left)
+    on the right           noRightLane, rightObstacle, rightSolidLine,
+                           rightLane (on a right-turn lane), rightFollow (the car ahead turns right)
+
+Second, a single layer turns these 19 probabilities into one score per action: outputStop, outputForward, outputLeft and outputRight. The action taken is the one with the highest score, provided that score is above 0. A score above 0 means the model rates the action as more likely allowed than not.
+
+The rules say which action the car must or must not take given what it sees, for example stop at a red light. Every rule shown in this study is violated: the verifier (Marabou) found concept probabilities for which the model does not do what the rule demands.

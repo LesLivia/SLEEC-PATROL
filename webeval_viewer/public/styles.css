@@ -1,0 +1,159 @@
+/* The answers viewer's styles. Up to the viewer's own section at the end, a copy of
+   webeval/public/styles.css, so the rule pages read as the participants saw them. */
+
+/* The evaluation site's own pages. The palette, the buttons, the verdict tags, the rule
+   panels and the dialogs all come from report.css, the webapp's stylesheet, which is
+   loaded first; this adds only what the report does not have: the page frame, the intro
+   pictures and the evaluation form. */
+
+/* The header stays in view, so the way back and the two references are always there.
+   Slimmer than the report's, which carries a title and nothing else. */
+header { position: sticky; top: 0; z-index: 10; padding: 0.85rem 0; }
+.topbar { display: flex; align-items: center; gap: 0.9rem; }
+.topbar .where { flex: 1; min-width: 0; }
+header p.step { margin: 0 0 0.15rem; font-family: inherit; font-size: 0.74rem;
+                font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+header h1 { font-size: 1.2rem; }
+.top-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }
+
+/* A rule page is wider than the report: the form sits beside the rule. */
+body.wide header .bar, body.wide main { max-width: 84rem; }
+
+/* the same panel the report's summary uses */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+        padding: 1.1rem 1.3rem 1.2rem; margin: 0 0 1.4rem;
+        box-shadow: 0 1px 2px rgba(59, 42, 26, 0.05); }
+.card > h2 { margin: 0 0 0.6rem; font-size: 1.02rem; color: var(--primary); }
+.card p { margin: 0.5rem 0; }
+.card ul, .card ol { margin: 0.4rem 0; padding-left: 1.3rem; }
+.card li { margin: 0.3rem 0; }
+.instructions h3 { margin: 1.5rem 0 0.4rem; font-size: 0.98rem; color: var(--primary); }
+.instructions h3:first-child { margin-top: 0.2rem; }
+.instructions .spec { margin: 0.6rem 0; font-size: 0.8rem; }
+.instructions pre.form { margin: 0.5rem 0; }
+.instructions .legend li { display: block; }
+.instructions figure.example { margin: 0.9rem 0 0; }
+.instructions figure.example img { display: block; width: 100%; max-width: 46rem;
+        border: 1px solid var(--line); border-radius: 8px; cursor: zoom-in; }
+.instructions figure.example figcaption { margin-top: 0.45rem; font-size: 0.86rem;
+        color: var(--muted); }
+.instructions .legend .tag { margin-right: 0.5rem; }
+/* the three kinds of word a rule marks, named in the colours the rule wears them in */
+.c-measure { color: var(--input); }
+.c-output { color: var(--accent); }
+.c-constant { color: var(--const); }
+
+.narrow { max-width: 36rem; margin: 3rem auto 0; }
+/* The start page holds its panel in the middle of the screen, as UI_static's does: the
+   page fills the height left under the header and main's own margins. */
+#page-entry { display: flex; flex-direction: column; justify-content: center;
+              min-height: calc(100vh - 11rem); margin-top: 0; }
+.done { text-align: center; }
+.mono { font-family: ui-monospace, "Cascadia Code", monospace; font-size: 0.8rem;
+        color: var(--muted); }
+.hint { color: var(--muted); font-size: 0.84rem; }
+.req { color: var(--danger-text); }
+.error { background: #FCEBEB; border-left: 3px solid var(--danger); border-radius: 6px;
+         padding: 0.6rem 0.8rem; color: var(--danger-text); font-size: 0.88rem; }
+.btn.wide-btn { display: block; width: 100%; margin-top: 0.8rem; }
+
+/* A background text: paragraphs, and indented blocks kept as they are written. */
+.text p { margin: 0 0 0.7rem; }
+.text pre.form { margin: 0 0 0.9rem; white-space: pre; }
+
+/* ---- intro pictures: one wide figure, or a grid of them ---- */
+.pictures { display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(24rem, 100%), 1fr));
+            gap: 1.1rem; margin-top: 0.8rem; }
+.pictures figure { margin: 0; }
+.pictures img { display: block; width: 100%; border: 1px solid var(--line);
+                border-radius: 8px; background: var(--bg); cursor: zoom-in; }
+.pictures figcaption { margin-top: 0.45rem; font-size: 0.86rem; color: var(--muted);
+                       line-height: 1.45; }
+.pictures figcaption b { color: var(--text); }
+
+/* fit-content: report.css gives every dialog the page's width */
+dialog.lightbox { width: fit-content; max-width: calc(100% - 2rem); max-height: calc(100vh - 2rem);
+                  padding: 0; border: none; border-radius: 8px; background: var(--bg);
+                  cursor: zoom-out; }
+/* A set width enlarges a small picture; 'contain' keeps a tall one in proportion when the
+   height runs out, rather than squeezing it to the box. */
+dialog.lightbox img { display: block; width: min(60rem, calc(100vw - 4rem));
+                      max-height: calc(100vh - 4rem); object-fit: contain; }
+
+/* ---- rule page: the form beside the rule; below it on a narrow screen ---- */
+.rule-layout { display: grid; grid-template-columns: 21rem minmax(0, 1fr); gap: 1.5rem;
+               align-items: start; }
+.eval-form { position: sticky; top: 5.6rem; margin: 0; }
+.rule-main > .explain { margin-bottom: 0.8rem; }
+/* the rule in plain words, read before the rule as written */
+.rule-main > .card.words { margin-bottom: 0.9rem; }
+.card.words p { margin: 0; font-size: 1.02rem; line-height: 1.6; }
+.rule-main .group { margin-top: 0; }
+@media (max-width: 62rem) {
+  .rule-layout { grid-template-columns: minmax(0, 1fr); }
+  .eval-form { position: static; order: 2; }
+}
+
+.field-label { display: block; margin: 0 0 0.5rem; padding: 0; font-weight: 600;
+               font-size: 0.92rem; }
+.eval-form fieldset { margin: 0 0 1.1rem; padding: 0; border: none; }
+.choice { display: flex; align-items: center; gap: 0.6rem; margin: 0.4rem 0;
+          padding: 0.55rem 0.8rem; background: #FFFFFF; border: 1px solid var(--line);
+          border-radius: 8px; cursor: pointer; }
+.choice:hover { border-color: var(--secondary); }
+.choice input { accent-color: var(--primary); }
+.choice:has(input:checked) { border-color: var(--primary);
+                             box-shadow: inset 3px 0 0 var(--primary); }
+.choice:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 1px; }
+
+input[type="text"], textarea { display: block; width: 100%; font: inherit;
+        font-size: 0.92rem; color: var(--text); background: #FFFFFF;
+        border: 1px solid var(--line); border-radius: 8px; padding: 0.55rem 0.7rem; }
+textarea { resize: vertical; }
+input[type="text"]:focus-visible, textarea:focus-visible {
+        outline: 3px solid var(--focus); outline-offset: 1px; }
+textarea:disabled { background: #ECEFF6; color: var(--muted); cursor: not-allowed; }
+
+@media (max-width: 40rem) {
+  .topbar { flex-wrap: wrap; }
+  .top-actions { width: 100%; justify-content: flex-start; }
+}
+
+/* =====================================================================
+   The viewer's own pieces: login, the list of submissions, the header's answer picker,
+   and the participant's answer shown read-only.
+   ===================================================================== */
+#page-login { display: flex; flex-direction: column; justify-content: center;
+              min-height: calc(100vh - 11rem); margin-top: 0; }
+#page-login input { margin-bottom: 0.9rem; }
+/* the study styles text fields only; the password field reads the same */
+input[type="password"] { display: block; width: 100%; font: inherit; font-size: 0.92rem;
+        color: var(--text); background: #FFFFFF; border: 1px solid var(--line);
+        border-radius: 8px; padding: 0.55rem 0.7rem; }
+input[type="password"]:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+
+/* 'subline', not 'sub': report.css draws a sub-rule's panel with .sub */
+header p.subline { margin: 0.2rem 0 0; font-family: inherit; font-size: 0.8rem; }
+.top-actions { align-items: center; }
+.picker { display: flex; align-items: center; gap: 0.5rem; color: #D8E0F4;
+          font-size: 0.8rem; font-weight: 600; }
+.picker select { font: inherit; font-size: 0.88rem; font-weight: 500; color: var(--text);
+                 background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px;
+                 padding: 0.3rem 0.5rem; max-width: 16rem; }
+.picker select:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+
+.table-wrap { overflow-x: auto; }
+table.list { margin: 0.4rem 0 0; font-family: inherit; font-size: 0.9rem; }
+table.list th { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em;
+                padding: 0.5rem 0.8rem 0.5rem 0; }
+table.list td { padding: 0.6rem 0.8rem 0.6rem 0; vertical-align: middle; }
+table.list td.mono { font-family: ui-monospace, "Cascadia Code", monospace;
+                     font-size: 0.78rem; }
+table.list td:last-child { text-align: right; padding-right: 0; }
+
+.readonly .choice { cursor: default; }
+.answer-text { margin: 0 0 0.8rem; padding: 0.55rem 0.7rem; min-height: 3.2rem;
+               background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px;
+               white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.92rem; }
+.answer-text.empty { color: var(--muted); font-style: italic; }

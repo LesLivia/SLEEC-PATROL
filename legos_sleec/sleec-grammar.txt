@@ -24,7 +24,7 @@ Constant:
 ;
 
 Value:
-    value=INT | "->" constant=[Constant]
+    value=NUMBER | "->" constant=[Constant]
 ;
 
 BoolValue:

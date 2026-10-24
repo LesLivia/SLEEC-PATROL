@@ -1,0 +1,60 @@
+# CBM model for SDD-OIA on precomputed features
+from argparse import ArgumentParser
+from utils.args import add_management_args, add_experiment_args
+from models.utils.oia_cbm import OIACBM
+
+
+def get_parser() -> ArgumentParser:
+    """Returns the parser
+
+    Returns:
+        argparse: argument parser
+    """
+    parser = ArgumentParser(description="Learning via" "Concept Extractor .")
+    add_management_args(parser)
+    add_experiment_args(parser)
+    return parser
+
+
+class PreSDDOIACBM(OIACBM):
+    """CBM MODEL FOR SDD-OIA ON PRECOMPUTED FEATURES: the OIA CBM (models/utils/oia_cbm.py) on SDD-OIA"""
+
+    NAME = "presddoiacbm"
+
+    def __init__(
+        self,
+        encoder,
+        decoder=None,
+        n_images=1,
+        c_split=(),
+        args=None,
+        model_dict=None,
+        n_facts=19,
+        nr_classes=4,
+    ):
+        """Initialize method
+
+        Args:
+            self: instance
+            encoder (nn.Module): encoder
+            decoder: unused; models/__init__.py passes it to models outside its list of discriminative models
+            n_images (int, default=1): number of images
+            c_split: concept splits
+            args: command line arguments
+            model_dict (default=None): model dictionary
+            n_facts (int, default=19): number of concepts (the 19 distinct SDD-OIA concepts,
+                datasets/utils/presddoia_creation.py)
+            nr_classes (int, nr_classes): number of classes for the multiclass classification problem
+
+        Returns:
+            None: This function does not return a value.
+        """
+        super(PreSDDOIACBM, self).__init__(
+            encoder,
+            n_images=n_images,
+            c_split=c_split,
+            args=args,
+            model_dict=model_dict,
+            n_facts=n_facts,
+            nr_classes=nr_classes,
+        )
