@@ -1,0 +1,20 @@
+# Cloudflare Pages configuration for the answers viewer. Read by `wrangler pages dev`
+# and `wrangler pages deploy`, both run from this folder.
+#
+# The manager's login is NOT here: ADMIN_USERNAME, ADMIN_PASSWORD and SESSION_SECRET are
+# Pages secrets (`wrangler pages secret put ...`), and for local runs they go in a
+# git-ignored .dev.vars file. See README.md.
+
+# The Pages project name; it becomes the viewer's address, <name>.pages.dev.
+name = "sleec-patrol-eval-viewer"
+pages_build_output_dir = "public"
+compatibility_date = "2026-10-01"
+
+# The same bucket the study site writes to; the viewer only reads it.
+[[r2_buckets]]
+binding = "SUBMISSIONS"
+bucket_name = "sleec-patrol-eval-submissions"
+# Local runs (`wrangler pages dev`) read the real answers, not a simulated bucket. The
+# viewer never writes, so this is safe. Remove the line to use a simulated bucket under
+# .wrangler/state. Deploying ignores it.
+remote = true

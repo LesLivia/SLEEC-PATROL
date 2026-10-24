@@ -176,9 +176,10 @@ def_start
     constant inLaneHi = 2
 
     // "ahead of ego": at least one car length (Vehicle.LENGTH = 5 m) ahead,
-    // so the car does not touch the ego. An obstacle (r8, r8b) is ahead and
-    // closer than dangerClose, below.
+    // so the car does not touch the ego; r8's obstacle is also within braking
+    // range (closeAhead), r8b's within dangerClose, below.
     constant justAhead = 5
+    constant closeAhead = 30
 
     // "too close to stop in time": < 10 m. At 30 m/s that is a third of a
     // second, and SLOWER only steps the target speed down by 5 m/s.
@@ -227,8 +228,8 @@ rule_start
     // AutoCar R8 -- "When an obstacle appears ahead, stop until it clears;
     //                if stopping is unsafe, change lanes."
     //
-    //   obstacle ahead   -> v1 present, inside ego's lane band, 5..10 m
-    //                       ahead (dangerClose), and ego closing in on it. All five rows
+    //   obstacle ahead   -> v1 present, inside ego's lane band, 5..30 m
+    //                       ahead (closeAhead), and ego closing in on it. All five rows
     //                       are vehicles; a stationary obstacle and a much
     //                       slower car are the same observation. Only row 1
     //                       is checked: it is the nearest vehicle, but in any
@@ -239,9 +240,7 @@ rule_start
     //                       constrains EVERY state in which the obstacle is
     //                       present, and stops applying once it is not.
     //   stopping unsafe  -> the obstacle is too close to stop in time, closer
-    //                       than dangerClose (riskLevel has no input feature).
-    //                       The obstacle itself is that close, so whenever the
-    //                       rule applies this part holds...
+    //                       than dangerClose (riskLevel has no input feature)...
     //   change lanes     -> ...and no other vehicle is perceived, so every
     //                       neighbouring lane is free. The lane changes that
     //                       exist depend on the ego's lane: both in the middle
@@ -258,7 +257,7 @@ rule_start
     r8 when cmdRequired and
         ({v1Presence} and
          ((({v1Y} > inLaneLo) and ({v1Y} < inLaneHi)) and
-          ((({v1X} > justAhead) and ({v1X} < dangerClose)) and ({v1Vx} < closing))))
+          ((({v1X} > justAhead) and ({v1X} < closeAhead)) and ({v1Vx} < closing))))
         then outputSlower
         // middle lane: both lane changes exist
         unless (({v1X} < dangerClose) and
@@ -279,8 +278,8 @@ rule_start
     // ============================================================
     // Derived from AutoCar R8 ("stop until it clears"): with an obstacle
     // close ahead (5..10 m, dangerClose), the ego must never accelerate.
-    // Same condition as r8; it is the weaker half of r8, with a verdict of
-    // its own.
+    // r8's condition, but closer: 5..10 m (dangerClose) instead of r8's
+    // 5..30 m (closeAhead); a verdict of its own.
     // ============================================================
     r8b when cmdRequired and
         ({v1Presence} and

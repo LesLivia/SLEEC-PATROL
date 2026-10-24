@@ -19,5 +19,7 @@ autonomous_driving/CBM/rssgen/
 
 # wrangler's local cache and dev state (account cache, local R2 for `wrangler pages dev`)
 .wrangler/
+# local secrets for `wrangler pages dev` (the viewer's login): never pushed
+.dev.vars
 
 .DS_Store

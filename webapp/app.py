@@ -285,8 +285,6 @@ async def verify(request: Request,
         "network_name": network_name,
         "groups": groups,
         "code": code,
-        # Said once at the top of the report rather than under every counter-example.
-        "has_scene": core.scene_renderer(generator) is not None,
     }
     return RedirectResponse(f"/results/{run_id}", status_code=303)
 

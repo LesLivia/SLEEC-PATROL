@@ -29,6 +29,6 @@ dependencies:
       - torch==2.8.0
       - uvicorn==0.54.0
       - z3-solver==4.15.4.0
-      - highway-env>=1.8.2
-      - stable-baselines3>=2.3.0
-prefix: /opt/anaconda3/envs/ai-sleec-ver
+      - gymnasium==1.0.0
+      - highway-env==1.12.1
+      - stable-baselines3==2.4.1

@@ -338,15 +338,22 @@ def section_owners(name, sections, defeaters, subrules):
                      for i in range(1, defeaters + 1)]
 
 
-def chosen_output(rows):
+def chosen_output(rows, semantics="exclusive", threshold=0.0):
     """The output event the network picked on this assignment: its largest output.
 
     The argmax head takes exactly one action, and the report names it in the
     specification's own words - the names its rules use - rather than in those of
-    whatever environment the model was trained in.
+    whatever environment the model was trained in. Under "independent" the largest
+    output is taken only above the decision threshold; below it the network takes
+    no action, and there is none to name.
     """
     outputs = [row for row in rows if row.get("output")]
-    return max(outputs, key=lambda row: row["raw"])["name"] if outputs else None
+    if not outputs:
+        return None
+    top = max(outputs, key=lambda row: row["raw"])
+    if semantics == "independent" and top["raw"] <= threshold:
+        return None
+    return top["name"]
 
 
 def scene_renderer(generator):
@@ -422,7 +429,9 @@ def build_report(outcome, generator):
             expected = ruletext.response_text(occs) if occs else None
             allowed = [occ.event.event.name for occ in occs]
             # What the model did instead, named as the specification names it.
-            action = chosen_output(rows) if violated else None
+            action = (chosen_output(rows, generator.config["output_semantics"],
+                                    generator.config["decision_threshold"])
+                      if violated else None)
             # The measures this part of the rule names itself. Narrower than 'used': a
             # normalized sub-rule also carries the conditions it was given to rule the
             # other alternatives out, so it compares inputs its own text never mentions.
@@ -458,6 +467,9 @@ def build_report(outcome, generator):
                 "related_rows": [row for row in rows if row["related"]],
                 "all_rows": rows,
                 "action": action,
+                # A violation with no action: no output cleared the decision threshold.
+                "no_action": violated and action is None,
+                "threshold": generator.config["decision_threshold"],
                 # Only a violation has an assignment to draw. scenes.render() refuses
                 # empty rows anyway; this says so where the decision is made. The
                 # constants go with the rows: a renderer reads the environment's shape

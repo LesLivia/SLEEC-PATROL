@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SLEEC-PATROL: Answers viewer</title>
+  <link rel="stylesheet" href="/report.css" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+
+  <!-- One header for every page: where the manager is, the way back to the list, and what
+       the page offers. app.js fills and shows what applies. -->
+  <header>
+    <div class="bar topbar">
+      <button id="nav-back" type="button" class="btn is-small is-outline is-secondary"
+              onclick="goToList()" hidden>&larr; All submissions</button>
+      <div class="where">
+        <p id="top-step" class="step" hidden></p>
+        <h1 id="top-title">SLEEC-PATROL: Answers viewer</h1>
+        <p id="top-sub" class="subline" hidden></p>
+      </div>
+      <div class="top-actions">
+        <!-- list page -->
+        <button id="btn-refresh" type="button" class="btn is-small is-outline is-secondary"
+                onclick="loadSubmissions()" hidden>Refresh</button>
+        <button id="btn-logout" type="button" class="btn is-small is-outline is-secondary"
+                onclick="doLogout()" hidden>Log out</button>
+        <!-- detail page -->
+        <button id="btn-background" type="button" class="btn is-small is-outline is-secondary"
+                onclick="openBackground()" hidden>Background</button>
+        <label id="picker-wrap" class="picker" hidden>Answer
+          <select id="detail-eval-picker" onchange="renderSelectedEvaluation()"></select>
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===================================================================
+         LOGIN PAGE
+         =================================================================== -->
+    <section id="page-login" class="page narrow" hidden>
+      <div class="card">
+        <h2>Manager login</h2>
+        <p>The answers of the SLEEC-PATROL diagnosis evaluation. Admin access
+          required.</p>
+        <form onsubmit="event.preventDefault(); doLogin();">
+          <label class="field-label" for="login-username">Username</label>
+          <input type="text" id="login-username" autocomplete="username" />
+          <label class="field-label" for="login-password">Password</label>
+          <input type="password" id="login-password" autocomplete="current-password" />
+          <p id="login-error" class="error" hidden></p>
+          <button id="login-submit" type="submit" class="btn wide-btn">Log in</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         LIST PAGE - one row per participant's file
+         =================================================================== -->
+    <section id="page-list" class="page" hidden>
+      <div class="card">
+        <h2>Submissions</h2>
+        <p id="list-status" class="hint">Loading…</p>
+        <p id="list-error" class="error" hidden></p>
+        <p id="list-empty" class="hint" hidden>No submissions yet.</p>
+        <div id="list-table-wrap" class="table-wrap" hidden>
+          <table class="list">
+            <thead>
+              <tr><th>Session ID</th><th>Expertise</th><th>Environments</th>
+                  <th>Answers</th><th>Last submitted</th><th></th></tr>
+            </thead>
+            <tbody id="list-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         DETAIL PAGE - one answer at a time, beside the rule page it is about,
+         as the participant saw it (read-only)
+         =================================================================== -->
+    <section id="page-detail" class="page" hidden>
+      <div class="rule-layout">
+        <aside class="card eval-form readonly">
+          <h2>Participant's answer</h2>
+          <fieldset disabled>
+            <legend class="field-label">Does the diagnosis help you to understand the
+              violation?</legend>
+            <label class="choice"><input type="radio" name="eval-helps" value="yes" />
+              Yes</label>
+            <label class="choice"><input type="radio" name="eval-helps" value="no" />
+              No</label>
+          </fieldset>
+          <p class="field-label">If no, what could be clearer?</p>
+          <p id="eval-clearer" class="answer-text"></p>
+          <p id="eval-submitted-at" class="hint"></p>
+        </aside>
+
+        <div class="rule-main">
+          <div id="rule-words-card" class="card words" hidden>
+            <h2>The rule in plain words</h2>
+            <p id="rule-words"></p>
+          </div>
+          <p class="explain">Below, the rule as the participant saw it. Open
+            <b>Diagnosis</b> on a red part of the rule to see the diagnosis they judged.</p>
+          <p id="rule-missing" class="error" hidden></p>
+          <div id="rule-panel"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- The Background button's sheet: the environment of the answer shown. -->
+  <dialog id="background-modal">
+    <div class="dlg-head">
+      <h2 id="background-modal-title">Background</h2>
+      <button type="button" class="btn is-secondary is-small is-outline"
+              data-close>Close</button>
+    </div>
+    <div class="dlg-body">
+      <div id="background-modal-body" class="text"></div>
+      <p id="background-modal-note" class="explain" hidden></p>
+    </div>
+  </dialog>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -33,6 +33,11 @@ import itertools
 #       leaves Marabou's own choice. It changes only the search, not what is checked.
 #   snc_workers: Marabou's parallel split-and-conquer mode with this many
 #       workers; 0 turns it off. It changes only the search, not what is checked.
+#   snc_splitting_strategy: how the parallel mode cuts a query into pieces.
+#       "largest-interval" halves the widest input range. Marabou's own choice
+#       ("auto", None here) cuts by fixing ReLUs on or off for networks with 10 or
+#       more inputs, which on the highway query sets off an exception Marabou does
+#       not catch, ending the process. It changes only the search, not what is checked.
 DEFAULT_CONFIG = {
     "target_output_ub": None,
     "output_semantics": "exclusive",
@@ -41,6 +46,7 @@ DEFAULT_CONFIG = {
     "strict_marabou_verif": "epsilon",
     "splitting_strategy": "largest-interval",
     "snc_workers": 32,
+    "snc_splitting_strategy": "largest-interval",
 }
 
 # Operator seen under a 'not'.
@@ -50,6 +56,10 @@ NEGATED_OP = {'>': '<=', '<': '>=', '>=': '<', '<=': '>', '=': '<>', '<>': '='}
 # |bound| (Tableau::computeBasicStatus), and reports sat on that same relaxation
 # (Engine::solve). A strict comparison survives only if it clears this.
 MARABOU_BOUND_SLACK = (1e-7, 1e-10)
+
+# Margin an output comparison needs for a counterexample to hold in float32 too: float32
+# outputs differ from Marabou's exact ones by up to ~5e-6 (measured on the highway PPO).
+OUTPUT_FLOAT32_MARGIN = 1e-4
 
 
 class _SleecNode:
@@ -464,6 +474,9 @@ class MarabouGenerator:
         options = []
         if self.config["snc_workers"]:
             options.append(f"snc=True, numWorkers={self.config['snc_workers']}")
+            if self.config["snc_splitting_strategy"] is not None:
+                options.append(
+                    f"sncSplittingStrategy={self.config['snc_splitting_strategy']!r}")
         if self.config["splitting_strategy"] is not None:
             options.append(f"splittingStrategy={self.config['splitting_strategy']!r}")
         if options:
@@ -766,12 +779,13 @@ class MarabouGenerator:
         """How far an output comparison moves off the tie: 0 under "closed".
 
         val is what the comparison is made against: 0 between two outputs,
-        decision_threshold against the threshold. The step is the input side's,
-        since it has the same slack to clear.
+        decision_threshold against the threshold. The step clears the network's
+        float32 rounding as well as Marabou's slack, so a counterexample's action
+        is taken in float32 too; inputs keep _strict_step, which clears the slack.
         """
         if self.config["strict_marabou_verif"] != "epsilon":
             return 0
-        return self._strict_step(val)
+        return max(OUTPUT_FLOAT32_MARGIN, self._strict_step(val))
 
     def _check_threshold(self, subject, val):
         lb, ub = self._range(subject)

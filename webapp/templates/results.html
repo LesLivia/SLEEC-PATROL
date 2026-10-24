@@ -318,7 +318,6 @@
     .net-out .action.violated { color: var(--danger-text); }
     .net-out .action.unverified { color: var(--warn-text); }
     .scene svg { display: block; }
-    .no-scene { color: var(--muted); font-size: 0.82rem; margin: -0.9rem 0 1.5rem; }
 
     /* the full counter-example, behind a button-looking toggle */
     /* Opening the full counter-example is a supporting action, so it takes the outlined
@@ -574,11 +573,6 @@
       </ul>
     </section>
 
-    {% if not run.has_scene %}
-      <p class="no-scene">No scene renderer is registered for this input interface, so
-      counter-examples are shown as values only.</p>
-    {% endif %}
-
     {# The rule list narrows in the browser: by title, by verdict, or by both. The count
        is written out here as well, so a report read without scripting still states how
        many rules it shows - which is then all of them. #}
@@ -697,6 +691,10 @@
               {% if part.action %}
                 <p class="net-out">Network output:
                   <span class="action violated">{{ part.action }}</span></p>
+              {% elif part.no_action is defined and part.no_action %}
+                <p class="net-out">Network output:
+                  <span class="action violated">none</span> (no output reaches the
+                  decision threshold, {{ part.threshold }})</p>
               {% endif %}
 
               {% if part.all_rows %}
